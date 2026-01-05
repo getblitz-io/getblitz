@@ -1,0 +1,34 @@
+{
+  "name": "@getblitz/redis",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "devDependencies": {
+    "@getblitz/eslint-config": "workspace:*",
+    "@getblitz/prettier-config": "workspace:*",
+    "@getblitz/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@getblitz/prettier-config",
+  "dependencies": {
+    "@getblitz/shared-types": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
+    "ioredis": "catalog:",
+    "zod": "catalog:"
+  }
+}

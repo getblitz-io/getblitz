@@ -1,0 +1,54 @@
+{
+  "name": "getblitz",
+  "private": true,
+  "engines": {
+    "node": "^22.21.0",
+    "pnpm": "^10.19.0"
+  },
+  "packageManager": "pnpm@10.19.0",
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "git clean -xdf node_modules",
+    "clean:workspaces": "turbo run clean",
+    "auth:generate": "pnpm -F @getblitz/auth generate",
+    "db:push": "pnpm -F @getblitz/database prisma:push",
+    "db:migrate": "pnpm -F @getblitz/database prisma:migrate",
+    "db:generate": "pnpm -F @getblitz/database prisma:generate",
+    "db:format": "pnpm -F @getblitz/database prisma:format",
+    "db:studio": "pnpm -F @getblitz/database prisma:studio",
+    "dev": "turbo watch dev --continue",
+    "dev:next": "turbo watch dev -F @getblitz/web...",
+    "dev:wss": "pnpm --filter @getblitz/wss dev",
+    "dev:demo": "pnpm --filter @getblitz/demo dev",
+    "dev:test-bank": "pnpm --filter @getblitz/test-bank dev",
+    "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",
+    "format:fix": "turbo run format --continue -- --write --cache --cache-location .cache/.prettiercache",
+    "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
+    "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
+    "lint:ws": "pnpm dlx sherif@latest",
+    "postinstall": "pnpm lint:ws",
+    "test": "turbo run test --ui=stream",
+    "typecheck": "turbo run typecheck",
+    "ui-add": "turbo run ui-add",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@getblitz/eslint-config": "workspace:*",
+    "@getblitz/prettier-config": "workspace:*",
+    "@turbo/gen": "^2.7.2",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "catalog:",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "catalog:",
+    "tsx": "^4.19.4",
+    "turbo": "^2.7.2",
+    "typescript": "catalog:"
+  },
+  "prettier": "@getblitz/prettier-config",
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css,md}": [
+      "pnpm exec prettier --write --cache --cache-location .cache/.prettiercache"
+    ]
+  }
+}

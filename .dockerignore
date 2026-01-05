@@ -1,0 +1,73 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/.next
+.turbo
+**/.turbo
+.cache
+**/.cache
+dist
+**/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+**/coverage
+.nyc_output
+**/.nyc_output
+
+# Documentation
+*.md
+!README.md
+docs
+**/docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+compose.yml
+.dockerignore
+
+# Scripts (not needed in container)
+scripts
+**/scripts
+
+# Projects folder (documentation)
+projects
+

@@ -1,0 +1,164 @@
+import type { BankCredentials } from "@getblitz/bank-providers";
+import type { OrganizationBankConnection } from "@getblitz/database";
+import { ProviderRegistry } from "@getblitz/bank-providers";
+
+import type {
+  CreateOrganizationBankConnectionInput,
+  IOrganizationBankConnectionRepository,
+} from "../interfaces";
+import type { ICredentialManagerService } from "./credential-manager.service";
+import { env } from "../env";
+import { NotFoundError } from "./organization.service";
+
+export interface SetupWebhookParams {
+  connectionId: string;
+  providerId: string;
+  /** Pass credentials directly (e.g. freshly exchanged OAuth tokens) */
+  credentials?: BankCredentials;
+}
+
+export interface SetupWebhookResult {
+  success: boolean;
+  error?: string;
+}
+
+export interface IBankConnectionService {
+  create(params: {
+    data: CreateOrganizationBankConnectionInput;
+  }): Promise<OrganizationBankConnection>;
+  findById(params: {
+    connectionId: string;
+  }): Promise<OrganizationBankConnection | null>;
+  findByOrganizationAndProvider(params: {
+    organizationId: string;
+    providerId: string;
+  }): Promise<OrganizationBankConnection | null>;
+  update(params: {
+    id: string;
+    data: Partial<
+      Omit<
+        CreateOrganizationBankConnectionInput,
+        "organizationId" | "providerId"
+      >
+    >;
+  }): Promise<OrganizationBankConnection>;
+  setupWebhook(params: SetupWebhookParams): Promise<SetupWebhookResult>;
+}
+
+export class BankConnectionService implements IBankConnectionService {
+  constructor(
+    private readonly organizationBankConnectionRepository: IOrganizationBankConnectionRepository,
+    private readonly credentialManager: ICredentialManagerService,
+  ) {}
+
+  async create({
+    data,
+  }: {
+    data: CreateOrganizationBankConnectionInput;
+  }): Promise<OrganizationBankConnection> {
+    return this.organizationBankConnectionRepository.create({ data });
+  }
+
+  async findById({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<OrganizationBankConnection | null> {
+    return this.organizationBankConnectionRepository.findById({
+      id: connectionId,
+    });
+  }
+
+  async findByOrganizationAndProvider({
+    organizationId,
+    providerId,
+  }: {
+    organizationId: string;
+    providerId: string;
+  }): Promise<OrganizationBankConnection | null> {
+    return this.organizationBankConnectionRepository.findByOrganizationIdAndProviderId(
+      {
+        organizationId,
+        providerId,
+      },
+    );
+  }
+
+  async update({
+    id,
+    data,
+  }: {
+    id: string;
+    data: Partial<
+      Omit<
+        CreateOrganizationBankConnectionInput,
+        "organizationId" | "providerId"
+      >
+    >;
+  }): Promise<OrganizationBankConnection> {
+    const connection = await this.organizationBankConnectionRepository.findById(
+      { id },
+    );
+    if (!connection)
+      throw new NotFoundError("Organization bank connection not found");
+
+    return this.organizationBankConnectionRepository.update({ id, data });
+  }
+
+  async setupWebhook({
+    connectionId,
+    providerId,
+    credentials: providedCredentials,
+  }: SetupWebhookParams): Promise<SetupWebhookResult> {
+    // Get the connection to access provider config
+    const connection = await this.organizationBankConnectionRepository.findById(
+      { id: connectionId },
+    );
+    if (!connection) {
+      return { success: false, error: "Connection not found" };
+    }
+
+    // Decrypt provider config and create configured provider instance
+    const providerConfig = this.credentialManager.decryptProviderConfig(
+      connection.providerConfig,
+    );
+    const provider = ProviderRegistry.createProvider(
+      providerId,
+      providerConfig,
+    );
+
+    if (!provider.createWebhook) {
+      return { success: false, error: "Provider does not support webhooks" };
+    }
+
+    try {
+      // Use provided credentials or fetch valid ones via credential manager
+      const credentials =
+        providedCredentials ??
+        (await this.credentialManager.getValidCredentials({ connectionId }))
+          .credentials;
+
+      const webhookUrl = this.buildWebhookUrl(connectionId);
+      const webhookResult = await provider.createWebhook({
+        credentials,
+        webhookUrl,
+      });
+
+      await this.organizationBankConnectionRepository.update({
+        id: connectionId,
+        data: { webhookUrl, webhookSecret: webhookResult.secret },
+      });
+
+      return { success: true };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Webhook setup failed";
+      console.warn("Webhook creation failed", err);
+      return { success: false, error: message };
+    }
+  }
+
+  private buildWebhookUrl(connectionId: string): string {
+    return `${env.NEXT_PUBLIC_APP_URL}/api/webhooks/connection/${connectionId}`;
+  }
+}

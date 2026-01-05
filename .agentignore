@@ -1,0 +1,51 @@
+# Build outputs
+dist/
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Cache directories
+.cache/
+.turbo/
+coverage/
+
+# Generated files
+packages/database/src/generated/
+
+# Editor directories
+.vscode/
+.idea/
+
+# Lock files (large, frequently changing)
+pnpm-lock.yaml
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test snapshots (often noisy)
+__snapshots__/
+
+# Binary/media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot

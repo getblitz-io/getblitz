@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "@getblitz/tailwind-config/theme";
+
+/* Override theme for test-bank with warm amber/gold palette */
+
+:root {
+  --tb-bg: oklch(0.13 0.02 85);
+  --tb-bg-secondary: oklch(0.16 0.025 80);
+  --tb-accent: oklch(0.72 0.14 75);
+  --tb-accent-dim: oklch(0.55 0.12 75);
+  --tb-border: oklch(0.28 0.04 80);
+  --tb-text: oklch(0.92 0.02 85);
+  --tb-text-muted: oklch(0.65 0.03 85);
+}
+
+body {
+  background: /* Subtle grid pattern */
+    linear-gradient(var(--tb-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--tb-border) 1px, transparent 1px),
+    /* Radial glow at top */
+    radial-gradient(
+        ellipse 80% 50% at 50% 0%,
+        oklch(0.35 0.12 75 / 0.3),
+        transparent
+      ),
+    /* Base gradient */
+    linear-gradient(180deg, var(--tb-bg) 0%, oklch(0.11 0.015 85) 100%);
+  background-size:
+    40px 40px,
+    40px 40px,
+    100% 100%,
+    100% 100%;
+  background-position:
+    -1px -1px,
+    -1px -1px,
+    0 0,
+    0 0;
+}
+
+/* Smooth input focus transitions */
+
+input:focus,
+select:focus,
+textarea:focus {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}

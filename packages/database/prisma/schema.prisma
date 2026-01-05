@@ -1,0 +1,283 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// =============================================================================
+// Payment Gateway Models (Phase 4)
+// =============================================================================
+
+enum Currency {
+  EUR
+  USDC
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+model PaymentSession {
+  id             String        @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String        @map("organization_id") @db.VarChar(36)
+  referenceId    String        @unique @map("reference_id") @db.VarChar(35)
+  amountCents    Int           @map("amount_cents")
+  currency       Currency      @default(EUR)
+  status         PaymentStatus @default(PENDING)
+  expiresAt      DateTime      @map("expires_at")
+  clientToken    String?       @map("client_token") @db.VarChar(255)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  bankAccountId  String        @map("bank_account_id") @db.VarChar(36)
+  bankAccount    BankAccount   @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("payment_session")
+}
+
+model Transaction {
+  id               String   @id @default(uuid(7)) @db.VarChar(36)
+  paymentSessionId String   @map("payment_session_id") @db.VarChar(36)
+  txHash           String   @unique @map("tx_hash") @db.VarChar(255)
+  rawPayload       Json?    @map("raw_payload")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  paymentSession PaymentSession @relation(fields: [paymentSessionId], references: [id], onDelete: Cascade)
+
+  @@index([paymentSessionId])
+  @@map("transaction")
+}
+
+model User {
+  id            String    @id
+  name          String    @db.Text
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  members     Member[]
+  invitations Invitation[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?  @db.Text
+  userAgent String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  activeOrganizationId String? @db.Text
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @db.Text
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier(length: 191)])
+  @@map("verification")
+}
+
+model Organization {
+  id                          String                       @id
+  name                        String                       @db.Text
+  slug                        String
+  logo                        String?                      @db.Text
+  createdAt                   DateTime
+  metadata                    String?                      @db.Text
+  members                     Member[]
+  invitations                 Invitation[]
+  paymentSessions             PaymentSession[]
+  secretKeys                  OrganizationSecretKey[]
+  webhooks                    OrganizationWebhook[]
+  organizationBankConnections OrganizationBankConnection[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @db.Text
+  createdAt      DateTime
+
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String       @db.Text
+  role           String?      @db.Text
+  status         String       @db.Text
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invitation")
+}
+
+enum BankConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+}
+
+model OrganizationBankConnection {
+  id             String       @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Provider identification (e.g., "qonto", "test-bank")
+  providerId String @map("provider_id") @db.VarChar(50)
+
+  // Custom name for this connection (optional, defaults to provider name)
+  name String? @db.VarChar(255)
+
+  // Encrypted provider configuration (clientId, clientSecret, URLs, etc.)
+  providerConfig String @map("provider_config") @db.MediumText
+
+  // Encrypted OAuth credentials (accessToken, refreshToken, expiresAt)
+  credentials String? @db.MediumText
+
+  isSandbox Boolean @default(false) @map("is_sandbox")
+
+  bankAccounts BankAccount[]
+
+  isDefault Boolean @default(false) @map("is_default")
+
+  webhookUrl    String? @map("webhook_url") @db.Text
+  webhookSecret String? @map("webhook_secret") @db.Text
+
+  status BankConnectionStatus @default(CONNECTED)
+
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@index([providerId])
+  @@map("organization_bank_account")
+}
+
+model OrganizationSecretKey {
+  id             String       @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  secretKey      String       @db.Text
+  lastUsedAt     DateTime?    @map("last_used_at")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("organization_secret_key")
+}
+
+// Organization-level webhook configuration
+model OrganizationWebhook {
+  id             String       @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String       @map("organization_id") @db.VarChar(36)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  webhookUrl    String @map("webhook_url") @db.Text // Global notification endpoint
+  webhookSecret String @map("webhook_secret") @db.Text // For HMAC signature verification
+
+  // Event subscriptions (which events to notify)
+  notifyPaymentSuccess   Boolean @default(true) @map("notify_payment_success")
+  notifyPaymentFailed    Boolean @default(true) @map("notify_payment_failed")
+  notifyPaymentExpired   Boolean @default(false) @map("notify_payment_expired")
+  notifyPaymentAbandoned Boolean @default(false) @map("notify_payment_abandoned")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@map("organization_webhook")
+}
+
+enum BankAccountStatus {
+  ENABLED
+  DISABLED
+  BLOCKED
+}
+
+// New: Generic bank account configuration
+model BankAccount {
+  id          String @id @default(uuid(7)) @db.VarChar(36)
+  accountName String @map("account_name") // User-friendly name
+  accountIban String @map("account_iban") // IBAN
+  accountBic  String @map("account_bic") // BIC
+
+  isDefault Boolean @default(false) @map("is_default")
+
+  organizationBankConnectionId String
+  organizationBankConnection   OrganizationBankConnection @relation(fields: [organizationBankConnectionId], references: [id], onDelete: Cascade)
+
+  accountConfig String @db.Text // IBAN, account ID, etc.
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  status          BankAccountStatus @default(ENABLED)
+  paymentSessions PaymentSession[]
+
+  @@map("bank_account")
+}

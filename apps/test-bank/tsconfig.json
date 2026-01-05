@@ -1,0 +1,13 @@
+{
+  "extends": "@getblitz/tsconfig/compiled-package.json",
+  "compilerOptions": {
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", ".next"]
+}

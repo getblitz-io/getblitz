@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@getblitz/tailwind-config/theme";
+@custom-variant dark (&:where(.dark, .dark *));
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    letter-spacing: var(--tracking-normal);
+  }
+}

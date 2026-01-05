@@ -1,0 +1,18 @@
+{
+  "name": "@getblitz/vitest-config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.ts",
+    "./node": "./node.ts",
+    "./react": "./react.ts"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "catalog:",
+    "vitest": "catalog:test"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "vitest": "catalog:test"
+  }
+}

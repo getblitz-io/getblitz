@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GetBlitz Payment Widget - Dev Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "DM Sans", system-ui, sans-serif;
+        background: linear-gradient(135deg, #0a0a0b 0%, #1a1a1f 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      h1 {
+        color: #fafafa;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      p {
+        color: #a1a1aa;
+        font-size: 14px;
+        margin-bottom: 32px;
+      }
+
+      #payment-container {
+        width: 100%;
+        max-width: 440px;
+      }
+
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .theme-toggle button {
+        padding: 8px 16px;
+        border: 1px solid #27272a;
+        border-radius: 8px;
+        background: #18181b;
+        color: #a1a1aa;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .theme-toggle button:hover {
+        background: #27272a;
+        color: #fafafa;
+      }
+
+      .theme-toggle button.active {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #0a0a0b;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="theme-toggle">
+      <button data-theme="dark" class="active">Dark</button>
+      <button data-theme="light">Light</button>
+      <button data-theme="auto">Auto</button>
+    </div>
+
+    <h1>GetBlitz Payment Widget</h1>
+    <p>Development preview with mock session data</p>
+    <div id="payment-container"></div>
+
+    <script type="module">
+      // Mock session for development (simulates API response) const mockSession = { sessionId: "550e8400-e29b-41d4-a716-446655440000", referenceId: "GB-DEV123", amountCents: 4999, currency: "EUR", status: "PENDING", expiresAt: new Date(Date.now() + 15 *
+      60 * 1000).toISOString(), organization: { name: "Demo Merchant", }, bankAccount: { providerId: "monerium", accountName: "Main Account", iban: "IS77 0200 0011 0000 0012 3456 78", }, }; // Import widget directly for dev preview (bypassing WebSocket)
+      import { GetBlitzWidget } from "./src/ui/widget.ts"; let currentTheme = "dark"; let widget = null; function initWidget(theme) { // Destroy existing widget if (widget) { widget.destroy(); } // Clear container const container = document.getElementById("payment-container");
+      container.innerHTML = ""; // Create widget directly with mock session (bypasses API/WebSocket) widget = new GetBlitzWidget(container, mockSession, { apiKey: "pk_test_demo", sessionId: mockSession.sessionId, theme: theme, }); widget.render(); console.log("Widget
+      rendered with theme:", theme); } // Theme toggle document.querySelectorAll(".theme-toggle button").forEach((btn) => { btn.addEventListener("click", () => { document.querySelectorAll(".theme-toggle button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active"); currentTheme = btn.dataset.theme; initWidget(currentTheme); }); }); // Initialize initWidget(currentTheme); // Simulate payment success after 8 seconds (for testing) setTimeout(() => { console.log("Simulating payment
+      success..."); if (widget) { widget.updateStatus("PAID"); } }, 8000);
+    </script>
+  </body>
+</html>

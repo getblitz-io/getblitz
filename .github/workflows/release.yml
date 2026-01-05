@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: develop
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # You can add additional steps here that run after a release is created
+      # For example, publishing packages to npm:
+      #
+      # - name: Checkout
+      #   if: ${{ steps.release.outputs.releases_created }}
+      #   uses: actions/checkout@v5
+      #
+      # - name: Setup
+      #   if: ${{ steps.release.outputs.releases_created }}
+      #   uses: ./tooling/github/setup
+      #
+      # - name: Publish getblitz-client to npm
+      #   if: ${{ steps.release.outputs['packages/getblitz-client--release_created'] }}
+      #   run: pnpm -F @getblitz/client publish --access public
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Sync develop to main after a release is created
+  sync-main:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge develop into main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git merge develop --ff-only
+          git push origin main

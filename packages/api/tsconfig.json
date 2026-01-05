@@ -1,0 +1,9 @@
+{
+  "extends": "@getblitz/tsconfig/compiled-package.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

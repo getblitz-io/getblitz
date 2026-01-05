@@ -1,0 +1,57 @@
+{
+  "name": "@getblitz/api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./env": "./src/env.ts",
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "default": "./src/services/index.ts"
+    },
+    "./repositories": {
+      "types": "./dist/repositories/index.d.ts",
+      "default": "./src/repositories/index.ts"
+    }
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@getblitz/auth": "workspace:*",
+    "@getblitz/bank-providers": "workspace:*",
+    "@getblitz/database": "workspace:*",
+    "@getblitz/redis": "workspace:*",
+    "@getblitz/shared-types": "workspace:*",
+    "@getblitz/validators": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "nanoid": "catalog:",
+    "rate-limiter-flexible": "^5.0.5",
+    "superjson": "2.2.3",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@getblitz/eslint-config": "workspace:*",
+    "@getblitz/prettier-config": "workspace:*",
+    "@getblitz/tsconfig": "workspace:*",
+    "@getblitz/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:test"
+  },
+  "prettier": "@getblitz/prettier-config"
+}

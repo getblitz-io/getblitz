@@ -1,0 +1,224 @@
+/* GetBlitz Payment Widget Styles */
+
+/* Using CSS custom properties for theming */
+
+.getblitz-widget {
+  --getblitz-font: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --getblitz-bg: #0a0a0b;
+  --getblitz-card-bg: #141417;
+  --getblitz-border: #27272a;
+  --getblitz-text: #fafafa;
+  --getblitz-text-muted: #a1a1aa;
+  --getblitz-accent: #22c55e;
+  --getblitz-accent-hover: #16a34a;
+  --getblitz-tab-bg: #18181b;
+  --getblitz-tab-active-bg: #27272a;
+  --getblitz-radius: 16px;
+  --getblitz-radius-sm: 8px;
+  font-family: var(--getblitz-font);
+  color: var(--getblitz-text);
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Light theme */
+
+.getblitz-theme-light {
+  --getblitz-bg: #f4f4f5;
+  --getblitz-card-bg: #ffffff;
+  --getblitz-border: #e4e4e7;
+  --getblitz-text: #18181b;
+  --getblitz-text-muted: #71717a;
+  --getblitz-tab-bg: #f4f4f5;
+  --getblitz-tab-active-bg: #ffffff;
+}
+
+/* Auto theme - respects system preference */
+
+@media (prefers-color-scheme: light) {
+  .getblitz-theme-auto {
+    --getblitz-bg: #f4f4f5;
+    --getblitz-card-bg: #ffffff;
+    --getblitz-border: #e4e4e7;
+    --getblitz-text: #18181b;
+    --getblitz-text-muted: #71717a;
+    --getblitz-tab-bg: #f4f4f5;
+    --getblitz-tab-active-bg: #ffffff;
+  }
+}
+
+/* Card container */
+
+.getblitz-card {
+  background: var(--getblitz-card-bg);
+  border: 1px solid var(--getblitz-border);
+  border-radius: var(--getblitz-radius);
+  overflow: hidden;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Header */
+
+.getblitz-header {
+  padding: 24px 24px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--getblitz-border);
+  background: linear-gradient(
+    180deg,
+    rgba(34, 197, 94, 0.05) 0%,
+    transparent 100%
+  );
+}
+
+.getblitz-org {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--getblitz-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.getblitz-amount {
+  display: block;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(
+    135deg,
+    var(--getblitz-text) 0%,
+    var(--getblitz-text-muted) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Content area */
+
+.getblitz-content {
+  padding: 24px;
+  min-height: 280px;
+}
+
+/* SEPA Tab */
+
+.getblitz-sepa-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.getblitz-qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: var(--getblitz-radius-sm);
+  box-shadow: inset 0 0 0 1px var(--getblitz-border);
+}
+
+.getblitz-qr-canvas {
+  display: block;
+  border-radius: 4px;
+}
+
+.getblitz-sepa-instruction {
+  font-size: 14px;
+  color: var(--getblitz-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.getblitz-sepa-instruction strong {
+  color: var(--getblitz-text);
+}
+
+.getblitz-sepa-details {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--getblitz-tab-bg);
+  border-radius: var(--getblitz-radius-sm);
+}
+
+.getblitz-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.getblitz-detail-label {
+  color: var(--getblitz-text-muted);
+}
+
+.getblitz-detail-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--getblitz-text);
+  background: transparent;
+  padding: 0;
+}
+
+.getblitz-sepa-note {
+  font-size: 12px;
+  color: var(--getblitz-accent);
+  text-align: center;
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: var(--getblitz-radius-sm);
+}
+
+/* Footer */
+
+.getblitz-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-top: 1px solid var(--getblitz-border);
+  background: var(--getblitz-tab-bg);
+}
+
+.getblitz-powered {
+  font-size: 11px;
+  color: var(--getblitz-text-muted);
+  opacity: 0.7;
+}
+
+.getblitz-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--getblitz-text-muted);
+}
+
+/* Success state */
+
+.getblitz-success .getblitz-status {
+  color: var(--getblitz-accent);
+}
+
+.getblitz-success .getblitz-card {
+  border-color: var(--getblitz-accent);
+  box-shadow:
+    0 0 0 1px var(--getblitz-accent),
+    0 4px 6px -1px rgb(34 197 94 / 0.1);
+}
+
+/* Error text */
+
+.getblitz-error {
+  color: #ef4444;
+  font-size: 14px;
+  text-align: center;
+  padding: 40px 20px;
+}

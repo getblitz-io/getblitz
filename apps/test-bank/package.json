@@ -1,0 +1,40 @@
+{
+  "name": "@getblitz/test-bank",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm with-env next build",
+    "clean": "git clean -xdf .cache .next .turbo node_modules",
+    "dev": "pnpm with-env next dev -p 3003",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "start": "pnpm with-env next start -p 3003",
+    "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e ./.env --"
+  },
+  "dependencies": {
+    "@t3-oss/env-nextjs": "catalog:",
+    "jsqr": "^1.4.0",
+    "next": "16.0.10",
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@getblitz/eslint-config": "workspace:*",
+    "@getblitz/prettier-config": "workspace:*",
+    "@getblitz/tailwind-config": "workspace:*",
+    "@getblitz/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:react19",
+    "@types/react-dom": "catalog:react19",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "catalog:",
+    "jiti": "^2.5.1",
+    "prettier": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@getblitz/prettier-config"
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "@getblitz/tsconfig/compiled-package.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "emitDeclarationOnly": false,
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

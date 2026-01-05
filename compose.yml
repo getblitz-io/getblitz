@@ -1,0 +1,66 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: getblitz-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: getblitz
+      MYSQL_USER: app
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:8-alpine
+    container_name: getblitz-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --save 60 1
+    volumes:
+      - redis_data:/data
+
+  # Self-hosted mode: Next.js with integrated WebSocket (default)
+  # Usage: docker compose up app
+  app:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: getblitz-app
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      ENABLE_WEBSOCKET: "true"
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: mysql://app:password@mysql:3306/getblitz
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+      - redis
+    profiles:
+      - standalone
+
+  # Split mode: Standalone WebSocket server for Vercel-compatible deployments
+  # Usage: docker compose --profile split up wss
+  wss:
+    build:
+      context: .
+      dockerfile: apps/wss/Dockerfile
+    container_name: getblitz-wss
+    environment:
+      WSS_PORT: 3001
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - redis
+    profiles:
+      - split
+
+volumes:
+  mysql_data:
+  redis_data:

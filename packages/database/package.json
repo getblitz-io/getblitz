@@ -1,0 +1,44 @@
+{
+  "name": "@getblitz/database",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
+    "lint": "eslint",
+    "prisma:format": "prisma format",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "prisma db seed",
+    "prisma:studio": "prisma studio",
+    "prisma:reset": "prisma migrate reset",
+    "reset": "pnpm prisma:reset && pnpm prisma:seed",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "@prisma/adapter-mariadb": "^7.1.0",
+    "@prisma/client": "^7.2.0",
+    "@t3-oss/env-core": "catalog:",
+    "dotenv": "^17.2.3",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@getblitz/eslint-config": "workspace:*",
+    "@getblitz/prettier-config": "workspace:*",
+    "@getblitz/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "prisma": "^7.2.0",
+    "typescript": "catalog:"
+  },
+  "prettier": "@getblitz/prettier-config"
+}

@@ -1,0 +1,120 @@
+import type { Mocked } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { BankProvider } from "@getblitz/bank-providers";
+import { ProviderRegistry } from "@getblitz/bank-providers";
+
+import type { IOrganizationBankConnectionRepository } from "../interfaces";
+import type { ICredentialManagerService } from "./credential-manager.service";
+import { BankConnectionService } from "./bank-connection.service";
+
+vi.mock("../env", () => ({
+  env: {
+    NEXT_PUBLIC_APP_URL: "https://app.test",
+  },
+}));
+
+vi.mock("@getblitz/bank-providers", () => ({
+  ProviderRegistry: {
+    createProvider: vi.fn(),
+  },
+}));
+
+describe("BankConnectionService", () => {
+  const mockedRegistry = ProviderRegistry as Mocked<typeof ProviderRegistry>;
+  let service: BankConnectionService;
+  const mockRepo = {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findByOrganizationIdAndProviderId: vi.fn(),
+    update: vi.fn(),
+    findByOrganizationId: vi.fn(),
+    findDefaultByOrganizationId: vi.fn(),
+    delete: vi.fn(),
+  };
+  const mockCredManager = {
+    decryptProviderConfig: vi.fn(),
+    getValidCredentials: vi.fn(),
+    refreshCredentials: vi.fn(),
+    isTokenExpiringSoon: vi.fn(),
+  };
+
+  beforeAll(() => {
+    service = new BankConnectionService(
+      mockRepo as unknown as IOrganizationBankConnectionRepository,
+      mockCredManager as unknown as ICredentialManagerService,
+    );
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should create a bank connection", async () => {
+    const data = {
+      organizationId: "org-1",
+      providerId: "test",
+      providerConfig: "cfg",
+    };
+    mockRepo.create.mockResolvedValue({ id: "conn-1" });
+
+    const result = await service.create({ data });
+
+    expect(result.id).toBe("conn-1");
+    expect(mockRepo.create).toHaveBeenCalledWith({ data });
+  });
+
+  it("should setup webhook successfully", async () => {
+    const connection = {
+      id: "conn-123",
+      providerConfig: "enc:cfg",
+      providerId: "test-bank",
+    };
+    mockRepo.findById.mockResolvedValue(connection);
+    mockCredManager.decryptProviderConfig.mockReturnValue({ some: "cfg" });
+    mockCredManager.getValidCredentials.mockResolvedValue({
+      credentials: { accessToken: "token" },
+    });
+
+    const mockProvider = {
+      createWebhook: vi.fn().mockResolvedValue({ secret: "webhook-secret" }),
+    };
+    mockedRegistry.createProvider.mockReturnValue(
+      mockProvider as unknown as BankProvider,
+    );
+
+    const result = await service.setupWebhook({
+      connectionId: "conn-123",
+      providerId: "test-bank",
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockProvider.createWebhook).toHaveBeenCalledWith({
+      credentials: { accessToken: "token" },
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
+    });
+    expect(mockRepo.update).toHaveBeenCalledWith({
+      id: "conn-123",
+      data: {
+        webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
+        webhookSecret: "webhook-secret",
+      },
+    });
+  });
+
+  it("should fail if provider does not support webhooks", async () => {
+    const connection = { id: "conn-123", providerId: "test-bank" };
+    mockRepo.findById.mockResolvedValue(connection);
+    mockedRegistry.createProvider.mockReturnValue(
+      {} as unknown as BankProvider,
+    );
+
+    const result = await service.setupWebhook({
+      connectionId: "conn-123",
+      providerId: "test-bank",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Provider does not support webhooks");
+  });
+});
