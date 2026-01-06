@@ -67,10 +67,8 @@ spec:
       engine: MYSQL
       version: "8"
       production: true
-      size_slug: db-s-1vcpu-1gb
 
     - name: redis
       engine: REDIS
       version: "7"
       production: true
-      size_slug: db-s-1vcpu-1gb
