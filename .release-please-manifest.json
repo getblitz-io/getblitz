@@ -1,4 +1,5 @@
 {
   "apps/nextjs": "0.0.1",
-  "packages/getblitz-client": "0.0.1"
+  "packages/getblitz-client": "0.0.2",
+  "apps/web": "1.0.0"
 }
