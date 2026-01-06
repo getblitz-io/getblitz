@@ -295,12 +295,6 @@ export interface IOrganizationService {
     keyId: string;
     userId: string;
   }): Promise<OrganizationSecretKey>;
-  getDashboardStats({ orgIds }: { orgIds: string[] }): Promise<DashboardStats>;
-  getOrganizationCounts({
-    orgIds,
-  }: {
-    orgIds: string[];
-  }): Promise<OrganizationCounts[]>;
   getPaidCount({ orgId }: { orgId: string }): Promise<number>;
 
   // Bank account methods

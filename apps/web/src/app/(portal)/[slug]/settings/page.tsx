@@ -105,11 +105,7 @@ export default async function SettingsPage({
         </Card>
 
         {/* Webhook Settings */}
-        <WebhookSettings
-          webhooks={organization.webhooks}
-          slug={slug}
-          organizationId={organization.id}
-        />
+        <WebhookSettings webhooks={organization.webhooks} slug={slug} />
 
         {/* Personal Settings Link */}
         <Card>

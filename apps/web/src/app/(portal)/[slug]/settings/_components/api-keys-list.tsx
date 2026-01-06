@@ -120,7 +120,7 @@ export function ApiKeysList({ keys, slug }: ApiKeysListProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => deleteKey.mutate({ keyId: key.id })}
+                  onClick={() => deleteKey.mutate({ keyId: key.id, slug })}
                   disabled={deleteKey.isPending}
                   className="text-destructive hover:text-destructive"
                 >

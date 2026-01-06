@@ -24,7 +24,7 @@ export default async function DashboardPage({
   const caller = await api();
   const organization = await caller.organization.getBySlug({ slug });
   const paidCount = await caller.organization.getPaidCount({
-    orgId: organization.id,
+    slug,
   });
 
   const bankAccountCount = organization.organizationBankConnections.flatMap(

@@ -160,23 +160,18 @@ export default function ConnectBankPage() {
   const tCommon = useTranslations("Common");
   const tToast = useTranslations("Toast");
 
-  // First get the org to get its ID
-  const { data: org } = useQuery(
-    trpc.organization.getBySlug.queryOptions({ slug }),
-  );
-
   // Get all bank connections for this organization
   const { data: connections, isLoading } = useQuery({
     ...trpc.organization.getBankConnections.queryOptions({
-      orgId: org?.id ?? "",
+      slug,
     }),
-    enabled: !!org?.id,
+    enabled: !!slug,
   });
 
   // Get all available providers for the selection modal
   const { data: allProviders } = useQuery({
     ...trpc.provider.list.queryOptions(),
-    enabled: !isLoading && !!org?.id,
+    enabled: !isLoading && !!slug,
   });
 
   const disconnectBank = useMutation(
@@ -185,7 +180,7 @@ export default function ConnectBankPage() {
         toast.success(tToast("bankDisconnected"));
         void queryClient.invalidateQueries({
           queryKey: trpc.organization.getBankConnections.queryKey({
-            orgId: org?.id ?? "",
+            slug,
           }),
         });
       },
@@ -201,7 +196,7 @@ export default function ConnectBankPage() {
         toast.success(tToast("webhookConfigured"));
         void queryClient.invalidateQueries({
           queryKey: trpc.organization.getBankConnections.queryKey({
-            orgId: org?.id ?? "",
+            slug,
           }),
         });
       },
@@ -218,7 +213,7 @@ export default function ConnectBankPage() {
         setEditingConnectionId(null);
         void queryClient.invalidateQueries({
           queryKey: trpc.organization.getBankConnections.queryKey({
-            orgId: org?.id ?? "",
+            slug,
           }),
         });
       },
@@ -229,11 +224,11 @@ export default function ConnectBankPage() {
   );
 
   const handleDisconnect = (connectionId: string) => {
-    if (!connectionId || !org?.id) return;
+    if (!connectionId || !slug) return;
     if (!confirm(t("disconnectConfirm"))) return;
 
     disconnectBank.mutate({
-      orgId: org.id,
+      slug,
       connectionId,
     });
   };
@@ -264,7 +259,7 @@ export default function ConnectBankPage() {
     setEditingConnectionId(null);
   };
 
-  if (isLoading || !org) {
+  if (isLoading || !slug) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
@@ -445,7 +440,7 @@ export default function ConnectBankPage() {
                                 : t("webhookInfo")}
                             </Button>
                             <Link
-                              href={`/${slug}/banks/connect/${connection.providerId}/accounts`}
+                              href={`/${slug}/banks/connect/${connection.id}/accounts`}
                             >
                               <Button
                                 variant="outline"
@@ -455,7 +450,7 @@ export default function ConnectBankPage() {
                               </Button>
                             </Link>
                             <Link
-                              href={`/${slug}/banks/connect/${connection.providerId}/configure?connectionId=${connection.id}`}
+                              href={`/${slug}/banks/connect/${connection.id}/configure`}
                             >
                               <Button
                                 variant="outline"
@@ -477,7 +472,7 @@ export default function ConnectBankPage() {
                           </>
                         ) : (
                           <Link
-                            href={`/${slug}/banks/connect/${connection.providerId}/configure?connectionId=${connection.id}`}
+                            href={`/${slug}/banks/connect/${connection.id}/configure`}
                           >
                             <Button className="w-full sm:w-auto">
                               {tCommon("buttons.configure")}

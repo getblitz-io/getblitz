@@ -43,12 +43,13 @@ function LoadingSpinner() {
  */
 function parseState(
   state: string,
-): { providerId: string; slug: string } | null {
+): { connectionId: string; slug: string; randomId: string } | null {
   const parts = state.split(":");
-  if (parts.length < 2) return null;
+  if (parts.length < 3) return null;
   return {
-    providerId: parts[0] ?? "",
+    connectionId: parts[0] ?? "",
     slug: parts[1] ?? "",
+    randomId: parts[2] ?? "",
   };
 }
 
@@ -74,14 +75,18 @@ export function BankCallbackClient({
     return parseState(state);
   }, [state]);
 
+  const connectionId = parsedState?.connectionId;
   const slug = parsedState?.slug;
+  const randomId = parsedState?.randomId;
 
   // Exchange Code
   const exchangeCode = useMutation(
     trpc.organization.completeBankConnection.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (data) => {
         toast.success("Code exchanged successfully");
-        router.push(`/${slug}/banks/connect/${providerId}/accounts`);
+        router.push(
+          `/${data.slug}/banks/connect/${data.connectionId}/accounts`,
+        );
       },
       onError: (error) => {
         toast.error(error.message);
@@ -91,20 +96,28 @@ export function BankCallbackClient({
   );
 
   useEffect(() => {
-    if (code && providerId && slug && !hasCalledRef.current) {
+    if (
+      code &&
+      providerId &&
+      connectionId &&
+      randomId &&
+      slug &&
+      !hasCalledRef.current
+    ) {
       hasCalledRef.current = true;
       const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
       exchangeCode.mutate({
+        connectionId,
         slug,
-        providerId,
         code,
+        randomId,
         redirectUri,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, providerId, slug]);
+  }, [code, providerId, connectionId, randomId, slug]);
 
-  if (!code || !state || !slug) {
+  if (!code || !state || !connectionId || !randomId) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="w-full max-w-md">
@@ -140,12 +153,14 @@ export function BankCallbackClient({
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  if (!code || !slug) return;
+                  if (!code || !state || !connectionId || !randomId || !slug)
+                    return;
                   setIsRetrying(true);
                   const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
                   exchangeCode.mutate({
+                    connectionId,
                     slug,
-                    providerId,
+                    randomId,
                     code,
                     redirectUri,
                   });
