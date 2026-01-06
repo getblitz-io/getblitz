@@ -94,7 +94,8 @@ export const organizationRouter = createTRPCRouter({
   getProviderConfigSchema: organizationProcedure
     .input(
       z.object({
-        connectionId: z.string(),
+        providerId: z.string(),
+        connectionId: z.string().optional(),
       }),
     )
     .query(
@@ -105,26 +106,7 @@ export const organizationRouter = createTRPCRouter({
         schema: ProviderConfigSchema;
         defaultConfig: ProviderConfig;
       }> => {
-        // If connectionId is provided, load existing config
-        const connection =
-          await ctx.prisma.organizationBankConnection.findUnique({
-            where: { id: input.connectionId },
-          });
-
-        if (!connection) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Connection not found",
-          });
-        }
-
-        // Decrypt and return existing config
-        const existingConfig =
-          ctx.services.credentialManager.decryptProviderConfig(
-            connection.providerConfig,
-          );
-
-        const provider = ProviderRegistry.getProvider(connection.providerId);
+        const provider = ProviderRegistry.getProvider(input.providerId);
         if (!provider) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -132,9 +114,31 @@ export const organizationRouter = createTRPCRouter({
           });
         }
 
+        let defaultConfig: ProviderConfig = provider.getDefaultConfig();
+        // If connectionId is provided, load existing config
+        if (input.connectionId) {
+          const connection =
+            await ctx.prisma.organizationBankConnection.findUnique({
+              where: {
+                id: input.connectionId,
+                organizationId: ctx.organization.id,
+              },
+            });
+
+          if (!connection) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Connection not found",
+            });
+          }
+          defaultConfig = ctx.services.credentialManager.decryptProviderConfig(
+            connection.providerConfig,
+          );
+        }
+
         return {
           schema: provider.getProviderConfigSchema(),
-          defaultConfig: existingConfig,
+          defaultConfig,
         };
       },
     ),

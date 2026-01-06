@@ -243,7 +243,7 @@ export default function ConnectBankPage() {
 
   const handleSelectProvider = (providerId: string) => {
     setProviderDialogOpen(false);
-    router.push(`/${slug}/banks/connect/${providerId}/configure`);
+    router.push(`/${slug}/banks/connect/${providerId}`);
   };
 
   const handleStartEditName = (connectionId: string) => {
@@ -440,7 +440,7 @@ export default function ConnectBankPage() {
                                 : t("webhookInfo")}
                             </Button>
                             <Link
-                              href={`/${slug}/banks/connect/${connection.id}/accounts`}
+                              href={`/${slug}/banks/accounts/${connection.id}`}
                             >
                               <Button
                                 variant="outline"
@@ -450,7 +450,7 @@ export default function ConnectBankPage() {
                               </Button>
                             </Link>
                             <Link
-                              href={`/${slug}/banks/connect/${connection.id}/configure`}
+                              href={`/${slug}/banks/connect/${connection.providerId}?connectionId=${connection.id}`}
                             >
                               <Button
                                 variant="outline"
@@ -472,7 +472,7 @@ export default function ConnectBankPage() {
                           </>
                         ) : (
                           <Link
-                            href={`/${slug}/banks/connect/${connection.id}/configure`}
+                            href={`/${slug}/banks/connect/${connection.providerId}?connectionId=${connection.id}`}
                           >
                             <Button className="w-full sm:w-auto">
                               {tCommon("buttons.configure")}

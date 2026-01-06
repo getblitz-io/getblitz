@@ -84,9 +84,7 @@ export function BankCallbackClient({
     trpc.organization.completeBankConnection.mutationOptions({
       onSuccess: (data) => {
         toast.success("Code exchanged successfully");
-        router.push(
-          `/${data.slug}/banks/connect/${data.connectionId}/accounts`,
-        );
+        router.push(`/${data.slug}/banks/accounts/${data.connectionId}`);
       },
       onError: (error) => {
         toast.error(error.message);

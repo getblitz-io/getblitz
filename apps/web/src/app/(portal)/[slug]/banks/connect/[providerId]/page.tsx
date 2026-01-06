@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -22,18 +22,21 @@ import { useTRPC } from "~/trpc/react";
 export default function ConfigureProviderPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const connectionId = params.connectionId as string;
+  const connectionId = searchParams.get("connectionId");
+  const providerId = params.providerId as string;
   const trpc = useTRPC();
   const t = useTranslations("BankConfigurePage");
 
   // Get the provider config schema (with existing config if connectionId provided)
   const { data: configData, isLoading: isLoadingSchema } = useQuery({
     ...trpc.organization.getProviderConfigSchema.queryOptions({
-      connectionId,
+      providerId,
+      connectionId: connectionId ?? undefined,
       slug,
     }),
-    enabled: !!connectionId && !!slug,
+    enabled: !!slug && !!providerId,
   });
 
   // Get connections to find provider info
@@ -46,9 +49,6 @@ export default function ConfigureProviderPage() {
     () => connections?.find((c) => c.id === connectionId),
     [connections, connectionId],
   );
-
-  // Derive providerId from connection
-  const providerId = connection?.providerId ?? "";
 
   const providerInfo = useMemo(() => {
     if (connection) {
@@ -101,7 +101,7 @@ export default function ConfigureProviderPage() {
         slug,
         providerId,
         providerConfig,
-        connectionId,
+        connectionId: connectionId ?? undefined,
         name: typeof name === "string" ? name.trim() || undefined : undefined,
       });
     },
@@ -188,12 +188,20 @@ export default function ConfigureProviderPage() {
     });
   };
 
+  // Track previous sandboxMode value to prevent infinite loop
+  const prevSandboxModeRef = useRef<boolean | undefined>(undefined);
+
   // Watch sandboxMode and update dependent fields (using effect to avoid subscription issues)
   useEffect(() => {
     if (providerId !== "qonto") return;
 
     const unsubscribe = form.store.subscribe(() => {
       const sandboxMode = form.state.values.sandboxMode as boolean | undefined;
+
+      // Only update if sandboxMode actually changed
+      if (sandboxMode === prevSandboxModeRef.current) return;
+      prevSandboxModeRef.current = sandboxMode;
+
       if (sandboxMode === true) {
         form.setFieldValue(
           "oauthBaseUrl" as never,
@@ -216,7 +224,7 @@ export default function ConfigureProviderPage() {
     });
 
     return unsubscribe;
-  }, [form, providerId]);
+  }, [providerId, form]);
 
   if (isLoadingSchema || !configData) {
     return (

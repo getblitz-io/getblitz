@@ -58,7 +58,7 @@ export default function OnboardingPage() {
     <div className="from-background to-muted/30 flex min-h-screen flex-col items-center justify-center bg-linear-to-b px-4">
       <div className="mb-8 flex flex-col items-center">
         <Image
-          src="/logo-icon.svg"
+          src="/logo-icon.png"
           alt="Logo"
           width={56}
           height={56}
