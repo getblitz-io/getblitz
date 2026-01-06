@@ -1,7 +1,9 @@
 {
   "name": "@getblitz/shared-types",
   "version": "0.0.1",
-  "private": true,
+  "description": "Shared TypeScript types for GetBlitz Payment Gateway",
+  "author": "GetBlitz <hello@getblitz.io>",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
@@ -9,7 +11,28 @@
       "default": "./src/index.ts"
     }
   },
-  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getblitz-io/getblitz.git",
+    "directory": "packages/shared-types"
+  },
+  "homepage": "https://getblitz.io",
+  "bugs": {
+    "url": "https://github.com/getblitz-io/getblitz/issues"
+  },
+  "keywords": [
+    "getblitz",
+    "payment",
+    "types",
+    "typescript",
+    "sepa"
+  ],
   "scripts": {
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
@@ -18,8 +41,13 @@
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
-  "dependencies": {
-    "zod": "catalog:"
+  "peerDependencies": {
+    "zod": "^3.24.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": false
+    }
   },
   "devDependencies": {
     "@getblitz/eslint-config": "workspace:*",
@@ -27,7 +55,8 @@
     "@getblitz/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zod": "catalog:"
   },
   "prettier": "@getblitz/prettier-config"
 }
