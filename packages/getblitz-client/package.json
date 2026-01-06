@@ -53,7 +53,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@getblitz/shared-types": "workspace:*",
+    "@getblitz/shared-types": "workspace:^",
     "qrcode": "catalog:",
     "socket.io-client": "catalog:"
   },

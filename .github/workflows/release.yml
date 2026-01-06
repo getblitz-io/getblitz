@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      shared_types_release_created: ${{ steps.release.outputs['packages/shared-types--release_created'] }}
       getblitz_client_release_created: ${{ steps.release.outputs['packages/getblitz-client--release_created'] }}
     steps:
       - uses: googleapis/release-please-action@v4
@@ -25,11 +26,12 @@ jobs:
           target-branch: develop
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  # Publish @getblitz/client to npm using trusted publishing (OIDC)
-  publish-client:
+  # Publish @getblitz/shared-types to npm using trusted publishing (OIDC)
+  publish-shared-types:
     needs: release-please
-    if: ${{ needs.release-please.outputs.getblitz_client_release_created == 'true' }}
+    if: ${{ needs.release-please.outputs.shared_types_release_created == 'true' }}
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       contents: read
       id-token: write # Required for npm trusted publishing (OIDC)
@@ -44,7 +46,44 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: ".nvmrc"
-          registry-url: "https://registry.npmjs.org" # Required for npm publish
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build @getblitz/shared-types
+        run: pnpm -F @getblitz/shared-types build
+
+      - name: Publish to npm
+        working-directory: packages/shared-types
+        run: npm publish --access public --provenance
+
+  # Publish @getblitz/client to npm using trusted publishing (OIDC)
+  publish-client:
+    needs: [release-please, publish-shared-types]
+    # Run if client was released, regardless of whether shared-types was released
+    # The 'always()' ensures this job runs even if publish-shared-types was skipped
+    if: |
+      always() &&
+      needs.release-please.outputs.getblitz_client_release_created == 'true' &&
+      (needs.publish-shared-types.result == 'success' || needs.publish-shared-types.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # Required for npm trusted publishing (OIDC)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install
@@ -53,9 +92,8 @@ jobs:
         run: pnpm -F @getblitz/client build
 
       - name: Publish to npm
-        # No NPM_TOKEN needed - uses OIDC trusted publishing
-        # Provenance is automatically generated
-        run: pnpm -F @getblitz/client publish --access public
+        working-directory: packages/getblitz-client
+        run: npm publish --access public --provenance
 
   # Sync develop to main after a release is created
   sync-main:

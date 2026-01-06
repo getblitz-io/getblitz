@@ -636,7 +636,7 @@ importers:
   packages/getblitz-client:
     dependencies:
       '@getblitz/shared-types':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../shared-types
       qrcode:
         specifier: 'catalog:'
@@ -738,10 +738,6 @@ importers:
         version: 5.9.3
 
   packages/shared-types:
-    dependencies:
-      zod:
-        specifier: 'catalog:'
-        version: 4.3.5
     devDependencies:
       '@getblitz/eslint-config':
         specifier: workspace:*
@@ -761,6 +757,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      zod:
+        specifier: 'catalog:'
+        version: 4.3.5
 
   packages/ui:
     dependencies:
