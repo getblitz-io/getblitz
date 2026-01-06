@@ -27,6 +27,10 @@ services:
         fromDatabase:
           name: getblitz-db
           property: database
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: getblitz-db
+          property: port
       
       # Redis
       - key: REDIS_URL

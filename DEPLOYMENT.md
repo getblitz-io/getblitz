@@ -35,7 +35,7 @@ This guide explains how to deploy GetBlitz to various cloud platforms.
     - `NODE_VERSION`: Preset to `22.12.0`.
 5.  **Resources**:
     - Render will generate a `render.yaml` based blueprint.
-    - It will create a single Web Service (Dashboard + WSS), a MySQL Database, and a Redis instance.
+    - It will create a single Web Service (Dashboard + WSS), a PostgreSQL Database, and a Redis instance.
 
 ## Manual Deployment
 

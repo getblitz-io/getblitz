@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 // =============================================================================
@@ -130,7 +130,7 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([identifier(length: 191)])
+  @@index([identifier])
   @@map("verification")
 }
 
@@ -196,10 +196,10 @@ model OrganizationBankConnection {
   name String? @db.VarChar(255)
 
   // Encrypted provider configuration (clientId, clientSecret, URLs, etc.)
-  providerConfig String @map("provider_config") @db.MediumText
+  providerConfig String @map("provider_config") @db.Text
 
   // Encrypted OAuth credentials (accessToken, refreshToken, expiresAt)
-  credentials String? @db.MediumText
+  credentials String? @db.Text
 
   isSandbox Boolean @default(false) @map("is_sandbox")
 

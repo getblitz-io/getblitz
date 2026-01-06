@@ -1,74 +1,123 @@
-spec:
-  name: getblitz
-  services:
-    - name: web
-      source_dir: /
-      environment_slug: node-js
-      instance_size_slug: basic-xs
-      instance_count: 1
-      build_command: pnpm install && pnpm db:generate && pnpm build:standalone
-      run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
-      envs:
-        # Feature Flags
-        - key: ENABLE_WEBSOCKET
-          value: "true"
+# DigitalOcean App Platform Deployment Template
+# Documentation: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+#
+# NOTE: DigitalOcean App Platform only supports PostgreSQL (PG) and Redis as managed dev databases.
+# This template uses PostgreSQL. You'll need to adapt your Prisma schema if migrating from MySQL.
+# Alternatively, use an external MySQL database (see commented section below).
 
-        # Database Connection (Individual Params)
-        - key: DATABASE_HOST
-          scope: RUN_AND_BUILD_TIME
-          value: ${db.HOSTNAME}
-        - key: DATABASE_USER
-          scope: RUN_AND_BUILD_TIME
-          value: ${db.USERNAME}
-        - key: DATABASE_PASSWORD
-          scope: RUN_AND_BUILD_TIME
-          value: ${db.PASSWORD}
-        - key: DATABASE_NAME
-          scope: RUN_AND_BUILD_TIME
-          value: ${db.DATABASE}
-        
-        # Redis
-        - key: REDIS_URL
-          scope: RUN_AND_BUILD_TIME
-          value: ${redis.REDIS_URL}
-        
-        # App URLs
-        - key: NEXT_PUBLIC_APP_URL
-          value: ${APP_URL}
-        - key: NEXT_PUBLIC_WSS_URL
-          value: ${APP_URL}
-        
-        # CORS (Self + Others)
-        - key: CORS_ORIGINS
-          value: ${APP_URL}
+name: getblitz
 
-        # Secrets (User Input)
-        - key: AUTH_SECRET
-          description: "Secret key for authentication (min 32 chars)"
-          required: true
-        - key: ENCRYPTION_KEY
-          description: "Key for encrypting secrets (min 32 chars)"
-          required: true
-        
-        # OAuth (User Input)
-        - key: AUTH_GOOGLE_ID
-          description: "Google OAuth Client ID"
-          required: true
-        - key: AUTH_GOOGLE_SECRET
-          description: "Google OAuth Client Secret"
-          required: true
+services:
+  - name: web
+    github:
+      repo: ${GITHUB_REPO}
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    instance_size_slug: basic-xs
+    instance_count: 1
+    build_command: pnpm install && pnpm db:generate && pnpm build:standalone
+    run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
+    http_port: 3000
+    envs:
+      # Feature Flags
+      - key: ENABLE_WEBSOCKET
+        value: "true"
+        scope: RUN_TIME
+        type: GENERAL
 
-      http_port: 3000
-      routes:
-        - path: /
+      # Database Connection (using DigitalOcean managed PostgreSQL)
+      - key: DATABASE_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: ${db.HOSTNAME}
+        type: GENERAL
+      - key: DATABASE_PORT
+        scope: RUN_AND_BUILD_TIME
+        value: ${db.PORT}
+        type: GENERAL
+      - key: DATABASE_USER
+        scope: RUN_AND_BUILD_TIME
+        value: ${db.USERNAME}
+        type: GENERAL
+      - key: DATABASE_PASSWORD
+        scope: RUN_AND_BUILD_TIME
+        value: ${db.PASSWORD}
+        type: GENERAL
+      - key: DATABASE_NAME
+        scope: RUN_AND_BUILD_TIME
+        value: ${db.DATABASE}
+        type: GENERAL
 
-  databases:
-    - name: db
-      engine: MYSQL
-      version: "8"
-      production: true
+      # Redis
+      - key: REDIS_URL
+        scope: RUN_AND_BUILD_TIME
+        value: ${redis.DATABASE_URL}
+        type: GENERAL
 
-    - name: redis
-      engine: REDIS
-      version: "7"
-      production: true
+      # App URLs (populated at runtime by DigitalOcean)
+      - key: NEXT_PUBLIC_APP_URL
+        scope: RUN_TIME
+        value: ${APP_URL}
+        type: GENERAL
+      - key: NEXT_PUBLIC_WSS_URL
+        scope: RUN_TIME
+        value: ${APP_URL}
+        type: GENERAL
+
+      # CORS (Self + Others)
+      - key: CORS_ORIGINS
+        scope: RUN_TIME
+        value: ${APP_URL}
+        type: GENERAL
+
+      # Secrets (User Input Required)
+      - key: AUTH_SECRET
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: ENCRYPTION_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      # OAuth (User Input Required)
+      - key: AUTH_GOOGLE_ID
+        scope: RUN_TIME
+        type: GENERAL
+      - key: AUTH_GOOGLE_SECRET
+        scope: RUN_TIME
+        type: SECRET
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+# Managed Dev Databases
+# Note: For production, consider using DigitalOcean Managed Databases instead
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: false
+
+  - name: redis
+    engine: REDIS
+    version: "7"
+    production: false
+
+# Optional: Deployment alerts
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+
+# Ingress configuration (routes are deprecated)
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /

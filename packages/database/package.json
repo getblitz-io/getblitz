@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.1.0",
+    "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@t3-oss/env-core": "catalog:",
     "dotenv": "^17.2.3",

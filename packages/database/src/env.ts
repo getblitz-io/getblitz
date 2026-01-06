@@ -5,6 +5,7 @@ export function databaseEnv() {
   return createEnv({
     server: {
       DATABASE_HOST: z.string().default("localhost"),
+      DATABASE_PORT: z.coerce.number().default(5432),
       DATABASE_USER: z.string().default("app"),
       DATABASE_PASSWORD: z.string().default("password"),
       DATABASE_NAME: z.string().default("getblitz"),

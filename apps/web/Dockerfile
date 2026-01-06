@@ -32,7 +32,6 @@ COPY turbo.json ./turbo.json
 
 # Build arguments with defaults (can be overridden with --build-arg)
 # These are only used during build for validation, actual values provided at runtime
-ARG DATABASE_URL=mysql://dummy:dummy@localhost:3306/dummy
 ARG AUTH_SECRET=dummy-build-secret
 ARG AUTH_GOOGLE_ID=dummy
 ARG AUTH_GOOGLE_SECRET=dummy
@@ -40,14 +39,12 @@ ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Generate Prisma client before building
 # This must happen before TypeScript compilation since the database package imports the generated client
-# DATABASE_URL is not actually used for generation, but prisma.config.ts requires it
 WORKDIR /app/packages/database
-RUN DATABASE_URL="${DATABASE_URL}" pnpm prisma:generate
+RUN pnpm prisma:generate
 
 # Build standalone server (compiles server.ts)
 WORKDIR /app/apps/web
 RUN CI=true \
-    DATABASE_URL="${DATABASE_URL}" \
     AUTH_SECRET="${AUTH_SECRET}" \
     AUTH_GOOGLE_ID="${AUTH_GOOGLE_ID}" \
     AUTH_GOOGLE_SECRET="${AUTH_GOOGLE_SECRET}" \

@@ -30,7 +30,11 @@ pnpm install
 
 Create `.env` files for each app based on your configuration. Key variables include:
 
-- `DATABASE_URL` - MySQL connection string
+- `DATABASE_USER` - PostgreSQL user
+- `DATABASE_PASSWORD` - PostgreSQL password
+- `DATABASE_HOST` - PostgreSQL host
+- `DATABASE_PORT` - PostgreSQL port
+- `DATABASE_NAME` - PostgreSQL database
 - `REDIS_URL` - Redis URL for pub/sub
 - `AUTH_SECRET` - Better Auth secret key
 - `NEXT_PUBLIC_APP_URL` - Public app URL
@@ -38,7 +42,7 @@ Create `.env` files for each app based on your configuration. Key variables incl
 ### 3. Start Infrastructure
 
 ```bash
-# Start MySQL and Redis
+# Start PostgreSQL and Redis
 docker compose up -d
 ```
 
@@ -73,7 +77,7 @@ The dashboard will be available at http://localhost:3000
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Infrastructure                           │
 ├─────────────┬─────────────────────────────────────────┬─────────┤
-│   MySQL     │              Redis                       │         │
+│ PostgreSQL  │              Redis                       │         │
 │  (Database) │           (Pub/Sub)                      │         │
 └─────────────┴──────────────┬──────────────────────────┴─────────┘
                              │
@@ -212,14 +216,18 @@ interface BankProvider {
 
 ### Environment Variables
 
-| Variable              | Description             | Required      |
-| --------------------- | ----------------------- | ------------- |
-| `DATABASE_URL`        | MySQL connection string | ✅            |
-| `REDIS_URL`           | Redis URL for pub/sub   | ✅            |
-| `AUTH_SECRET`         | Better Auth secret key  | ✅            |
-| `NEXT_PUBLIC_APP_URL` | Public app URL          | ✅            |
-| `WSS_URL`             | WebSocket server URL    | ✅            |
-| `CRON_SECRET`         | Cron job auth secret    | ⚠️ Production |
+| Variable              | Description            | Required      |
+| --------------------- | ---------------------- | ------------- |
+| `DATABASE_USER`       | PostgreSQL user        | ✅            |
+| `DATABASE_PASSWORD`   | PostgreSQL password    | ✅            |
+| `DATABASE_HOST`       | PostgreSQL host        | ✅            |
+| `DATABASE_PORT`       | PostgreSQL port        | ✅            |
+| `DATABASE_NAME`       | PostgreSQL database    | ✅            |
+| `REDIS_URL`           | Redis URL for pub/sub  | ✅            |
+| `AUTH_SECRET`         | Better Auth secret key | ✅            |
+| `NEXT_PUBLIC_APP_URL` | Public app URL         | ✅            |
+| `WSS_URL`             | WebSocket server URL   | ✅            |
+| `CRON_SECRET`         | Cron job auth secret   | ⚠️ Production |
 
 Provider-specific variables (e.g., Qonto OAuth credentials) should be configured per your bank integration.
 
