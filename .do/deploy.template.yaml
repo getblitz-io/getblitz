@@ -1,0 +1,90 @@
+spec:
+  name: getblitz
+  services:
+    - name: web
+      source_dir: /
+      environment_slug: node-js
+      instance_size_slug: basic-xs
+      instance_count: 1
+      build_command: pnpm install && pnpm db:generate && pnpm --filter @getblitz/web build
+      run_command: pnpm --filter @getblitz/web start
+      envs:
+        # Database Connection (Individual Params)
+        - key: DATABASE_HOST
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.HOSTNAME}
+        - key: DATABASE_USER
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.USERNAME}
+        - key: DATABASE_PASSWORD
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.PASSWORD}
+        - key: DATABASE_NAME
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.DATABASE}
+        
+        # Redis
+        - key: REDIS_URL
+          scope: RUN_AND_BUILD_TIME
+          value: ${redis.REDIS_URL}
+        
+        # App URLs
+        - key: NEXT_PUBLIC_APP_URL
+          value: ${APP_URL}
+        - key: NEXT_PUBLIC_WSS_URL
+          description: "Public URL of the WebSocket Server (e.g. wss://app-name-wss.ondigitalocean.app)"
+          required: true
+
+        # Secrets (User Input)
+        - key: AUTH_SECRET
+          description: "Secret key for authentication (min 32 chars)"
+          required: true
+        - key: ENCRYPTION_KEY
+          description: "Key for encrypting secrets (min 32 chars)"
+          required: true
+        
+        # OAuth (User Input)
+        - key: AUTH_GOOGLE_ID
+          description: "Google OAuth Client ID"
+          required: true
+        - key: AUTH_GOOGLE_SECRET
+          description: "Google OAuth Client Secret"
+          required: true
+
+      http_port: 3000
+      routes:
+        - path: /
+
+    - name: wss
+      source_dir: /
+      environment_slug: node-js
+      instance_size_slug: basic-xs
+      instance_count: 1
+      build_command: pnpm install && pnpm --filter @getblitz/wss build
+      run_command: pnpm --filter @getblitz/wss start
+      envs:
+        - key: REDIS_URL
+          scope: RUN_AND_BUILD_TIME
+          value: ${redis.REDIS_URL}
+        - key: PORT
+          value: "8080"
+        - key: CORS_ORIGINS
+          value: ${web.APP_URL}
+      http_port: 8080
+      routes:
+        - path: /socket.io
+
+  databases:
+    - name: db
+      engine: MYSQL
+      version: "8"
+      production: true
+      # 'db-s-1vcpu-1gb' is usually the smallest production DB (~$15/mo)
+      size_slug: db-s-1vcpu-1gb
+
+    - name: redis
+      engine: REDIS
+      version: "7"
+      production: true
+      # 'db-s-1vcpu-1gb' for Redis as well
+      size_slug: db-s-1vcpu-1gb
