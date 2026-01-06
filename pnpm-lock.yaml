@@ -69,6 +69,9 @@ catalogs:
     qrcode:
       specifier: ^1.5.4
       version: 1.5.4
+    socket.io:
+      specifier: ^4.8.3
+      version: 4.8.3
     socket.io-client:
       specifier: ^4.8.1
       version: 4.8.3
@@ -342,7 +345,7 @@ importers:
         specifier: catalog:react19
         version: 19.1.2(react@19.1.2)
       socket.io:
-        specifier: ^4.8.3
+        specifier: 'catalog:'
         version: 4.8.3
       socket.io-client:
         specifier: 'catalog:'
@@ -850,7 +853,7 @@ importers:
         specifier: workspace:*
         version: link:../shared-types
       socket.io:
-        specifier: ^4.8.1
+        specifier: 'catalog:'
         version: 4.8.3
       zod:
         specifier: 'catalog:'
