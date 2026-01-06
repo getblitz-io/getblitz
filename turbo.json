@@ -14,6 +14,10 @@
       "dependsOn": ["^prisma:generate", "^build"],
       "outputs": [".cache/tsbuildinfo.json", "dist/**"]
     },
+    "build:standalone": {
+      "dependsOn": ["^prisma:generate", "^build"],
+      "outputs": [".cache/tsbuildinfo.json", "dist/**"]
+    },
     "dev": {
       "dependsOn": ["^prisma:generate", "^dev"],
       "cache": false,

@@ -8,7 +8,6 @@ import { BankConnectionStatus } from "@getblitz/database";
 import type {
   AddBankAccountInput,
   CreateOrganizationWebhookInput,
-  DashboardStats,
   IApiKeyRepository,
   IBankAccountRepository,
   IOrganizationBankConnectionRepository,
@@ -16,7 +15,6 @@ import type {
   IOrganizationService,
   IOrganizationWebhookRepository,
   IPaymentSessionRepository,
-  OrganizationCounts,
   OrganizationWithDetails,
   UpdateOrganizationWebhookInput,
 } from "../interfaces";
@@ -338,41 +336,6 @@ export class OrganizationService implements IOrganizationService {
     if (!member) throw new ForbiddenError("Access denied");
 
     return this.organizationWebhookRepository.delete({ id: webhookId });
-  }
-
-  /**
-   * Get dashboard stats for given organizations
-   */
-  async getDashboardStats({
-    orgIds,
-  }: {
-    orgIds: string[];
-  }): Promise<DashboardStats> {
-    const stats = await this.paymentSessionRepository.getStatsByOrgIds({
-      orgIds,
-    });
-
-    const totalPayments = stats.reduce((sum, s) => sum + s._count, 0);
-    const paidPayments = stats.find((s) => s.status === "PAID")?._count ?? 0;
-    const pendingPayments =
-      stats.find((s) => s.status === "PENDING")?._count ?? 0;
-
-    return {
-      totalPayments,
-      paidPayments,
-      pendingPayments,
-    };
-  }
-
-  /**
-   * Get counts for multiple organizations
-   */
-  async getOrganizationCounts({
-    orgIds,
-  }: {
-    orgIds: string[];
-  }): Promise<OrganizationCounts[]> {
-    return this.organizationRepository.getCountsByOrgIds({ orgIds });
   }
 
   /**

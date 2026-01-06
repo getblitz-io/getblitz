@@ -27,7 +27,6 @@ import { useTRPC } from "~/trpc/react";
 interface WebhookSettingsProps {
   webhooks: OrganizationWithDetails["webhooks"];
   slug: string;
-  organizationId: string;
 }
 
 interface WebhookFormData {
@@ -56,14 +55,12 @@ function generateSecret(): string {
 function WebhookCard({
   webhook,
   slug,
-  organizationId,
   isNew,
   onCancel,
   onSaved,
 }: {
   webhook: WebhookFormData;
   slug: string;
-  organizationId: string;
   isNew?: boolean;
   onCancel?: () => void;
   onSaved?: () => void;
@@ -124,7 +121,7 @@ function WebhookCard({
     e.preventDefault();
     if (isNew) {
       createWebhook.mutate({
-        organizationId,
+        slug,
         webhookUrl: form.webhookUrl,
         webhookSecret: form.webhookSecret,
         notifyPaymentSuccess: form.notifyPaymentSuccess,
@@ -133,6 +130,7 @@ function WebhookCard({
       });
     } else if (form.id) {
       updateWebhook.mutate({
+        slug,
         webhookId: form.id,
         webhookUrl: form.webhookUrl,
         webhookSecret: form.webhookSecret,
@@ -146,7 +144,7 @@ function WebhookCard({
   const handleDelete = () => {
     if (!form.id) return;
     if (confirm("Are you sure you want to delete this webhook?")) {
-      deleteWebhook.mutate({ webhookId: form.id });
+      deleteWebhook.mutate({ webhookId: form.id, slug });
     }
   };
 
@@ -300,11 +298,7 @@ function WebhookCard({
   );
 }
 
-export function WebhookSettings({
-  webhooks,
-  slug,
-  organizationId,
-}: WebhookSettingsProps) {
+export function WebhookSettings({ webhooks, slug }: WebhookSettingsProps) {
   const [showNew, setShowNew] = useState(false);
 
   return (
@@ -335,7 +329,6 @@ export function WebhookSettings({
           <WebhookCard
             webhook={emptyWebhook}
             slug={slug}
-            organizationId={organizationId}
             isNew
             onCancel={() => setShowNew(false)}
             onSaved={() => setShowNew(false)}
@@ -359,7 +352,6 @@ export function WebhookSettings({
                 notifyPaymentExpired: webhook.notifyPaymentExpired,
               }}
               slug={slug}
-              organizationId={organizationId}
             />
           ))
         )}

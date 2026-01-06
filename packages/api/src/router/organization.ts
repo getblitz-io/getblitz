@@ -65,21 +65,19 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Generate new API key
-  generateApiKey: protectedProcedure
-    .input(z.object({ organizationId: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      try {
-        return await ctx.services.organization.generateApiKey({
-          organizationId: input.organizationId,
-          userId: ctx.session.user.id,
-        });
-      } catch (error) {
-        handleServiceError(error);
-      }
-    }),
+  generateApiKey: organizationProcedure.mutation(async ({ ctx }) => {
+    try {
+      return await ctx.services.organization.generateApiKey({
+        organizationId: ctx.organization.id,
+        userId: ctx.session.user.id,
+      });
+    } catch (error) {
+      handleServiceError(error);
+    }
+  }),
 
   // Delete API key
-  deleteApiKey: protectedProcedure
+  deleteApiKey: organizationProcedure
     .input(z.object({ keyId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -93,11 +91,10 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Get provider configuration schema (for dynamic form generation)
-  getProviderConfigSchema: protectedProcedure
+  getProviderConfigSchema: organizationProcedure
     .input(
       z.object({
-        providerId: z.string(),
-        connectionId: z.string().optional(),
+        connectionId: z.string(),
       }),
     )
     .query(
@@ -108,7 +105,26 @@ export const organizationRouter = createTRPCRouter({
         schema: ProviderConfigSchema;
         defaultConfig: ProviderConfig;
       }> => {
-        const provider = ProviderRegistry.getProvider(input.providerId);
+        // If connectionId is provided, load existing config
+        const connection =
+          await ctx.prisma.organizationBankConnection.findUnique({
+            where: { id: input.connectionId },
+          });
+
+        if (!connection) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Connection not found",
+          });
+        }
+
+        // Decrypt and return existing config
+        const existingConfig =
+          ctx.services.credentialManager.decryptProviderConfig(
+            connection.providerConfig,
+          );
+
+        const provider = ProviderRegistry.getProvider(connection.providerId);
         if (!provider) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -116,46 +132,9 @@ export const organizationRouter = createTRPCRouter({
           });
         }
 
-        // If connectionId is provided, load existing config
-        if (input.connectionId) {
-          const connection =
-            await ctx.prisma.organizationBankConnection.findUnique({
-              where: { id: input.connectionId },
-            });
-
-          if (!connection) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Connection not found",
-            });
-          }
-
-          // Verify connection belongs to user's organization
-          try {
-            await ctx.services.organization.getById({
-              id: connection.organizationId,
-              userId: ctx.session.user.id,
-            });
-          } catch (error) {
-            handleServiceError(error);
-          }
-
-          // Decrypt and return existing config
-          const existingConfig =
-            ctx.services.credentialManager.decryptProviderConfig(
-              connection.providerConfig,
-            );
-
-          return {
-            schema: provider.getProviderConfigSchema(),
-            defaultConfig: existingConfig,
-          };
-        }
-
-        // Otherwise return default config
         return {
           schema: provider.getProviderConfigSchema(),
-          defaultConfig: provider.getDefaultConfig(),
+          defaultConfig: existingConfig,
         };
       },
     ),
@@ -241,17 +220,15 @@ export const organizationRouter = createTRPCRouter({
   getBankAuthUrl: organizationProcedure
     .input(
       z.object({
-        providerId: z.string(),
-        slug: z.string(),
-        redirectUri: z.string().url(),
+        connectionId: z.string(),
+        redirectUri: z.url(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
       // Find the connection to get the provider config
       const connection = await ctx.prisma.organizationBankConnection.findFirst({
         where: {
-          organizationId: ctx.organization.id,
-          providerId: input.providerId,
+          id: input.connectionId,
         },
       });
 
@@ -269,7 +246,7 @@ export const organizationRouter = createTRPCRouter({
           connection.providerConfig,
         );
       const provider = ProviderRegistry.createProvider(
-        input.providerId,
+        connection.providerId,
         providerConfig,
       );
 
@@ -281,7 +258,7 @@ export const organizationRouter = createTRPCRouter({
       }
 
       // Encode providerId and slug into state for callback identification
-      const state = `${input.providerId}:${input.slug}:${Math.random().toString(36).substring(7)}`;
+      const state = `${connection.id}:${ctx.organization.slug}:${Math.random().toString(36).substring(7)}`;
 
       return {
         url: provider.getAuthUrl({ redirectUri: input.redirectUri, state }),
@@ -293,8 +270,8 @@ export const organizationRouter = createTRPCRouter({
   completeBankConnection: organizationProcedure
     .input(
       z.object({
-        slug: z.string(),
-        providerId: z.string(),
+        connectionId: z.string(),
+        randomId: z.string(),
         code: z.string(),
         redirectUri: z.url(),
       }),
@@ -304,8 +281,8 @@ export const organizationRouter = createTRPCRouter({
       const existingConnection =
         await ctx.prisma.organizationBankConnection.findFirst({
           where: {
+            id: input.connectionId,
             organizationId: ctx.organization.id,
-            providerId: input.providerId,
           },
         });
 
@@ -323,7 +300,7 @@ export const organizationRouter = createTRPCRouter({
           existingConnection.providerConfig,
         );
       const provider = ProviderRegistry.createProvider(
-        input.providerId,
+        existingConnection.providerId,
         providerConfig,
       );
 
@@ -353,13 +330,14 @@ export const organizationRouter = createTRPCRouter({
         // Attempt webhook creation - non-fatal if it fails
         const webhookResult = await ctx.services.bankConnection.setupWebhook({
           connectionId: existingConnection.id,
-          providerId: input.providerId,
+          providerId: existingConnection.providerId,
           credentials,
         });
 
         return {
           connectionId: existingConnection.id,
           webhookError: webhookResult.error,
+          slug: ctx.organization.slug,
         };
       } catch (error: unknown) {
         throw new TRPCError({
@@ -411,18 +389,17 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Get accounts from provider (using connectionId)
-  getProviderAccounts: protectedProcedure
+  getProviderAccounts: organizationProcedure
     .input(
       z.object({
-        providerId: z.string(),
-        organizationId: z.string(),
+        connectionId: z.string(),
       }),
     )
     .query(async ({ input, ctx }) => {
       const connection = await ctx.prisma.organizationBankConnection.findFirst({
         where: {
-          organizationId: input.organizationId,
-          providerId: input.providerId,
+          id: input.connectionId,
+          organizationId: ctx.organization.id,
         },
       });
       if (!connection) {
@@ -438,7 +415,7 @@ export const organizationRouter = createTRPCRouter({
           connection.providerConfig,
         );
       const provider = ProviderRegistry.createProvider(
-        input.providerId,
+        connection.providerId,
         providerConfig,
       );
 
@@ -504,22 +481,11 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Get all bank connections for an organization with provider metadata
-  getBankConnections: protectedProcedure
-    .input(z.object({ orgId: z.string() }))
-    .query(async ({ input, ctx }): Promise<BankConnectionWithProvider[]> => {
-      // Verify user has access
-      try {
-        await ctx.services.organization.getById({
-          id: input.orgId,
-          userId: ctx.session.user.id,
-        });
-      } catch (error) {
-        handleServiceError(error);
-      }
-
+  getBankConnections: organizationProcedure.query(
+    async ({ ctx }): Promise<BankConnectionWithProvider[]> => {
       // Get all connections for this organization
       const connections = await ctx.prisma.organizationBankConnection.findMany({
-        where: { organizationId: input.orgId },
+        where: { organizationId: ctx.organization.id },
         orderBy: { createdAt: "desc" },
       });
 
@@ -559,30 +525,23 @@ export const organizationRouter = createTRPCRouter({
           providerAuthType: provider.authType,
         };
       });
-    }),
+    },
+  ),
 
   // Disconnect a bank from organization
-  disconnectBank: protectedProcedure
+  disconnectBank: organizationProcedure
     .input(
       z.object({
-        orgId: z.string(),
         connectionId: z.string(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Verify user has access
-      try {
-        await ctx.services.organization.getById({
-          id: input.orgId,
-          userId: ctx.session.user.id,
-        });
-      } catch (error) {
-        handleServiceError(error);
-      }
-
       const connection = await ctx.prisma.organizationBankConnection.findUnique(
         {
-          where: { id: input.connectionId },
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
         },
       );
 
@@ -591,10 +550,6 @@ export const organizationRouter = createTRPCRouter({
           code: "NOT_FOUND",
           message: "Bank connection not found",
         });
-      }
-
-      if (connection.organizationId !== input.orgId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
       }
 
       await ctx.prisma.organizationBankConnection.delete({
@@ -616,7 +571,10 @@ export const organizationRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const connection = await ctx.prisma.organizationBankConnection.findUnique(
         {
-          where: { id: input.connectionId },
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
         },
       );
 
@@ -627,13 +585,8 @@ export const organizationRouter = createTRPCRouter({
         });
       }
 
-      // Verify connection belongs to the organization
-      if (connection.organizationId !== ctx.organization.id) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
-      }
-
       await ctx.prisma.organizationBankConnection.update({
-        where: { id: input.connectionId },
+        where: { id: input.connectionId, organizationId: ctx.organization.id },
         data: {
           name: input.name ?? null,
         },
@@ -643,11 +596,10 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Add bank account configuration (New)
-  addBankAccount: protectedProcedure
+  addBankAccount: organizationProcedure
     .input(
       z.object({
-        organizationId: z.string(),
-        providerId: z.string(),
+        connectionId: z.string(),
         accountName: z.string().min(1, "Account name is required"),
         accountIban: z.string().min(1, "Account IBAN is required"),
         accountBic: z.string().min(1, "Account BIC is required"),
@@ -658,8 +610,8 @@ export const organizationRouter = createTRPCRouter({
       // 1. Find the connection
       const connection = await ctx.prisma.organizationBankConnection.findFirst({
         where: {
-          organizationId: input.organizationId,
-          providerId: input.providerId,
+          id: input.connectionId,
+          organizationId: ctx.organization.id,
         },
       });
       if (!connection) {
@@ -708,7 +660,7 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Delete bank account
-  deleteBankAccount: protectedProcedure
+  deleteBankAccount: organizationProcedure
     .input(z.object({ bankAccountId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -722,7 +674,7 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Set default bank account
-  setDefaultBankAccount: protectedProcedure
+  setDefaultBankAccount: organizationProcedure
     .input(z.object({ bankAccountId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -737,10 +689,9 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Create a new webhook
-  createWebhook: protectedProcedure
+  createWebhook: organizationProcedure
     .input(
       z.object({
-        organizationId: z.string(),
         webhookUrl: z.url("Invalid URL"),
         webhookSecret: z
           .string()
@@ -753,7 +704,10 @@ export const organizationRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       try {
         return await ctx.services.organization.createWebhook({
-          input,
+          input: {
+            ...input,
+            organizationId: ctx.organization.id,
+          },
           userId: ctx.session.user.id,
         });
       } catch (error) {
@@ -762,7 +716,7 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Update an existing webhook
-  updateWebhook: protectedProcedure
+  updateWebhook: organizationProcedure
     .input(
       z.object({
         webhookId: z.string(),
@@ -789,7 +743,7 @@ export const organizationRouter = createTRPCRouter({
     }),
 
   // Delete a webhook
-  deleteWebhook: protectedProcedure
+  deleteWebhook: organizationProcedure
     .input(z.object({ webhookId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -802,39 +756,14 @@ export const organizationRouter = createTRPCRouter({
       }
     }),
 
-  // Get dashboard stats for user's organizations
-  getDashboardStats: protectedProcedure
-    .input(z.object({ orgIds: z.array(z.string()) }))
-    .query(async ({ input, ctx }) => {
-      // TODO: Add validation that user has access to these orgs
-      return ctx.services.organization.getDashboardStats({
-        orgIds: input.orgIds,
-      });
-    }),
-
-  // Get organization counts (api keys, wallets, payments)
-  getCounts: protectedProcedure
-    .input(z.object({ orgIds: z.array(z.string()) }))
-    .query(async ({ input, ctx }) => {
-      // TODO: Add validation that user has access to these orgs
-      return ctx.services.organization.getOrganizationCounts({
-        orgIds: input.orgIds,
-      });
-    }),
-
   // Get paid count for a specific organization
-  getPaidCount: protectedProcedure
-    .input(z.object({ orgId: z.string() }))
-    .query(async ({ input, ctx }) => {
-      try {
-        // Verify user has access
-        await ctx.services.organization.getById({
-          id: input.orgId,
-          userId: ctx.session.user.id,
-        });
-        return ctx.services.organization.getPaidCount({ orgId: input.orgId });
-      } catch (error) {
-        handleServiceError(error);
-      }
-    }),
+  getPaidCount: organizationProcedure.query(async ({ ctx }) => {
+    try {
+      return ctx.services.organization.getPaidCount({
+        orgId: ctx.organization.id,
+      });
+    } catch (error) {
+      handleServiceError(error);
+    }
+  }),
 });

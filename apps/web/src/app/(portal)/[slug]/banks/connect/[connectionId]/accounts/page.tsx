@@ -16,7 +16,7 @@ export default function SelectAccountPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
-  const providerId = params.providerId as string;
+  const connectionId = params.connectionId as string;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const t = useTranslations("BankAccountsPage");
@@ -31,13 +31,11 @@ export default function SelectAccountPage() {
     trpc.organization.getBySlug.queryOptions({ slug }),
   );
 
-  const orgId = org?.id ?? "";
-
   // Get provider accounts from the bank API
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery(
     trpc.organization.getProviderAccounts.queryOptions(
-      { organizationId: orgId, providerId },
-      { enabled: !!orgId },
+      { slug, connectionId },
+      { enabled: !!slug && !!connectionId },
     ),
   );
 
@@ -46,13 +44,13 @@ export default function SelectAccountPage() {
     if (!org?.organizationBankConnections) return new Set<string>();
 
     const connection = org.organizationBankConnections.find(
-      (conn) => conn.providerId === providerId,
+      (conn) => conn.id === connectionId,
     );
 
     if (!connection?.bankAccounts) return new Set<string>();
 
     return new Set(connection.bankAccounts.map((acc) => acc.accountIban));
-  }, [org, providerId]);
+  }, [org, connectionId]);
 
   const addBankAccount = useMutation(
     trpc.organization.addBankAccount.mutationOptions({
@@ -75,28 +73,28 @@ export default function SelectAccountPage() {
   };
 
   const handleConnect = async () => {
-    if (selectedAccounts.size === 0 || !orgId || !accounts) {
+    if (selectedAccounts.size === 0 || !slug || !connectionId) {
       toast.error(t("selectAtLeastOne"));
       return;
     }
 
     setIsSubmitting(true);
 
-    const accountsToAdd = accounts.filter((acc) =>
+    const accountsToAdd = accounts?.filter((acc) =>
       selectedAccounts.has(acc.iban),
     );
 
     const results = await Promise.allSettled(
-      accountsToAdd.map((account) =>
+      accountsToAdd?.map((account) =>
         addBankAccount.mutateAsync({
-          organizationId: orgId,
-          providerId,
+          slug,
+          connectionId,
           accountName: account.name,
           accountIban: account.iban,
           accountBic: account.bic,
           isDefault: false,
         }),
-      ),
+      ) ?? [],
     );
 
     const successCount = results.filter((r) => r.status === "fulfilled").length;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -22,39 +22,33 @@ import { useTRPC } from "~/trpc/react";
 export default function ConfigureProviderPage() {
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const providerId = params.providerId as string;
-  const connectionId = searchParams.get("connectionId");
+  const connectionId = params.connectionId as string;
   const trpc = useTRPC();
   const t = useTranslations("BankConfigurePage");
-
-  // First get the org to get its ID
-  const { data: org } = useQuery(
-    trpc.organization.getBySlug.queryOptions({ slug }),
-  );
 
   // Get the provider config schema (with existing config if connectionId provided)
   const { data: configData, isLoading: isLoadingSchema } = useQuery({
     ...trpc.organization.getProviderConfigSchema.queryOptions({
-      providerId,
-      connectionId: connectionId ?? undefined,
+      connectionId,
+      slug,
     }),
-    enabled: !!providerId,
+    enabled: !!connectionId && !!slug,
   });
 
   // Get connections to find provider info
   const { data: connections } = useQuery({
-    ...trpc.organization.getBankConnections.queryOptions({
-      orgId: org?.id ?? "",
-    }),
-    enabled: !!org?.id,
+    ...trpc.organization.getBankConnections.queryOptions({ slug }),
+    enabled: !!slug,
   });
 
   const connection = useMemo(
     () => connections?.find((c) => c.id === connectionId),
     [connections, connectionId],
   );
+
+  // Derive providerId from connection
+  const providerId = connection?.providerId ?? "";
 
   const providerInfo = useMemo(() => {
     if (connection) {
@@ -63,18 +57,9 @@ export default function ConfigureProviderPage() {
         displayName: connection.name ?? connection.providerName,
       };
     }
-    // Fallback: try to find provider from connections
-    const providerConnection = connections?.find(
-      (c) => c.providerId === providerId,
-    );
-    return providerConnection
-      ? {
-          name: providerConnection.providerName,
-          displayName:
-            providerConnection.name ?? providerConnection.providerName,
-        }
-      : { name: providerId, displayName: providerId };
-  }, [connection, connections, providerId]);
+    // Fallback when connection is not yet loaded
+    return { name: providerId, displayName: providerId };
+  }, [connection, providerId]);
 
   const isReconfiguring = !!connectionId;
 
@@ -116,7 +101,7 @@ export default function ConfigureProviderPage() {
         slug,
         providerId,
         providerConfig,
-        connectionId: connectionId ?? undefined,
+        connectionId,
         name: typeof name === "string" ? name.trim() || undefined : undefined,
       });
     },
@@ -173,7 +158,7 @@ export default function ConfigureProviderPage() {
           data.updated ? t("configurationUpdated") : t("providerConfigured"),
         );
         // Redirect to OAuth flow
-        startOAuth();
+        startOAuth({ connectionId: data.connectionId });
       },
       onError: (error) => {
         toast.error(error.message);
@@ -194,12 +179,12 @@ export default function ConfigureProviderPage() {
     }),
   );
 
-  const startOAuth = () => {
+  const startOAuth = ({ connectionId }: { connectionId: string }) => {
     const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
     getAuthUrl.mutate({
-      providerId,
-      slug,
+      connectionId,
       redirectUri,
+      slug,
     });
   };
 
