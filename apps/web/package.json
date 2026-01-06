@@ -1,6 +1,6 @@
 {
   "name": "@getblitz/web",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "clean": "git clean -xdf .cache .next .turbo node_modules dist",
     "dev:next": "pnpm with-env next dev",
     "dev": "pnpm with-env tsx watch server.ts",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
     "start": "pnpm with-env next start",
     "start:standalone": "pnpm with-env node dist/server.js",

@@ -1,6 +1,6 @@
 {
   "name": "@getblitz/shared-types",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Shared TypeScript types for GetBlitz Payment Gateway",
   "author": "GetBlitz <hello@getblitz.io>",
   "license": "MIT",
@@ -37,7 +37,7 @@
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
