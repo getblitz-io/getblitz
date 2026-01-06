@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.5](https://github.com/getblitz-io/getblitz/compare/web-v0.0.4...web-v0.0.5) (2026-01-06)
+
+
+### Features
+
+* Allow fetching bank provider config schema by provider ID and refactor bank connection routes. ([307450b](https://github.com/getblitz-io/getblitz/commit/307450b2df5648dda71e9dc4eacba94ad38588c7))
+* introduce banks integration guide, and enhance bank provider metadata with setup guide URLs and test provider flags. ([f491c0f](https://github.com/getblitz-io/getblitz/commit/f491c0fb08cc6e91aecf03c51673bf91008e4fff))
+
+
+### Code Refactoring
+
+* Migrate database from MySQL to PostgreSQL and update deployment configurations ([18b7107](https://github.com/getblitz-io/getblitz/commit/18b710706383ed590ded3b81ef5b70e8c7142dd2))
+
 ## [0.0.4](https://github.com/getblitz-io/getblitz/compare/web-v0.0.3...web-v0.0.4) (2026-01-06)
 
 
