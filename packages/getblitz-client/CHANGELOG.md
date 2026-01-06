@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.2...getblitz-client-v0.0.3) (2026-01-06)
+
+
+### Features
+
+* implement merchant reference id and enhanced webhooks ([#13](https://github.com/getblitz-io/getblitz/issues/13)) ([81558fc](https://github.com/getblitz-io/getblitz/commit/81558fcca5ae10d5cbe87bf7a927bb79270a835a))
+
 ## [0.0.2](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.1...getblitz-client-v0.0.2) (2026-01-06)
 
 
