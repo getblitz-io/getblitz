@@ -9,38 +9,33 @@ This guide explains how to deploy GetBlitz to various cloud platforms.
 1.  Click the **Deploy to DigitalOcean** button in the README.
 2.  Connect your GitHub account and select the `getblitz-io/getblitz` repository.
 3.  **Instance Configuration (Defaults)**:
-    - **Web/WSS Services**: Defaults to `basic-xs` (~$5/mo each). Good for low-traffic production. Upgrade to `basic-s` or larger for higher concurrency.
-    - **Database/Redis**: Defaults to `db-s-1vcpu-1gb` (~$15/mo each). This is the minimum for production stability.
-    - **Total Estimated Cost**: ~$40/month.
+    -   **Web Service**: Defaults to `basic-xs` (~$5/mo). Handles both API/Frontend and WebSocket traffic.
+    -   **Database/Redis**: Defaults to `db-s-1vcpu-1gb` (~$15/mo each).
+    -   **Total Estimated Cost**: ~$35/month.
 4.  **Environment Configuration**:
-    - **Web Service**:
-      - `AUTH_SECRET`: **Required**. Enter a secure random string (min 32 chars).
-      - `ENCRYPTION_KEY`: **Required**. Enter a secure random string (min 32 chars).
-      - `AUTH_GOOGLE_ID`: **Required**. Your Google OAuth Client ID.
-      - `AUTH_GOOGLE_SECRET`: **Required**. Your Google OAuth Client Secret.
-      - `NEXT_PUBLIC_WSS_URL`: **Required**. The public URL of your WebSocket service (e.g., `wss://app-name-wss.ondigitalocean.app`). _Note: You will find this URL in the DigitalOcean dashboard after the first build, checking the `wss` component._
-      - `DATABASE_*` & `REDIS_URL`: Automatically injected.
-    - **WSS Service**:
-      - `REDIS_URL` & `CORS_ORIGINS`: Automatically injected.
+    -   `AUTH_SECRET`: **Required**. Enter a secure random string (min 32 chars).
+    -   `ENCRYPTION_KEY`: **Required**. Enter a secure random string (min 32 chars).
+    -   `AUTH_GOOGLE_ID`: **Required**. Your Google OAuth Client ID.
+    -   `AUTH_GOOGLE_SECRET`: **Required**. Your Google OAuth Client Secret.
+    -   `DATABASE_*`, `REDIS_URL`, `NEXT_PUBLIC_*`: Automatically configured.
 5.  **Build**:
-    - The build command `pnpm db:generate && pnpm build` ensures the Prisma client is generated before the app starts.
+    -   The build command `pnpm db:generate && pnpm --filter @getblitz/web build:standalone` prepares the standalone Next.js app with integrated WebSockets.
 
 ### Render
 
 1.  Click the **Deploy to Render** button in the README.
 2.  Connect your GitHub account.
 3.  **Instance Configuration (Defaults)**:
-    - **Services**: Defaults to `Starter` (~$7/mo each). Prevents cold-starts (unlike free tier).
-    - **Database/Redis**: Defaults to `Starter` (~$7/mo + ~$10/mo depending on region).
-    - **Total Estimated Cost**: ~$30-40/month.
+    -   **Services**: Defaults to `Starter` (~$7/mo each).
+    -   **Database/Redis**: Defaults to `Starter` (~$7/mo + ~$10/mo depending on region).
+    -   **Total Estimated Cost**: ~$25-30/month.
 4.  **Environment Configuration**:
-    - `AUTH_SECRET` & `ENCRYPTION_KEY`: Will be automatically generated.
-    - `AUTH_GOOGLE_ID` & `AUTH_GOOGLE_SECRET`: You will be prompted to enter these in the Render dashboard.
-    - `NEXT_PUBLIC_WSS_URL`: Mapping to the WSS service URL. ensure it starts with `wss://` or `https://` (client handles upgrade).
-    - `NODE_VERSION`: Preset to `22.12.0`.
+    -   `AUTH_SECRET` & `ENCRYPTION_KEY`: Will be automatically generated.
+    -   `AUTH_GOOGLE_ID` & `AUTH_GOOGLE_SECRET`: You will be prompted to enter these in the Render dashboard.
+    -   `NODE_VERSION`: Preset to `22.12.0`.
 5.  **Resources**:
-    - Render will generate a `render.yaml` based blueprint.
-    - It will create a Web Service (Dashboard), a Web Service (WebSocket), a MySQL Database, and a Redis instance.
+    -   Render will generate a `render.yaml` based blueprint.
+    -   It will create a single Web Service (Dashboard + WSS), a MySQL Database, and a Redis instance.
 
 ## Manual Deployment
 
@@ -68,11 +63,11 @@ To deploy only the Dashboard/API (`apps/web`):
 1.  Import the project to Vercel.
 2.  Set Root Directory to `apps/web`.
 3.  **Build Command**: `pnpm db:generate && pnpm build`
-    - _Note_: You may need to configure the "Output Directory" to `.next` (default).
+    -   *Note*: You may need to configure the "Output Directory" to `.next` (default).
 4.  **Environment Variables**:
-    - Provide `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` pointing to your external hosted database.
-    - Provide `REDIS_URL`.
-    - Provide `AUTH_SECRET`, `ENCRYPTION_KEY`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`.
-    - Provide `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_WSS_URL`.
+    -   Provide `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` pointing to your external hosted database.
+    -   Provide `REDIS_URL`.
+    -   Provide `AUTH_SECRET`, `ENCRYPTION_KEY`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`.
+    -   Provide `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_WSS_URL`.
 
-> **Note**: The WebSocket Server (`apps/wss`) cannot be hosted on Vercel as it requires a long-running process. You must deploy it separately.
+> **Note**: Hosting on Vercel generally requires a separate WebSocket solution if you need real-time features, as Vercel Serverless Functions have execution time limits.
