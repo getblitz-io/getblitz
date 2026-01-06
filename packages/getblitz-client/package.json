@@ -1,10 +1,38 @@
 {
   "name": "@getblitz/client",
   "version": "0.0.1",
+  "description": "Embeddable payment SDK for GetBlitz Payment Gateway - Self-hosted SEPA instant transfers across Europe",
+  "author": "GetBlitz <hello@getblitz.io>",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/getblitz.umd.cjs",
   "module": "./dist/getblitz.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getblitz-io/getblitz.git",
+    "directory": "packages/getblitz-client"
+  },
+  "homepage": "https://getblitz.io",
+  "bugs": {
+    "url": "https://github.com/getblitz-io/getblitz/issues"
+  },
+  "keywords": [
+    "payment",
+    "gateway",
+    "sepa",
+    "instant-transfer",
+    "open-banking",
+    "self-hosted",
+    "sdk",
+    "embeddable",
+    "europe",
+    "fintech"
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/getblitz-io"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,7 +53,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@getblitz/shared-types": "workspace:*",
+    "@getblitz/shared-types": "workspace:^",
     "qrcode": "catalog:",
     "socket.io-client": "catalog:"
   },

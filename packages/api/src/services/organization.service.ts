@@ -179,10 +179,7 @@ export class OrganizationService implements IOrganizationService {
       await this.organizationBankConnectionRepository.findByOrganizationIdAndProviderId(
         { organizationId: input.organizationId, providerId: input.providerId },
       );
-    if (
-      !organizationBankConnection ||
-      organizationBankConnection.status !== BankConnectionStatus.CONNECTED
-    ) {
+    if (organizationBankConnection?.status !== BankConnectionStatus.CONNECTED) {
       throw new NotFoundError(
         "Organization bank connection not found or not connected",
       );

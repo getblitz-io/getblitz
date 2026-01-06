@@ -8,6 +8,11 @@
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": true
     },
+    "packages/shared-types": {
+      "component": "shared-types",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true
+    },
     "packages/getblitz-client": {
       "component": "getblitz-client",
       "changelog-path": "CHANGELOG.md",

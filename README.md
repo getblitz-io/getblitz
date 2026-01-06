@@ -1,15 +1,16 @@
 # GetBlitz Payment Gateway
 
-A self-hosted payment gateway that supports both **Crypto (EVM)** and **Fiat (SEPA)** payments with real-time WebSocket notifications.
+A self-hosted payment gateway for **SEPA Instant Transfers** with real-time WebSocket notifications. Built for businesses accepting online and offline EUR payments across Europe.
 
 ## Features
 
-- 🏦 **Hybrid Payments** - Accept both crypto (USDC on EVM chains) and fiat (SEPA Instant via Monerium)
+- 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, custom providers)
 - 🔐 **Self-Hosted** - Full data sovereignty with your own database and infrastructure
 - ⚡ **Real-time** - WebSocket notifications for instant payment confirmations
 - 🏢 **Multi-tenant** - Organization-based access with API key management
 - 📱 **Embeddable SDK** - Lightweight JavaScript widget for merchant integration
 - 🔒 **Secure** - HMAC webhook verification, rate limiting, and structured logging
+- 🧪 **Test Mode** - Built-in test bank simulator for development
 
 ## Quick Start
 
@@ -27,12 +28,12 @@ pnpm install
 
 ### 2. Configure Environment
 
-```bash
-# Copy the example environment file
-cp env.example .env
+Create `.env` files for each app based on your configuration. Key variables include:
 
-# Edit .env with your configuration
-```
+- `DATABASE_URL` - MySQL connection string
+- `REDIS_URL` - Redis URL for pub/sub
+- `AUTH_SECRET` - Better Auth secret key
+- `NEXT_PUBLIC_APP_URL` - Public app URL
 
 ### 3. Start Infrastructure
 
@@ -54,12 +55,14 @@ pnpm db:push
 ### 5. Start Development Servers
 
 ```bash
-# Start all services (Next.js + WSS)
+# Start all services (Next.js + WSS + Demo + Test Bank)
 pnpm dev
 
 # Or start individually:
-pnpm dev:next  # Next.js dashboard + API
-pnpm dev:wss   # WebSocket server
+pnpm dev:next       # Next.js dashboard + API (port 3000)
+pnpm dev:wss        # WebSocket server
+pnpm dev:demo       # Demo merchant site (port 3002)
+pnpm dev:test-bank  # Mock bank simulator (port 3003)
 ```
 
 The dashboard will be available at http://localhost:3000
@@ -86,7 +89,7 @@ The dashboard will be available at http://localhost:3000
         │                    │                    │
         ▼                    │                    ▼
 ┌───────────────┐            │            ┌───────────────┐
-│   Monerium    │────────────┘            │   Merchant    │
+│  Bank Provider│────────────┘            │   Merchant    │
 │   Webhook     │                         │   Website     │
 └───────────────┘                         └───────────────┘
 ```
@@ -96,17 +99,22 @@ The dashboard will be available at http://localhost:3000
 ```
 getblitz/
 ├── apps/
-│   ├── web/              # Dashboard + API routes
-│   └── wss/                 # WebSocket server
+│   ├── web/                 # Dashboard + API routes (Next.js 16)
+│   ├── wss/                 # WebSocket server (Socket.io)
+│   ├── demo/                # Demo merchant site
+│   └── test-bank/           # Mock bank simulator for development
 ├── packages/
-│   ├── api/                 # tRPC routers, utilities, Redis
+│   ├── api/                 # tRPC routers, services, repositories (DI pattern)
 │   ├── auth/                # Better Auth configuration
+│   ├── bank-providers/      # Bank provider integrations (Qonto, test-bank)
 │   ├── database/            # Prisma schema and client
+│   ├── redis/               # Redis client and pub/sub
 │   ├── shared-types/        # TypeScript interfaces
-│   ├── ui/                  # Shared UI components
+│   ├── ui/                  # Shared UI components (shadcn/ui)
+│   ├── validators/          # Zod schemas
+│   ├── websocket/           # WebSocket utilities
 │   └── getblitz-client/     # Embeddable payment SDK
-└── scripts/
-    └── e2e-test.ts          # End-to-end test script
+└── tooling/                 # ESLint, Prettier, TypeScript, Vitest configs
 ```
 
 ## API Reference
@@ -119,9 +127,9 @@ Authorization: Bearer <API_KEY>
 Content-Type: application/json
 
 {
-  "amount": 500,       # Amount in cents (€5.00)
-  "currency": "EUR",   # EUR or USDC
-  "bankAccountId": "uuid" # Optional: specific bank account
+  "amount": 500,           # Amount in cents (€5.00)
+  "currency": "EUR",       # EUR only
+  "bankAccountId": "uuid"  # Optional: specific bank account
 }
 ```
 
@@ -138,11 +146,11 @@ Content-Type: application/json
 
 ### Webhook Events
 
-The gateway supports Monerium webhooks for fiat payment processing:
+The gateway receives webhooks from connected bank providers:
 
 ```
-POST /api/webhooks/monerium
-X-Monerium-Signature: <HMAC-SHA256>
+POST /api/webhooks/connection
+X-Provider-Signature: <HMAC-SHA256>
 ```
 
 ### SDK Integration
@@ -158,35 +166,73 @@ X-Monerium-Signature: <HMAC-SHA256>
 
   payment.mount("#payment-container");
 
-  payment.on("success", (token) => {
-    console.log("Payment successful:", token);
-  });
+  payment
+    .on("onSuccess", (token) => {
+      console.log("Payment successful:", token);
+    })
+    .on("onError", (error) => {
+      console.error("Payment failed:", error);
+    })
+    .on("onExpired", () => {
+      console.log("Payment session expired");
+    });
 </script>
+```
+
+## Bank Provider Integration
+
+GetBlitz supports multiple bank providers through a pluggable adapter system:
+
+### Supported Providers
+
+| Provider   | Auth Type | Description                    |
+| ---------- | --------- | ------------------------------ |
+| **Qonto**  | OAuth2    | Business banking for SMEs      |
+| **Test Bank** | None   | Mock provider for development  |
+
+### Adding a Custom Provider
+
+Bank providers implement a standard interface in `packages/bank-providers`:
+
+```typescript
+interface BankProvider {
+  id: string;
+  displayName: string;
+  authType: "oauth2" | "api_key";
+  
+  getAuthUrl(params: AuthParams): string;
+  exchangeCode(params: CodeParams): Promise<BankCredentials>;
+  listAccounts(params: AccountParams): Promise<Account[]>;
+  verifyAndParseWebhook(params: WebhookParams): Promise<WebhookResult>;
+  createWebhook(params: WebhookCreateParams): Promise<WebhookConfig>;
+}
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable                  | Description              | Required      |
-| ------------------------- | ------------------------ | ------------- |
-| `DATABASE_URL`            | MySQL connection string  | ✅            |
-| `REDIS_URL`               | Redis URL for pub/sub    | ✅            |
-| `AUTH_SECRET`             | Better Auth secret key   | ✅            |
-| `NEXT_PUBLIC_APP_URL`     | Public app URL           | ✅            |
-| `WSS_URL`                 | WebSocket server URL     | ✅            |
-| `MONERIUM_WEBHOOK_SECRET` | Webhook signature secret | ⚠️ Production |
-| `CRON_SECRET`             | Cron job auth secret     | ⚠️ Production |
+| Variable              | Description              | Required      |
+| --------------------- | ------------------------ | ------------- |
+| `DATABASE_URL`        | MySQL connection string  | ✅            |
+| `REDIS_URL`           | Redis URL for pub/sub    | ✅            |
+| `AUTH_SECRET`         | Better Auth secret key   | ✅            |
+| `NEXT_PUBLIC_APP_URL` | Public app URL           | ✅            |
+| `WSS_URL`             | WebSocket server URL     | ✅            |
+| `CRON_SECRET`         | Cron job auth secret     | ⚠️ Production |
 
-See `env.example` for a complete list.
+Provider-specific variables (e.g., Qonto OAuth credentials) should be configured per your bank integration.
 
 ## Development
 
 ### Running Tests
 
 ```bash
-# E2E test (requires running services)
-pnpm test:e2e --api-key=sk_test_xxx
+# Run all tests
+pnpm test
+
+# Run tests for a specific package
+pnpm -F @getblitz/api test
 ```
 
 ### Database Commands
@@ -250,12 +296,12 @@ Or use Vercel Cron by adding to `apps/web/vercel.json`:
 
 1. **Merchant** creates a payment challenge via API
 2. **Customer** is redirected to payment page
-3. **Customer** chooses payment method (Crypto/SEPA)
-4. For **Crypto**: Transfers tokens to merchant wallet
-5. For **SEPA**: Scans EPC-QR code with bank app
-6. **Webhook** receives payment confirmation from Monerium/Chain
+3. **Customer** scans EPC-QR code with their bank app
+4. **Customer** completes SEPA Instant Transfer
+5. **Bank Webhook** sends payment confirmation
+6. **API** matches payment by reference ID
 7. **API** updates payment status to PAID
-8. **API** publishes event to Redis
+8. **Redis** publishes event for real-time notification
 9. **WSS** forwards event to connected clients
 10. **SDK** triggers onSuccess callback
 
@@ -263,7 +309,7 @@ Or use Vercel Cron by adding to `apps/web/vercel.json`:
 
 - **API Keys**: Secure, rotatable keys per organization
 - **Webhook Verification**: HMAC-SHA256 signature validation
-- **Rate Limiting**: Configurable limits via Upstash Redis
+- **Rate Limiting**: Configurable limits via Redis
 - **CORS**: Strict origin validation on WebSocket connections
 - **Database**: ACID transactions for payment state updates
 
