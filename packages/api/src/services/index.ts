@@ -1,6 +1,6 @@
 // Service classes
 export { ApiKeyService } from "./api-key.service";
-export { WebhookService, type MerchantWebhookPayload } from "./webhook.service";
+export { WebhookService } from "./webhook.service";
 export { PaymentSessionService } from "./payment-session.service";
 export { PaymentSettlementService } from "./payment-settlement.service";
 export {

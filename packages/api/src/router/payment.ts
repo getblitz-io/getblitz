@@ -72,6 +72,14 @@ export const paymentRouter = createTRPCRouter({
         slug: z.string(),
         amountCents: z.number().int().positive(),
         bankAccountId: z.string().optional(),
+        merchantReferenceId: z
+          .string()
+          .max(64)
+          .regex(
+            /^[a-zA-Z0-9_-]+$/,
+            "Only alphanumeric characters, hyphens, and underscores allowed",
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -81,6 +89,7 @@ export const paymentRouter = createTRPCRouter({
           amount: input.amountCents,
           currency: "EUR",
           bankAccountId: input.bankAccountId,
+          merchantReferenceId: input.merchantReferenceId,
         },
         baseUrl: env.NEXT_PUBLIC_APP_URL,
       });

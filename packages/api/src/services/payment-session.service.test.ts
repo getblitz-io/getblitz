@@ -26,6 +26,7 @@ describe("PaymentSessionService", () => {
     create: vi.fn(),
     findById: vi.fn(),
     findByReferenceId: vi.fn(),
+    findByMerchantReferenceId: vi.fn(),
     updateStatus: vi.fn(),
     expirePendingSessions: vi.fn(),
     updateStatusWithToken: vi.fn(),
@@ -83,6 +84,53 @@ describe("PaymentSessionService", () => {
 
     expect(result.sessionId).toBe("session-1");
     expect(result.paymentUrl).toBe("https://pay.test/pay/session-1");
+  });
+
+  it("should create a challenge with merchantReferenceId", async () => {
+    const input: CreateChallengeInput = {
+      organizationId: "org-1",
+      amount: 1000,
+      currency: Currency.EUR,
+      merchantReferenceId: "order-123",
+    };
+    const bankAccount = {
+      id: "bank-1",
+      organizationBankConnection: { id: "conn-1" },
+    };
+    mockSessionRepo.findByMerchantReferenceId.mockResolvedValue(null);
+    mockBankRepo.findDefaultByOrganizationId.mockResolvedValue(bankAccount);
+    mockSessionRepo.create.mockResolvedValue({
+      id: "session-1",
+      referenceId: "ref-1",
+      merchantReferenceId: "order-123",
+      expiresAt: new Date(),
+    });
+
+    const result = await service.createChallenge({
+      input,
+      baseUrl: "https://pay.test",
+    });
+
+    expect(result.sessionId).toBe("session-1");
+    expect(result.merchantReferenceId).toBe("order-123");
+  });
+
+  it("should throw error for duplicate merchantReferenceId", async () => {
+    const input: CreateChallengeInput = {
+      organizationId: "org-1",
+      amount: 1000,
+      currency: Currency.EUR,
+      merchantReferenceId: "order-123",
+    };
+    mockSessionRepo.findByMerchantReferenceId.mockResolvedValue({
+      id: "existing-session",
+    });
+
+    await expect(
+      service.createChallenge({ input, baseUrl: "https://pay.test" }),
+    ).rejects.toThrow(
+      'A payment with merchantReferenceId "order-123" already exists for this organization',
+    );
   });
 
   it("should get session details and expire if needed", async () => {

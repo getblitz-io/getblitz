@@ -32,7 +32,27 @@ export class PaymentSessionService implements IPaymentSessionService {
     input: CreateChallengeInput;
     baseUrl: string;
   }): Promise<CreateChallengeResult> {
-    const { organizationId, amount, currency, bankAccountId } = input;
+    const {
+      organizationId,
+      amount,
+      currency,
+      bankAccountId,
+      merchantReferenceId,
+    } = input;
+
+    // Validate merchantReferenceId uniqueness per organization if provided
+    if (merchantReferenceId) {
+      const existingSession =
+        await this.paymentSessionRepository.findByMerchantReferenceId({
+          organizationId,
+          merchantReferenceId,
+        });
+      if (existingSession) {
+        throw new Error(
+          `A payment with merchantReferenceId "${merchantReferenceId}" already exists for this organization`,
+        );
+      }
+    }
 
     // Resolve bank account
     let bankAccount: BankAccountWithOrganizationBankConnection | null = null;
@@ -67,6 +87,7 @@ export class PaymentSessionService implements IPaymentSessionService {
         organizationId,
         bankAccountId: bankAccount.id,
         referenceId,
+        merchantReferenceId,
         amountCents: amount,
         currency,
         expiresAt,
@@ -79,6 +100,7 @@ export class PaymentSessionService implements IPaymentSessionService {
     return {
       sessionId: paymentSession.id,
       referenceId,
+      merchantReferenceId,
       paymentUrl,
       expiresAt: paymentSession.expiresAt.toISOString(),
       connectionId: bankAccount.organizationBankConnection.id,

@@ -41,6 +41,7 @@ import {
 const payload: CreateChallengeRequest = {
   amount: 500, // €5.00 in cents
   currency: "EUR",
+  merchantReferenceId: "order-123", // Your own reference ID
   metadata: { orderId: "order_123" },
 };
 
@@ -116,6 +117,7 @@ interface CreateChallengeRequest {
   amount: number; // Amount in cents (e.g., 500 = €5.00)
   currency?: "EUR" | "USDC"; // Currency (default: EUR)
   bankAccountId?: string; // Specific bank account UUID
+  merchantReferenceId?: string; // Your own reference ID (unique per org, max 64 chars)
   metadata?: Record<string, string>; // Optional merchant metadata
 }
 ```
@@ -126,6 +128,7 @@ interface CreateChallengeRequest {
 interface CreateChallengeResponse {
   sessionId: string; // UUID of the payment session
   referenceId: string; // Bank reference (max 35 chars)
+  merchantReferenceId?: string; // Your own reference ID (if provided)
   paymentUrl: string; // URL to redirect customer
   expiresAt: Date; // Session expiration time
 }
@@ -169,6 +172,36 @@ interface PaymentEvent {
   status: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
   clientToken?: string; // Proof of payment for the buyer
   timestamp: string; // ISO 8601 timestamp
+}
+```
+
+### Webhook Types
+
+| Type                     | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `MerchantWebhookPayload` | Payload sent to merchant webhook endpoints       |
+| `WebhookEventType`       | Event types (payment.success, .failed, .expired) |
+
+#### `MerchantWebhookPayload`
+
+```typescript
+interface MerchantWebhookPayload {
+  event: "payment.success" | "payment.failed" | "payment.expired";
+  sessionId: string;
+  referenceId: string;
+  merchantReferenceId?: string; // Your own reference ID
+  amountCents: number;
+  currency: string;
+  provider: string;
+  clientToken?: string;
+  timestamp: string;
+  bankAccount: {
+    connectionId: string; // Bank connection UUID
+    connectionName: string; // Display name for the connection
+    accountName: string; // Bank account name
+    iban: string; // IBAN
+    bic: string; // BIC/SWIFT code
+  };
 }
 ```
 
@@ -219,6 +252,8 @@ All types have corresponding Zod schemas for runtime validation:
 - `PaymentEventSchema`
 - `PaymentEventTypeSchema`
 - `GetBlitzClientConfigSchema`
+- `MerchantWebhookPayloadSchema`
+- `WebhookEventTypeSchema`
 
 ## Related Packages
 

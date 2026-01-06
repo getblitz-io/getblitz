@@ -28,6 +28,13 @@ export interface IPaymentSessionRepository {
   }: {
     referenceId: string;
   }): Promise<PaymentSession | null>;
+  findByMerchantReferenceId({
+    organizationId,
+    merchantReferenceId,
+  }: {
+    organizationId: string;
+    merchantReferenceId: string;
+  }): Promise<PaymentSession | null>;
   create({
     data,
   }: {
@@ -381,6 +388,7 @@ export interface CreatePaymentSessionInput {
   organizationId: string;
   bankAccountId?: string;
   referenceId: string;
+  merchantReferenceId?: string;
   amountCents: number;
   currency: Currency;
   expiresAt: Date;
@@ -420,11 +428,13 @@ export interface CreateChallengeInput {
   amount: number;
   currency: Currency;
   bankAccountId?: string;
+  merchantReferenceId?: string;
 }
 
 export interface CreateChallengeResult {
   sessionId: string;
   referenceId: string;
+  merchantReferenceId?: string;
   paymentUrl: string;
   expiresAt: string;
   connectionId: string;
