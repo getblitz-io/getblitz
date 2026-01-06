@@ -56,7 +56,7 @@ jobs:
 
       - name: Publish to npm
         working-directory: packages/shared-types
-        run: npm publish --access public --provenance
+        run: npm publish --access public
 
   # Publish @getblitz/client to npm using trusted publishing (OIDC)
   publish-client:
@@ -93,5 +93,5 @@ jobs:
 
       - name: Publish to npm
         working-directory: packages/getblitz-client
-        run: npm publish --access public --provenance
+        run: npm publish --access public
 
