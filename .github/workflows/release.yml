@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - develop
+      - main
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          target-branch: develop
+          target-branch: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # Publish @getblitz/shared-types to npm using trusted publishing (OIDC)
@@ -95,23 +95,3 @@ jobs:
         working-directory: packages/getblitz-client
         run: npm publish --access public --provenance
 
-  # Sync develop to main after a release is created
-  sync-main:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: develop
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge develop into main
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout main
-          git merge develop --ff-only
-          git push origin main
