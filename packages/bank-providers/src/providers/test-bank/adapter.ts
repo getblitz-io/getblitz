@@ -65,6 +65,7 @@ export class TestBankProvider extends BaseBankProvider {
   readonly displayName = "Test Bank";
   readonly domain = "localhost";
   readonly authType = "oauth2" as const;
+  override readonly isTestProvider = true;
 
   private baseUrl: string;
 
@@ -72,6 +73,10 @@ export class TestBankProvider extends BaseBankProvider {
     super();
     const cfg = config as TestBankProviderConfig | undefined;
     this.baseUrl = cfg?.baseUrl ?? "http://localhost:3003";
+  }
+
+  getSetupGuide(): string {
+    return "https://github.com/getblitz-io/getblitz/blob/main/docs/banks/test-bank.md";
   }
 
   getProviderConfigSchema(): ProviderConfigSchema {

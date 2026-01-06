@@ -47,6 +47,8 @@ export interface ProviderMetadata {
   displayName: string;
   domain: string;
   authType: "oauth2" | "api_key" | "certificate" | "none";
+  setupGuideUrl: string | null;
+  isTestProvider: boolean;
 }
 
 /**
@@ -73,6 +75,10 @@ export interface BankProvider {
   readonly displayName: string;
   readonly domain: string;
   readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  readonly isTestProvider: boolean;
+
+  // Documentation
+  getSetupGuide(): string | null;
 
   // Provider configuration schema for dynamic form
   getProviderConfigSchema(): ProviderConfigSchema;

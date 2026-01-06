@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -251,6 +252,17 @@ export default function ConfigureProviderPage() {
         <p className="text-muted-foreground">
           {isReconfiguring ? t("reconfigureDescription") : t("description")}
         </p>
+        {configData.setupGuideUrl && (
+          <a
+            href={configData.setupGuideUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80 mt-2 inline-flex items-center gap-1 text-sm font-medium"
+          >
+            {t("viewSetupGuide")}
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
+          </a>
+        )}
       </div>
 
       {/* Connection Name Section */}

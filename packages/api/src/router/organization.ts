@@ -105,6 +105,7 @@ export const organizationRouter = createTRPCRouter({
       }): Promise<{
         schema: ProviderConfigSchema;
         defaultConfig: ProviderConfig;
+        setupGuideUrl: string | null;
       }> => {
         const provider = ProviderRegistry.getProvider(input.providerId);
         if (!provider) {
@@ -139,6 +140,7 @@ export const organizationRouter = createTRPCRouter({
         return {
           schema: provider.getProviderConfigSchema(),
           defaultConfig,
+          setupGuideUrl: provider.getSetupGuide(),
         };
       },
     ),

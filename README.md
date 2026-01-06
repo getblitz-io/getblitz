@@ -185,14 +185,18 @@ X-Provider-Signature: <HMAC-SHA256>
 
 ## Bank Provider Integration
 
-GetBlitz supports multiple bank providers through a pluggable adapter system:
+GetBlitz supports multiple bank providers through a pluggable adapter system.
+
+📚 **See [docs/banks/](./docs/banks/) for detailed setup guides.**
 
 ### Supported Providers
 
-| Provider      | Auth Type | Description                   |
-| ------------- | --------- | ----------------------------- |
-| **Qonto**     | OAuth2    | Business banking for SMEs     |
-| **Test Bank** | None      | Mock provider for development |
+| Provider      | Auth Type | Description                   | Setup Guide                       |
+| ------------- | --------- | ----------------------------- | --------------------------------- |
+| **Qonto**     | OAuth2    | Business banking for SMEs     | [View](./docs/banks/qonto.md)     |
+| **Test Bank** | None      | Mock provider for development | [View](./docs/banks/test-bank.md) |
+
+> **Note**: Test Bank is automatically hidden in production environments.
 
 ### Adding a Custom Provider
 
@@ -203,7 +207,9 @@ interface BankProvider {
   id: string;
   displayName: string;
   authType: "oauth2" | "api_key";
+  isTestProvider: boolean;
 
+  getSetupGuide(): string | null;
   getAuthUrl(params: AuthParams): string;
   exchangeCode(params: CodeParams): Promise<BankCredentials>;
   listAccounts(params: AccountParams): Promise<Account[]>;

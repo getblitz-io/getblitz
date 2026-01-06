@@ -17,6 +17,10 @@ export abstract class BaseBankProvider implements BankProvider {
   abstract readonly displayName: string;
   abstract readonly domain: string;
   abstract readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  readonly isTestProvider: boolean = false;
+
+  // Documentation
+  abstract getSetupGuide(): string | null;
 
   // Provider configuration for dynamic form
   abstract getProviderConfigSchema(): ProviderConfigSchema;

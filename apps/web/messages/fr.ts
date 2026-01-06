@@ -318,6 +318,7 @@ const messages = {
     updating: "Mise à jour...",
     providerConfigured: "Fournisseur configuré",
     configurationUpdated: "Configuration mise à jour",
+    viewSetupGuide: "Voir le guide d'installation",
   },
   BankAccountsPage: {
     backToBanks: "← Retour aux banques",

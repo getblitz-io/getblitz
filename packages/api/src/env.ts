@@ -9,6 +9,9 @@ export function apiEnv() {
       NODE_ENV: z
         .enum(["development", "production", "test"])
         .default("development"),
+      APPLICATION_ENV: z
+        .enum(["development", "production", "preview", "test"])
+        .default("development"),
     },
     clientPrefix: "NEXT_PUBLIC_",
     client: {

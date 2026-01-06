@@ -313,6 +313,7 @@ const messages = {
     updating: "Updating...",
     providerConfigured: "Provider configured",
     configurationUpdated: "Configuration updated",
+    viewSetupGuide: "View Setup Guide",
   },
   BankAccountsPage: {
     backToBanks: "← Back to Banks",

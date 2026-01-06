@@ -320,6 +320,7 @@ const messages = {
     updating: "Aktualisiert...",
     providerConfigured: "Anbieter konfiguriert",
     configurationUpdated: "Konfiguration aktualisiert",
+    viewSetupGuide: "Einrichtungsanleitung anzeigen",
   },
   BankAccountsPage: {
     backToBanks: "← Zurück zu Banken",

@@ -87,8 +87,14 @@ services:
         scope: RUN_TIME
         type: SECRET
 
+      # Envionment
+      - key: APPLICATION_ENV
+        scope: RUN_TIME
+        value: production
+        type: GENERAL
+
     health_check:
-      http_path: /api/health
+      http_path: /api/version
       initial_delay_seconds: 30
       period_seconds: 10
       timeout_seconds: 5
@@ -107,11 +113,6 @@ databases:
     engine: REDIS
     version: "7"
     production: false
-
-# Optional: Deployment alerts
-alerts:
-  - rule: DEPLOYMENT_FAILED
-  - rule: DOMAIN_FAILED
 
 # Ingress configuration (routes are deprecated)
 ingress:
