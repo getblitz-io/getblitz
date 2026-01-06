@@ -30,22 +30,24 @@ enum PaymentStatus {
 }
 
 model PaymentSession {
-  id             String        @id @default(uuid(7)) @db.VarChar(36)
-  organizationId String        @map("organization_id") @db.VarChar(36)
-  referenceId    String        @unique @map("reference_id") @db.VarChar(35)
-  amountCents    Int           @map("amount_cents")
-  currency       Currency      @default(EUR)
-  status         PaymentStatus @default(PENDING)
-  expiresAt      DateTime      @map("expires_at")
-  clientToken    String?       @map("client_token") @db.VarChar(255)
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  bankAccountId  String        @map("bank_account_id") @db.VarChar(36)
-  bankAccount    BankAccount   @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  id                  String        @id @default(uuid(7)) @db.VarChar(36)
+  organizationId      String        @map("organization_id") @db.VarChar(36)
+  referenceId         String        @unique @map("reference_id") @db.VarChar(35)
+  merchantReferenceId String?       @map("merchant_reference_id") @db.VarChar(64)
+  amountCents         Int           @map("amount_cents")
+  currency            Currency      @default(EUR)
+  status              PaymentStatus @default(PENDING)
+  expiresAt           DateTime      @map("expires_at")
+  clientToken         String?       @map("client_token") @db.VarChar(255)
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  bankAccountId       String        @map("bank_account_id") @db.VarChar(36)
+  bankAccount         BankAccount   @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
+  @@unique([organizationId, merchantReferenceId])
   @@index([organizationId])
   @@index([status])
   @@map("payment_session")

@@ -33,6 +33,7 @@ describe("WebhookService", () => {
     const session = {
       id: "session-1",
       referenceId: "ref-1",
+      merchantReferenceId: "order-123",
       amountCents: 1000,
       currency: "EUR",
       organization: {
@@ -45,7 +46,14 @@ describe("WebhookService", () => {
         ],
       },
       bankAccount: {
-        organizationBankConnection: { providerId: "test-bank" },
+        accountName: "Test Account",
+        accountIban: "DE89370400440532013000",
+        accountBic: "COBADEFFXXX",
+        organizationBankConnection: {
+          id: "conn-1",
+          name: "Test Connection",
+          providerId: "test-bank",
+        },
       },
     };
     mockSessionRepo.findById.mockResolvedValue(session);
@@ -66,9 +74,9 @@ describe("WebhookService", () => {
         method: "POST",
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         headers: expect.objectContaining({
-          "X-getblitz-Event": "payment.success",
+          "X-GetBlitz-Event": "payment.success",
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          "X-getblitz-Signature": expect.any(String),
+          "X-GetBlitz-Signature": expect.any(String),
         }),
       }),
     );

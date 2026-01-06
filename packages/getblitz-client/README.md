@@ -45,7 +45,8 @@ curl -X POST https://pay.yourdomain.com/api/v1/challenge \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 2500,
-    "currency": "EUR"
+    "currency": "EUR",
+    "merchantReferenceId": "order-456"
   }'
 ```
 
@@ -55,10 +56,13 @@ Response:
 {
   "sessionId": "550e8400-e29b-41d4-a716-446655440000",
   "referenceId": "GB-A9F3B2C1",
+  "merchantReferenceId": "order-456",
   "paymentUrl": "https://pay.yourdomain.com/pay/550e8400-e29b-41d4-a716-446655440000",
   "expiresAt": "2024-01-15T12:15:00.000Z"
 }
 ```
+
+> **Tip:** Use `merchantReferenceId` to link payments to your own system (e.g., order IDs). It must be unique per organization.
 
 ### 2. Mount the Payment Widget (Client-side)
 

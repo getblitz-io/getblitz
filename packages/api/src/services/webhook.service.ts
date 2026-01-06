@@ -1,23 +1,13 @@
 import { createHmac } from "crypto";
 
 import type { OrganizationWebhook } from "@getblitz/database";
+import type { MerchantWebhookPayload } from "@getblitz/shared-types";
 
 import type {
   IPaymentSessionRepository,
   IWebhookService,
   WebhookEventType,
 } from "../interfaces";
-
-export interface MerchantWebhookPayload {
-  event: WebhookEventType;
-  sessionId: string;
-  referenceId: string;
-  amountCents: number;
-  currency: string;
-  provider: string;
-  clientToken?: string;
-  timestamp: string;
-}
 
 export class WebhookService implements IWebhookService {
   constructor(
@@ -60,11 +50,20 @@ export class WebhookService implements IWebhookService {
       event,
       sessionId: session.id,
       referenceId: session.referenceId,
+      merchantReferenceId: session.merchantReferenceId ?? undefined,
       amountCents: session.amountCents,
       currency: session.currency,
       provider,
       clientToken: session.clientToken ?? undefined,
       timestamp: new Date().toISOString(),
+      bankAccount: {
+        connectionId: session.bankAccount.organizationBankConnection.id,
+        connectionName:
+          session.bankAccount.organizationBankConnection.name ?? provider,
+        accountName: session.bankAccount.accountName,
+        iban: session.bankAccount.accountIban,
+        bic: session.bankAccount.accountBic,
+      },
     };
 
     // 1. Notify Organization-level webhook
@@ -121,11 +120,11 @@ export class WebhookService implements IWebhookService {
     const body = JSON.stringify(payload);
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "X-getblitz-Event": payload.event,
+      "X-GetBlitz-Event": payload.event,
     };
 
     if (secret) {
-      headers["X-getblitz-Signature"] = createHmac("sha256", secret)
+      headers["X-GetBlitz-Signature"] = createHmac("sha256", secret)
         .update(body)
         .digest("hex");
     }

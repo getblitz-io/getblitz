@@ -12,6 +12,15 @@ export const CreateChallengeRequestSchema = z.object({
     .uuid()
     .optional()
     .describe("Specific bank account ID, or uses default"),
+  merchantReferenceId: z
+    .string()
+    .max(64)
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Only alphanumeric characters, hyphens, and underscores allowed",
+    )
+    .optional()
+    .describe("Merchant's own reference ID for this payment (unique per org)"),
   metadata: z
     .record(z.string(), z.string())
     .optional()
@@ -25,6 +34,7 @@ export type CreateChallengeRequest = z.infer<
 export const CreateChallengeResponseSchema = z.object({
   sessionId: z.uuid(),
   referenceId: z.string().max(35),
+  merchantReferenceId: z.string().max(64).optional(),
   paymentUrl: z.url(),
   expiresAt: z.date(),
 });

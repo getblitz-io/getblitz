@@ -53,6 +53,23 @@ export class PaymentSessionRepository
     });
   }
 
+  async findByMerchantReferenceId({
+    organizationId,
+    merchantReferenceId,
+  }: {
+    organizationId: string;
+    merchantReferenceId: string;
+  }): Promise<PaymentSession | null> {
+    return this.prisma.paymentSession.findUnique({
+      where: {
+        organizationId_merchantReferenceId: {
+          organizationId,
+          merchantReferenceId,
+        },
+      },
+    });
+  }
+
   async create({
     data,
   }: {
@@ -63,6 +80,7 @@ export class PaymentSessionRepository
         bankAccount: { connect: { id: data.bankAccountId } },
         organization: { connect: { id: data.organizationId } },
         referenceId: data.referenceId,
+        merchantReferenceId: data.merchantReferenceId,
         amountCents: data.amountCents,
         currency: data.currency,
         expiresAt: data.expiresAt,
