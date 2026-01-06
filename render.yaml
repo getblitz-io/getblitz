@@ -1,0 +1,71 @@
+services:
+  - type: web
+    name: getblitz-web
+    env: node
+    plan: starter
+    buildCommand: pnpm install && pnpm db:generate && pnpm build:standalone
+    startCommand: pnpm db:push && pnpm --filter @getblitz/web start:standalone
+    envVars:
+      # Feature Flags
+      - key: ENABLE_WEBSOCKET
+        value: true
+
+      # Database Connection
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: getblitz-db
+          property: host
+      - key: DATABASE_USER
+        fromDatabase:
+          name: getblitz-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: getblitz-db
+          property: password
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: getblitz-db
+          property: database
+      
+      # Redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: getblitz-redis
+          property: connectionString
+      
+      # Secrets (Auto-generated)
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      
+      # OAuth (User Input)
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+
+      # App URLs (Self)
+      - key: NEXT_PUBLIC_APP_URL
+        value: ${RENDER_EXTERNAL_URL}
+      - key: NEXT_PUBLIC_WSS_URL
+        value: ${RENDER_EXTERNAL_URL}
+      - key: CORS_ORIGINS
+        value: ${RENDER_EXTERNAL_URL}
+        
+      - key: NODE_VERSION
+        value: 22.12.0
+
+databases:
+  - name: getblitz-db
+    databaseName: getblitz
+    user: getblitz
+    plan: starter
+
+services:
+  - type: redis
+    name: getblitz-redis
+    plan: starter
+    ipAllowList: []

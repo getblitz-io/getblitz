@@ -1,0 +1,76 @@
+spec:
+  name: getblitz
+  services:
+    - name: web
+      source_dir: /
+      environment_slug: node-js
+      instance_size_slug: basic-xs
+      instance_count: 1
+      build_command: pnpm install && pnpm db:generate && pnpm build:standalone
+      run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
+      envs:
+        # Feature Flags
+        - key: ENABLE_WEBSOCKET
+          value: "true"
+
+        # Database Connection (Individual Params)
+        - key: DATABASE_HOST
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.HOSTNAME}
+        - key: DATABASE_USER
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.USERNAME}
+        - key: DATABASE_PASSWORD
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.PASSWORD}
+        - key: DATABASE_NAME
+          scope: RUN_AND_BUILD_TIME
+          value: ${db.DATABASE}
+        
+        # Redis
+        - key: REDIS_URL
+          scope: RUN_AND_BUILD_TIME
+          value: ${redis.REDIS_URL}
+        
+        # App URLs
+        - key: NEXT_PUBLIC_APP_URL
+          value: ${APP_URL}
+        - key: NEXT_PUBLIC_WSS_URL
+          value: ${APP_URL}
+        
+        # CORS (Self + Others)
+        - key: CORS_ORIGINS
+          value: ${APP_URL}
+
+        # Secrets (User Input)
+        - key: AUTH_SECRET
+          description: "Secret key for authentication (min 32 chars)"
+          required: true
+        - key: ENCRYPTION_KEY
+          description: "Key for encrypting secrets (min 32 chars)"
+          required: true
+        
+        # OAuth (User Input)
+        - key: AUTH_GOOGLE_ID
+          description: "Google OAuth Client ID"
+          required: true
+        - key: AUTH_GOOGLE_SECRET
+          description: "Google OAuth Client Secret"
+          required: true
+
+      http_port: 3000
+      routes:
+        - path: /
+
+  databases:
+    - name: db
+      engine: MYSQL
+      version: "8"
+      production: true
+      size_slug: db-s-1vcpu-1gb
+
+    - name: redis
+      engine: REDIS
+      version: "7"
+      production: true
+      size_slug: db-s-1vcpu-1gb

@@ -146,7 +146,10 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setDefaultAccount.mutate({ bankAccountId: account.id })
+                      setDefaultAccount.mutate({
+                        bankAccountId: account.id,
+                        slug,
+                      })
                     }
                     disabled={setDefaultAccount.isPending}
                     className="flex-1 sm:flex-none"
@@ -158,7 +161,7 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() =>
-                    deleteAccount.mutate({ bankAccountId: account.id })
+                    deleteAccount.mutate({ bankAccountId: account.id, slug })
                   }
                   disabled={deleteAccount.isPending}
                   className="text-destructive hover:text-destructive"

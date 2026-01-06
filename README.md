@@ -185,10 +185,10 @@ GetBlitz supports multiple bank providers through a pluggable adapter system:
 
 ### Supported Providers
 
-| Provider   | Auth Type | Description                    |
-| ---------- | --------- | ------------------------------ |
-| **Qonto**  | OAuth2    | Business banking for SMEs      |
-| **Test Bank** | None   | Mock provider for development  |
+| Provider      | Auth Type | Description                   |
+| ------------- | --------- | ----------------------------- |
+| **Qonto**     | OAuth2    | Business banking for SMEs     |
+| **Test Bank** | None      | Mock provider for development |
 
 ### Adding a Custom Provider
 
@@ -199,7 +199,7 @@ interface BankProvider {
   id: string;
   displayName: string;
   authType: "oauth2" | "api_key";
-  
+
   getAuthUrl(params: AuthParams): string;
   exchangeCode(params: CodeParams): Promise<BankCredentials>;
   listAccounts(params: AccountParams): Promise<Account[]>;
@@ -212,14 +212,14 @@ interface BankProvider {
 
 ### Environment Variables
 
-| Variable              | Description              | Required      |
-| --------------------- | ------------------------ | ------------- |
-| `DATABASE_URL`        | MySQL connection string  | ✅            |
-| `REDIS_URL`           | Redis URL for pub/sub    | ✅            |
-| `AUTH_SECRET`         | Better Auth secret key   | ✅            |
-| `NEXT_PUBLIC_APP_URL` | Public app URL           | ✅            |
-| `WSS_URL`             | WebSocket server URL     | ✅            |
-| `CRON_SECRET`         | Cron job auth secret     | ⚠️ Production |
+| Variable              | Description             | Required      |
+| --------------------- | ----------------------- | ------------- |
+| `DATABASE_URL`        | MySQL connection string | ✅            |
+| `REDIS_URL`           | Redis URL for pub/sub   | ✅            |
+| `AUTH_SECRET`         | Better Auth secret key  | ✅            |
+| `NEXT_PUBLIC_APP_URL` | Public app URL          | ✅            |
+| `WSS_URL`             | WebSocket server URL    | ✅            |
+| `CRON_SECRET`         | Cron job auth secret    | ⚠️ Production |
 
 Provider-specific variables (e.g., Qonto OAuth credentials) should be configured per your bank integration.
 
@@ -256,7 +256,15 @@ pnpm typecheck    # Run TypeScript checks
 
 ## Deployment
 
-### Docker
+### One-Click Deploy
+
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/getblitz-io/getblitz/tree/main&refcode=0eb3774edd76)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/getblitz-io/getblitz)
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions and environment configuration.
+
+### Docker (Manual)
 
 ```bash
 # Build and run with Docker Compose
