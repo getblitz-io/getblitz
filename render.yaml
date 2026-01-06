@@ -4,7 +4,7 @@ services:
     env: node
     plan: starter
     buildCommand: pnpm install && pnpm db:generate && pnpm build:standalone
-    startCommand: pnpm --filter @getblitz/web start:standalone
+    startCommand: pnpm db:push && pnpm --filter @getblitz/web start:standalone
     envVars:
       # Feature Flags
       - key: ENABLE_WEBSOCKET

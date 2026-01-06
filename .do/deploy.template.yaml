@@ -7,7 +7,7 @@ spec:
       instance_size_slug: basic-xs
       instance_count: 1
       build_command: pnpm install && pnpm db:generate && pnpm build:standalone
-      run_command: pnpm --filter @getblitz/web start:standalone
+      run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
       envs:
         # Feature Flags
         - key: ENABLE_WEBSOCKET
