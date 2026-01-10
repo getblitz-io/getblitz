@@ -69,6 +69,9 @@ export type {
   PaymentSessionWithOrg,
   PaymentStatusStats,
   BankWebhookResult,
+  // Organization types (frontend display)
+  ProviderWithConnectionStatus,
+  BankConnectionWithProvider,
 } from "./interfaces";
 
 // Re-export database types commonly used
@@ -103,6 +106,3 @@ export {
   closeRedisConnections,
   publishPaymentEvent,
 } from "@getblitz/redis";
-
-// Types
-export type { ProviderWithConnectionStatus } from "./types";

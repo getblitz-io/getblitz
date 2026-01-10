@@ -7,12 +7,8 @@ import type {
 } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
 
-import type { BankConnectionWithProvider } from "../types/organization";
-import {
-  ConflictError,
-  ForbiddenError,
-  NotFoundError,
-} from "../services/organization.service";
+import type { BankConnectionWithProvider } from "../interfaces";
+import { ConflictError, ForbiddenError, NotFoundError } from "../interfaces";
 import {
   createTRPCRouter,
   organizationProcedure,
@@ -461,7 +457,6 @@ export const organizationRouter = createTRPCRouter({
           select: {
             id: true,
             providerId: true,
-            isDefault: true,
             webhookUrl: true,
             webhookSecret: true,
           },
@@ -606,6 +601,7 @@ export const organizationRouter = createTRPCRouter({
     .input(
       z.object({
         connectionId: z.string(),
+        externalAccountId: z.string().min(1, "External account ID is required"),
         accountName: z.string().min(1, "Account name is required"),
         accountIban: z.string().min(1, "Account IBAN is required"),
         accountBic: z.string().min(1, "Account BIC is required"),
@@ -613,56 +609,21 @@ export const organizationRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // 1. Find the connection
-      const connection = await ctx.prisma.organizationBankConnection.findFirst({
-        where: {
-          id: input.connectionId,
-          organizationId: ctx.organization.id,
-        },
-      });
-      if (!connection) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Organization bank connection not found",
-        });
-      }
-
-      const provider = ProviderRegistry.getProvider(connection.providerId);
-      if (!provider) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid provider",
-        });
-      }
-
-      // 2. Database Operations
-      return await ctx.prisma.$transaction(async (tx) => {
-        // Find or Create BankAccount
-        const iban = input.accountIban;
-        const existingAccount = await tx.bankAccount.findFirst({
-          where: {
-            accountIban: iban,
-            organizationBankConnectionId: connection.id,
-          },
-        });
-
-        return await tx.bankAccount.upsert({
-          where: { id: existingAccount?.id ?? "" },
-          update: {
-            organizationBankConnection: { connect: { id: connection.id } },
+      try {
+        return await ctx.services.organization.addBankAccount({
+          input: {
+            organizationId: ctx.organization.id,
+            connectionId: input.connectionId,
+            externalAccountId: input.externalAccountId,
             accountName: input.accountName,
-            accountIban: iban,
+            accountIban: input.accountIban,
             accountBic: input.accountBic,
-          },
-          create: {
-            organizationBankConnection: { connect: { id: connection.id } },
-            accountName: input.accountName,
-            accountIban: iban,
-            accountBic: input.accountBic,
-            accountConfig: JSON.stringify({}),
+            isDefault: input.isDefault,
           },
         });
-      });
+      } catch (error) {
+        handleServiceError(error);
+      }
     }),
 
   // Delete bank account

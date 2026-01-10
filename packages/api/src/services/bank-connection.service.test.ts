@@ -4,8 +4,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BankProvider } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
 
-import type { IOrganizationBankConnectionRepository } from "../interfaces";
-import type { ICredentialManagerService } from "./credential-manager.service";
+import type {
+  ICredentialManagerService,
+  IOrganizationBankConnectionRepository,
+} from "../interfaces";
 import { BankConnectionService } from "./bank-connection.service";
 
 vi.mock("../env", () => ({

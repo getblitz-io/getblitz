@@ -1,4 +1,8 @@
 /**
+ * Organization-related types for frontend display
+ */
+
+/**
  * Provider with connection status for an organization.
  */
 export interface ProviderWithConnectionStatus {

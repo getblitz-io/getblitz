@@ -89,6 +89,7 @@ export default function SelectAccountPage() {
         addBankAccount.mutateAsync({
           slug,
           connectionId,
+          externalAccountId: account.id,
           accountName: account.name,
           accountIban: account.iban,
           accountBic: account.bic,
