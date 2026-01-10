@@ -1,35 +1,32 @@
 // Service classes
 export { ApiKeyService } from "./api-key.service";
-export { WebhookService } from "./webhook.service";
+export { BankConnectionService } from "./bank-connection.service";
+export { BankWebhookService } from "./bank-webhook.service";
+export { CredentialManagerService } from "./credential-manager.service";
+export { OrganizationService } from "./organization.service";
 export { PaymentSessionService } from "./payment-session.service";
 export { PaymentSettlementService } from "./payment-settlement.service";
+export { WebhookService } from "./webhook.service";
+
+// Re-export interfaces and errors from centralized location
 export {
-  OrganizationService,
+  ConflictError,
   ForbiddenError,
   NotFoundError,
-  ConflictError,
-} from "./organization.service";
-export { BankWebhookService } from "./bank-webhook.service";
-export {
-  BankConnectionService,
+  type AddBankAccountInput,
+  type ApiKeyValidationResult,
+  type BankWebhookResult,
+  type CreateChallengeInput,
+  type CreateChallengeResult,
+  type DashboardStats,
   type IBankConnectionService,
+  type OrganizationCounts,
+  type PaymentSessionWithOrg,
+  type PaymentStatusStats,
+  type SessionDetailsResult,
+  type SettlementInput,
+  type SettlementResult,
   type SetupWebhookResult,
-} from "./bank-connection.service";
-
-// Re-export interfaces
-export type {
-  SettlementResult,
-  SettlementInput,
-  WebhookEventType,
-  ApiKeyValidationResult,
-  CreateChallengeInput,
-  CreateChallengeResult,
-  SessionDetailsResult,
-  SimulatePaymentResult,
-  AddBankAccountInput,
-  DashboardStats,
-  OrganizationCounts,
-  PaymentSessionWithOrg,
-  PaymentStatusStats,
-  BankWebhookResult,
+  type SimulatePaymentResult,
+  type WebhookEventType,
 } from "../interfaces";

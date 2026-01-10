@@ -11,11 +11,8 @@ import type {
   IOrganizationWebhookRepository,
   IPaymentSessionRepository,
 } from "../interfaces";
-import {
-  ForbiddenError,
-  NotFoundError,
-  OrganizationService,
-} from "./organization.service";
+import { ForbiddenError, NotFoundError } from "../interfaces";
+import { OrganizationService } from "./organization.service";
 
 describe("OrganizationService", () => {
   let service: OrganizationService;
@@ -28,12 +25,12 @@ describe("OrganizationService", () => {
   };
   const mockSessionRepo = {};
   const mockBankRepo = {
-    create: vi.fn(),
+    upsert: vi.fn(),
     setDefault: vi.fn(),
   };
   const mockWebhookRepo = {};
   const mockConnRepo = {
-    findByOrganizationIdAndProviderId: vi.fn(),
+    findById: vi.fn(),
   };
 
   beforeAll(() => {
@@ -95,45 +92,68 @@ describe("OrganizationService", () => {
   });
 
   it("should add bank account if connection is connected", async () => {
-    mockOrgRepo.findMemberByUserAndOrg.mockResolvedValue({ userId: "user-1" });
-    mockConnRepo.findByOrganizationIdAndProviderId.mockResolvedValue({
+    mockConnRepo.findById.mockResolvedValue({
       id: "conn-1",
+      organizationId: "org-1",
       status: BankConnectionStatus.CONNECTED,
     });
-    mockBankRepo.create.mockResolvedValue({ id: "bank-1" });
+    mockBankRepo.upsert.mockResolvedValue({ id: "bank-1" });
 
     const input: AddBankAccountInput = {
       organizationId: "org-1",
-      providerId: "test",
+      connectionId: "conn-1",
+      externalAccountId: "ext-1",
       accountName: "Main",
       accountIban: "FR123",
       accountBic: "BIC123",
       isDefault: true,
     };
 
-    const result = await service.addBankAccount({ input, userId: "user-1" });
+    const result = await service.addBankAccount({ input });
 
     expect(result.id).toBe("bank-1");
     expect(mockBankRepo.setDefault).toHaveBeenCalled();
   });
 
-  it("should throw error when adding bank account if connection not connected", async () => {
-    mockOrgRepo.findMemberByUserAndOrg.mockResolvedValue({ userId: "user-1" });
-    mockConnRepo.findByOrganizationIdAndProviderId.mockResolvedValue({
+  it("should throw error when adding bank account if connection belongs to different org", async () => {
+    mockConnRepo.findById.mockResolvedValue({
       id: "conn-1",
-      status: BankConnectionStatus.DISCONNECTED,
+      organizationId: "other-org",
+      status: BankConnectionStatus.CONNECTED,
     });
 
     const input: AddBankAccountInput = {
       organizationId: "org-1",
-      providerId: "test",
+      connectionId: "conn-1",
+      externalAccountId: "ext-1",
       accountName: "Main",
       accountIban: "FR123",
       accountBic: "BIC123",
     };
 
-    await expect(
-      service.addBankAccount({ input, userId: "user-1" }),
-    ).rejects.toThrow(NotFoundError);
+    await expect(service.addBankAccount({ input })).rejects.toThrow(
+      NotFoundError,
+    );
+  });
+
+  it("should throw error when adding bank account if connection not connected", async () => {
+    mockConnRepo.findById.mockResolvedValue({
+      id: "conn-1",
+      organizationId: "org-1",
+      status: BankConnectionStatus.DISCONNECTED,
+    });
+
+    const input: AddBankAccountInput = {
+      organizationId: "org-1",
+      connectionId: "conn-1",
+      externalAccountId: "ext-1",
+      accountName: "Main",
+      accountIban: "FR123",
+      accountBic: "BIC123",
+    };
+
+    await expect(service.addBankAccount({ input })).rejects.toThrow(
+      NotFoundError,
+    );
   });
 });

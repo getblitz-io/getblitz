@@ -18,18 +18,7 @@ import type {
   OrganizationWithDetails,
   UpdateOrganizationWebhookInput,
 } from "../interfaces";
-
-export class ForbiddenError extends Error {
-  override name = "ForbiddenError" as const;
-}
-
-export class NotFoundError extends Error {
-  override name = "NotFoundError" as const;
-}
-
-export class ConflictError extends Error {
-  override name = "ConflictError" as const;
-}
+import { ForbiddenError, NotFoundError } from "../interfaces";
 
 export class OrganizationService implements IOrganizationService {
   constructor(
@@ -154,38 +143,30 @@ export class OrganizationService implements IOrganizationService {
   }
 
   /**
-   * Add a bank account to an organization
+   * Add or update a bank account for an organization (upsert by IBAN)
    */
   async addBankAccount({
     input,
-    userId,
   }: {
     input: AddBankAccountInput;
-    userId: string;
   }): Promise<BankAccount> {
-    // Verify user has access
-    const member = await this.organizationRepository.findMemberByUserAndOrg({
-      userId,
-      organizationId: input.organizationId,
-    });
+    // Find connection by ID and verify it belongs to the organization
+    const connection = await this.organizationBankConnectionRepository.findById(
+      { id: input.connectionId },
+    );
 
-    if (!member) {
-      throw new ForbiddenError("You don't have access to this organization");
+    if (connection?.organizationId !== input.organizationId) {
+      throw new NotFoundError("Organization bank connection not found");
     }
 
-    const organizationBankConnection =
-      await this.organizationBankConnectionRepository.findByOrganizationIdAndProviderId(
-        { organizationId: input.organizationId, providerId: input.providerId },
-      );
-    if (organizationBankConnection?.status !== BankConnectionStatus.CONNECTED) {
-      throw new NotFoundError(
-        "Organization bank connection not found or not connected",
-      );
+    if (connection.status !== BankConnectionStatus.CONNECTED) {
+      throw new NotFoundError("Organization bank connection is not connected");
     }
 
-    const bankAccount = await this.bankAccountRepository.create({
+    const bankAccount = await this.bankAccountRepository.upsert({
       data: {
-        organizationBankConnectionId: organizationBankConnection.id,
+        organizationBankConnectionId: input.connectionId,
+        externalAccountId: input.externalAccountId,
         accountName: input.accountName,
         accountIban: input.accountIban,
         accountBic: input.accountBic,

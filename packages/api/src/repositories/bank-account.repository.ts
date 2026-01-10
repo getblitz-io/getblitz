@@ -58,37 +58,33 @@ export class BankAccountRepository
     });
   }
 
-  async create({
+  async upsert({
     data,
   }: {
     data: CreateBankAccountInput;
   }): Promise<BankAccountWithOrganizationBankConnection> {
-    return this.prisma.bankAccount.create({
-      data: {
-        organizationBankConnection: {
-          connect: { id: data.organizationBankConnectionId },
+    return this.prisma.bankAccount.upsert({
+      where: {
+        externalAccountId_organizationBankConnectionId: {
+          externalAccountId: data.externalAccountId,
+          organizationBankConnectionId: data.organizationBankConnectionId,
         },
+      },
+      update: {
+        externalAccountId: data.externalAccountId,
         accountName: data.accountName,
         accountIban: data.accountIban,
         accountBic: data.accountBic,
-        accountConfig: JSON.stringify({}),
       },
-      include: {
-        organizationBankConnection: true,
+      create: {
+        externalAccountId: data.externalAccountId,
+        accountName: data.accountName,
+        accountIban: data.accountIban,
+        accountBic: data.accountBic,
+        organizationBankConnection: {
+          connect: { id: data.organizationBankConnectionId },
+        },
       },
-    });
-  }
-
-  async update({
-    id,
-    data,
-  }: {
-    id: string;
-    data: Partial<CreateBankAccountInput>;
-  }): Promise<BankAccountWithOrganizationBankConnection> {
-    return this.prisma.bankAccount.update({
-      where: { id },
-      data,
       include: {
         organizationBankConnection: true,
       },

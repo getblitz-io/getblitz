@@ -60,16 +60,6 @@ export class OrganizationBankConnectionRepository
     });
   }
 
-  async findDefaultByOrganizationId({
-    organizationId,
-  }: {
-    organizationId: string;
-  }): Promise<OrganizationBankConnection | null> {
-    return this.prisma.organizationBankConnection.findFirst({
-      where: { organizationId, isDefault: true },
-    });
-  }
-
   async create({
     data,
   }: {

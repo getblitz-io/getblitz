@@ -18,7 +18,6 @@ const organizationWithDetailsInclude = {
       id: true,
       providerId: true,
       providerConfig: true,
-      isDefault: true,
       credentials: true,
       webhookUrl: true,
       webhookSecret: true,
