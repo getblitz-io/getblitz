@@ -56,7 +56,7 @@ export interface ProviderMetadata {
  */
 export interface ProviderConfigField {
   name: string;
-  type: "string" | "boolean" | "number";
+  type: "string" | "boolean" | "number" | "textarea";
   label: string;
   description?: string;
   required: boolean;

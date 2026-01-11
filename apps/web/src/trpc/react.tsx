@@ -64,6 +64,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return window.location.origin;
-  if (env.COOLIFY_URL) return env.COOLIFY_URL;
-  return `http://localhost:${env.PORT ?? 3000}`;
+  if (env.NEXT_PUBLIC_APP_URL) return env.NEXT_PUBLIC_APP_URL;
+  return `http://localhost:3000`;
 };

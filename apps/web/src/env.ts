@@ -8,7 +8,7 @@ import { databaseEnv } from "@getblitz/database/env";
 import { redisEnv } from "@getblitz/redis/env";
 
 export const env = createEnv({
-  extends: [authEnv(), coolify(), apiEnv(), databaseEnv(), redisEnv()],
+  extends: [authEnv(), apiEnv(), databaseEnv(), redisEnv()],
   shared: {
     NODE_ENV: z
       .enum(["development", "production", "test"])

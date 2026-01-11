@@ -435,6 +435,31 @@ export default function ConfigureProviderPage() {
                             </p>
                           )}
                         </>
+                      ) : field.type === "textarea" ? (
+                        <>
+                          <textarea
+                            id={field.name}
+                            rows={8}
+                            value={
+                              typeof formField.state.value === "string"
+                                ? formField.state.value
+                                : ""
+                            }
+                            onChange={(e) =>
+                              formField.handleChange(e.target.value)
+                            }
+                            onBlur={formField.handleBlur}
+                            placeholder={field.description}
+                            required={field.required}
+                            disabled={form.state.isSubmitting}
+                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 font-mono text-xs file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                          {field.description && (
+                            <p className="text-muted-foreground text-xs">
+                              {field.description}
+                            </p>
+                          )}
+                        </>
                       ) : (
                         <>
                           <input

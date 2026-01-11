@@ -3,6 +3,7 @@ import type { PrismaClient } from "@getblitz/database";
 import {
   ProviderRegistry,
   QontoProvider,
+  RevolutProvider,
   TestBankProvider,
 } from "@getblitz/bank-providers";
 import { prisma } from "@getblitz/database";
@@ -65,6 +66,7 @@ let container: ServiceContainer | null = null;
  */
 function initProviders() {
   ProviderRegistry.register(QontoProvider);
+  ProviderRegistry.register(RevolutProvider);
   ProviderRegistry.register(TestBankProvider);
 }
 
