@@ -61,6 +61,7 @@ export class ProviderRegistry {
       displayName: provider.displayName,
       domain: provider.domain,
       authType: provider.authType,
+      oauthFlowType: provider.oauthFlowType,
       setupGuideUrl: provider.getSetupGuide(),
       isTestProvider: provider.isTestProvider,
     }));

@@ -288,6 +288,15 @@ const messages = {
     manualConnection: "Manual connection",
     editName: "Edit name",
     connectionNameMaxLength: "Connection name must be 255 characters or less",
+    // Status badges
+    statusPendingConfig: "Pending Setup",
+    statusPendingOAuth: "Awaiting Authorization",
+    statusExpired: "Expired",
+    statusDisconnected: "Disconnected",
+    // Pending connection actions
+    resume: "Resume",
+    deletePendingConfirm:
+      "Are you sure you want to delete this pending connection?",
   },
   BankConfigurePage: {
     backToProviders: "← Back to Providers",
@@ -309,11 +318,28 @@ const messages = {
     cancel: "Cancel",
     configure: "Configure & Connect",
     update: "Update & Reconnect",
+    connect: "Connect",
+    connecting: "Connecting...",
     configuring: "Configuring...",
     updating: "Updating...",
     providerConfigured: "Provider configured",
     configurationUpdated: "Configuration updated",
+    configSaved: "Configuration saved! Now authorize in your bank app.",
     viewSetupGuide: "View Setup Guide",
+    registerCallbackUrl: "Register Callback URL",
+    registerCallbackUrlDescription:
+      "Copy this URL and register it in your bank's API settings before proceeding.",
+    urlCopied: "URL copied to clipboard",
+    completeAuthorization: "Complete Authorization",
+    manualConsentDescription:
+      "Your configuration has been saved. Now complete the authorization in your bank app.",
+    nextSteps: "Next Steps",
+    openBankApp: "Open the {providerName} app or website",
+    navigateToApiSettings: "Navigate to API settings",
+    clickEnableAccess: 'Click "Enable access" or "Authorize"',
+    youWillBeRedirected:
+      "You will be automatically redirected back here after authorization",
+    yourCallbackUrl: "Your registered callback URL:",
   },
   BankAccountsPage: {
     backToBanks: "← Back to Banks",
@@ -436,6 +462,7 @@ const messages = {
     bankDisconnected: "Bank disconnected successfully",
     webhookConfigured: "Webhook configured successfully",
     connectionNameUpdated: "Connection name updated",
+    pendingConnectionDeleted: "Pending connection deleted",
     paymentReceived: "Payment received!",
     paymentReceivedDescription: "The payment has been completed successfully.",
     paymentExpired: "Payment expired",

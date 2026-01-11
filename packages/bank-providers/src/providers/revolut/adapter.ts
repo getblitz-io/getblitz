@@ -41,10 +41,10 @@ export const RevolutWebhookPayloadSchema = z.object({
 
 /**
  * Revolut provider configuration
+ * Note: redirectUri is not stored in config - it's generated per connection attempt
  */
 export interface RevolutProviderConfig extends ProviderConfig {
   clientId: string;
-  redirectUri: string;
   privateKeyPem: string;
   sandboxMode: boolean;
 }
@@ -54,9 +54,9 @@ export class RevolutProvider extends BaseBankProvider {
   readonly displayName = "Revolut Business";
   readonly domain = "revolut.com";
   readonly authType = "certificate" as const;
+  readonly oauthFlowType = "manual-consent" as const;
 
   private clientId: string;
-  private redirectUri: string;
   private privateKeyPem: string;
   private sandboxMode: boolean;
 
@@ -65,7 +65,6 @@ export class RevolutProvider extends BaseBankProvider {
     const cfg = config as RevolutProviderConfig | undefined;
 
     this.clientId = cfg?.clientId ?? "";
-    this.redirectUri = cfg?.redirectUri ?? "";
     this.privateKeyPem = cfg?.privateKeyPem ?? "";
     this.sandboxMode = cfg?.sandboxMode ?? false;
   }
@@ -93,15 +92,6 @@ export class RevolutProvider extends BaseBankProvider {
           secret: false,
         },
         {
-          name: "redirectUri",
-          type: "string",
-          label: "OAuth Redirect URI",
-          description:
-            "The redirect URI registered with Revolut (must match exactly)",
-          required: true,
-          secret: false,
-        },
-        {
           name: "privateKeyPem",
           type: "textarea",
           label: "Private Key (PEM)",
@@ -125,14 +115,13 @@ export class RevolutProvider extends BaseBankProvider {
   getDefaultConfig(sandboxMode = false): RevolutProviderConfig {
     return {
       clientId: "",
-      redirectUri: "",
       privateKeyPem: "",
       sandboxMode,
     };
   }
 
   private ensureConfigured(): void {
-    if (!this.clientId || !this.privateKeyPem || !this.redirectUri) {
+    if (!this.clientId || !this.privateKeyPem) {
       throw new Error(
         "RevolutProvider is not configured. Create a configured instance using ProviderRegistry.createProvider()",
       );
@@ -157,13 +146,14 @@ export class RevolutProvider extends BaseBankProvider {
   /**
    * Generate a JWT client assertion for Revolut API authentication.
    * The JWT is signed with the private key using RS256 algorithm.
+   * @param redirectUri - The callback URL, used to extract the issuer domain
    */
-  private generateClientAssertion(): string {
+  private generateClientAssertion(redirectUri: string): string {
     const now = Math.floor(Date.now() / 1000);
     const exp = now + 60 * 40; // 40 minutes from now
 
     // Extract domain from redirectUri for the issuer claim
-    const issuerDomain = new URL(this.redirectUri).hostname;
+    const issuerDomain = new URL(redirectUri).hostname;
 
     const header = {
       alg: "RS256",
@@ -206,7 +196,10 @@ export class RevolutProvider extends BaseBankProvider {
   private async fetchBankDetails(
     accessToken: string,
     accountId: string,
-  ): Promise<{ iban: string; bic: string } | null> {
+  ): Promise<
+    | { accountId: string; iban: string; bic: string; beneficiary: string }[]
+    | null
+  > {
     try {
       const response = await fetch(
         `${this.baseUrl}/api/1.0/accounts/${accountId}/bank-details`,
@@ -224,12 +217,29 @@ export class RevolutProvider extends BaseBankProvider {
       const data = (await response.json()) as {
         iban?: string;
         bic?: string;
-      };
+        beneficiary?: string;
+      }[];
 
-      return {
-        iban: data.iban ?? "",
-        bic: data.bic ?? "",
-      };
+      // filter out data wihout iban, bic, beneficiary and group by iban, bic, beneficiary
+      const grouped = new Map<
+        string,
+        { iban: string; bic: string; beneficiary: string }
+      >();
+      for (const item of data) {
+        if (item.iban && item.bic && item.beneficiary) {
+          const key = `${item.iban}-${item.bic}-${item.beneficiary}`;
+          grouped.set(key, {
+            iban: item.iban,
+            bic: item.bic,
+            beneficiary: item.beneficiary,
+          });
+        }
+      }
+
+      return Array.from(grouped.values()).map((value) => ({
+        accountId,
+        ...value,
+      }));
     } catch {
       return null;
     }
@@ -373,7 +383,11 @@ export class RevolutProvider extends BaseBankProvider {
   }): Promise<BankCredentials> {
     this.ensureConfigured();
 
-    const clientAssertion = this.generateClientAssertion();
+    if (!redirectUri) {
+      throw new Error("redirectUri is required for Revolut authentication");
+    }
+
+    const clientAssertion = this.generateClientAssertion(redirectUri);
 
     const response = await fetch(`${this.baseUrl}/api/1.0/auth/token`, {
       method: "POST",
@@ -386,7 +400,7 @@ export class RevolutProvider extends BaseBankProvider {
         client_assertion_type:
           "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         client_assertion: clientAssertion,
-        ...(redirectUri && { redirect_uri: redirectUri }),
+        redirect_uri: redirectUri,
       }),
     });
 
@@ -443,40 +457,40 @@ export class RevolutProvider extends BaseBankProvider {
     // Filter accounts that qualify for IBAN fetching:
     // EUR currency, active state, and public (has bank details)
     const eligibleAccounts = accounts.filter(
-      (acc) =>
-        acc.currency === "EUR" && acc.state === "active" && acc.public === true,
+      (acc) => acc.currency === "EUR" && acc.state === "active",
     );
 
     // Fetch bank details in parallel for eligible accounts only
-    const bankDetailsMap = new Map<string, { iban: string; bic: string }>();
+    const bankDetailsMap = new Map<
+      string,
+      { iban: string; bic: string; beneficiary: string }
+    >();
 
     const accessToken = credentials.accessToken;
     if (eligibleAccounts.length > 0 && accessToken) {
       const bankDetailsResults = await Promise.all(
         eligibleAccounts.map(async (acc) => {
           const details = await this.fetchBankDetails(accessToken, acc.id);
-          return { id: acc.id, details };
+          return { accountId: acc.id, details };
         }),
       );
 
       for (const result of bankDetailsResults) {
         if (result.details) {
-          bankDetailsMap.set(result.id, result.details);
+          for (const detail of result.details) {
+            bankDetailsMap.set(detail.accountId, detail);
+          }
         }
       }
     }
 
-    // Return all accounts, with IBAN/BIC populated for eligible ones
-    return accounts.map((acc) => {
-      const bankDetails = bankDetailsMap.get(acc.id);
-      return {
-        id: acc.id,
-        name: acc.name,
-        iban: bankDetails?.iban ?? "",
-        currency: acc.currency,
-        bic: bankDetails?.bic ?? "",
-      };
-    });
+    return Array.from(bankDetailsMap.entries()).map(([accountId, details]) => ({
+      id: accountId,
+      name: details.beneficiary,
+      iban: details.iban,
+      currency: "EUR",
+      bic: details.bic,
+    }));
   }
 
   async createWebhook({
@@ -515,12 +529,18 @@ export class RevolutProvider extends BaseBankProvider {
 
   async refreshToken({
     refreshToken,
+    callbackUrl,
   }: {
     refreshToken: string;
+    callbackUrl?: string;
   }): Promise<BankCredentials> {
     this.ensureConfigured();
 
-    const clientAssertion = this.generateClientAssertion();
+    if (!callbackUrl) {
+      throw new Error("callbackUrl is required for Revolut token refresh");
+    }
+
+    const clientAssertion = this.generateClientAssertion(callbackUrl);
 
     const response = await fetch(`${this.baseUrl}/api/1.0/auth/token`, {
       method: "POST",

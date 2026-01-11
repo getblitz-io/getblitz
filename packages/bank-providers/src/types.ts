@@ -47,6 +47,7 @@ export interface ProviderMetadata {
   displayName: string;
   domain: string;
   authType: "oauth2" | "api_key" | "certificate" | "none";
+  oauthFlowType: OAuthFlowType;
   setupGuideUrl: string | null;
   isTestProvider: boolean;
 }
@@ -69,12 +70,15 @@ export interface ProviderConfigSchema {
   fields: ProviderConfigField[];
 }
 
+export type OAuthFlowType = "redirect" | "manual-consent" | "none";
+
 export interface BankProvider {
   // Static metadata (replaces Bank table fields)
   readonly id: string;
   readonly displayName: string;
   readonly domain: string;
   readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  readonly oauthFlowType: OAuthFlowType;
   readonly isTestProvider: boolean;
 
   // Documentation
@@ -137,8 +141,10 @@ export interface BankProvider {
   // Token refresh (for OAuth2 providers)
   refreshToken?({
     refreshToken,
+    callbackUrl,
   }: {
     refreshToken: string;
+    callbackUrl?: string; // Optional: needed by some providers (e.g., Revolut) for JWT generation
   }): Promise<BankCredentials>;
 
   // Helper to check if provider supports token refresh

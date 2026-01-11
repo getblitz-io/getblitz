@@ -10,6 +10,17 @@ Before you begin, you'll need:
 - Access to the [Revolut Business Web App](https://business.revolut.com/)
 - OpenSSL installed on your system (comes pre-installed on macOS and most Linux distributions)
 
+## Understanding the Revolut OAuth Flow
+
+Revolut uses a **manual consent OAuth flow**, which differs from standard redirect-based OAuth:
+
+1. You register a callback URL in your Revolut API settings
+2. You configure your API credentials in GetBlitz
+3. You manually open the Revolut app/website and click "Enable access"
+4. Revolut redirects to your registered callback URL with an authorization code
+
+This is different from banks like Qonto where you're automatically redirected to the bank for authorization.
+
 ## Step 1: Generate Your Certificate
 
 Revolut uses certificate-based authentication. You'll need to generate a private key and public certificate using OpenSSL.
@@ -53,47 +64,58 @@ cat publiccert.cer
 
 Copy the entire output, including the `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` lines.
 
-## Step 2: Upload Certificate to Revolut
+## Step 2: Start Configuration in GetBlitz
+
+In your GetBlitz dashboard:
+
+1. Navigate to **Banks** → **Connect**
+2. Select **Revolut Business** as the provider
+3. **Copy the Callback URL** displayed in Step 1 of the configuration page
+   - This URL is unique to your connection attempt and looks like:
+   - `https://your-getblitz.com/banks/callback/your-org.abc123def456`
+
+> **Important**: Keep this page open - you'll need it after registering the callback URL in Revolut.
+
+## Step 3: Upload Certificate and Register Callback URL in Revolut
 
 1. Log in to the [Revolut Business Web App](https://business.revolut.com/)
 2. Click on the **gear icon** (Settings) in the top right corner
 3. Navigate to **APIs** → **Business API**
 4. Click **Add API certificate** (or **Add new** if you already have certificates)
 5. Paste the contents of your `publiccert.cer` into the **X509 public key** field
-6. Enter your **OAuth redirect URI** (e.g., `https://your-domain.com/banks/callback/revolut`)
+6. **Paste the Callback URL** from GetBlitz into the **OAuth redirect URI** field
 7. Give your certificate a meaningful title (e.g., "GetBlitz Production")
 8. Click **Continue**
 
-> **Important**: Copy the **Client ID** displayed in the API Certificate details. You'll need this for GetBlitz configuration.
+> **Important**: Copy the **Client ID** displayed in the API Certificate details. You'll need this for the next step.
 
 ### Optional: IP Whitelisting
 
 For additional security, you can provide a list of IP addresses that are allowed to access the API. Only traffic from these IP addresses will be permitted.
 
-## Step 3: Configure GetBlitz
+## Step 4: Complete Configuration in GetBlitz
 
-In your GetBlitz dashboard:
+Return to the GetBlitz configuration page:
 
-1. Navigate to **Banks** → **Connect**
-2. Select **Revolut Business** as the provider
-3. Enter your configuration:
-   - **Client ID**: The Client ID from Revolut (obtained in Step 2)
-   - **OAuth Redirect URI**: Must match exactly what you configured in Revolut (e.g., `https://your-domain.com/banks/callback/revolut`)
+1. Enter your configuration:
+   - **Client ID**: The Client ID from Revolut (obtained in Step 3)
    - **Private Key (PEM)**: Paste the entire contents of your `privatecert.pem` file, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines
    - **Sandbox Mode**: Enable for testing, disable for production
+2. Click **Connect** to save your settings
 
-4. Click **Configure** to save your settings
+## Step 5: Complete OAuth Authorization in Revolut
 
-## Step 4: Complete OAuth Authorization
+After saving your configuration, GetBlitz will show instructions for completing authorization:
 
-After configuring your provider:
+1. Open the [Revolut Business Web App](https://business.revolut.com/)
+2. Navigate to **APIs** → **Business API**
+3. Find your API certificate and click on it
+4. Click **Enable access** to authorize GetBlitz
+5. You'll be automatically redirected back to GetBlitz
 
-1. You'll be redirected to Revolut's consent page
-2. Log in to your Revolut Business account if prompted
-3. Review and approve the requested permissions
-4. You'll be redirected back to GetBlitz with your accounts connected
+> **Note**: This step is done in Revolut's interface, not via a redirect from GetBlitz.
 
-## Step 5: Select Bank Accounts
+## Step 6: Select Bank Accounts
 
 After successful authorization:
 
@@ -120,9 +142,15 @@ After successful authorization:
 
 ### OAuth Authorization Fails
 
-- Verify your redirect URI matches **exactly** what's configured in Revolut (including protocol, domain, and path)
+- Verify your redirect URI in Revolut matches **exactly** the callback URL from GetBlitz
 - Check that your private key matches the public certificate uploaded to Revolut
 - Ensure the Client ID is correct
+- Make sure you clicked "Enable access" in the Revolut app
+
+### Callback URL Expired
+
+- If your GetBlitz session expired before completing authorization, start over by clicking "Connect" again on the Revolut provider
+- A new callback URL will be generated
 
 ### Token Refresh Issues
 

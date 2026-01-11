@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
+import {
+  CheckIcon,
+  ClipboardCopyIcon,
+  ExternalLinkIcon,
+} from "@radix-ui/react-icons";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 
+import type { OAuthFlowType } from "@getblitz/bank-providers";
 import {
   Card,
   CardContent,
@@ -30,6 +35,20 @@ export default function ConfigureProviderPage() {
   const trpc = useTRPC();
   const t = useTranslations("BankConfigurePage");
 
+  // State for 2-step flow
+  const [step, setStep] = useState<1 | 2>(1);
+  const [pendingConnectionId, setPendingConnectionId] = useState<string | null>(
+    null,
+  );
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+  const [oauthFlowType, setOauthFlowType] = useState<OAuthFlowType | null>(
+    null,
+  );
+  const [setupGuideUrl, setSetupGuideUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const isReconfiguring = !!connectionId;
+
   // Get the provider config schema (with existing config if connectionId provided)
   const { data: configData, isLoading: isLoadingSchema } = useQuery({
     ...trpc.organization.getProviderConfigSchema.queryOptions({
@@ -40,10 +59,10 @@ export default function ConfigureProviderPage() {
     enabled: !!slug && !!providerId,
   });
 
-  // Get connections to find provider info
+  // Get connections to find provider info (for reconfiguring)
   const { data: connections } = useQuery({
     ...trpc.organization.getBankConnections.queryOptions({ slug }),
-    enabled: !!slug,
+    enabled: !!slug && isReconfiguring,
   });
 
   const connection = useMemo(
@@ -58,11 +77,65 @@ export default function ConfigureProviderPage() {
         displayName: connection.name ?? connection.providerName,
       };
     }
-    // Fallback when connection is not yet loaded
     return { name: providerId, displayName: providerId };
   }, [connection, providerId]);
 
-  const isReconfiguring = !!connectionId;
+  // Initialize bank connection mutation (Step 1)
+  const initConnection = useMutation(
+    trpc.organization.initBankConnection.mutationOptions({
+      onSuccess: (data) => {
+        setPendingConnectionId(data.connectionId);
+        setCallbackUrl(data.callbackUrl);
+        setOauthFlowType(data.oauthFlowType);
+        setSetupGuideUrl(data.setupGuideUrl);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
+  // Save bank config mutation (Step 2)
+  const saveBankConfig = useMutation(
+    trpc.organization.saveBankConfig.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
+  // Get auth URL mutation (for redirect flow)
+  const getAuthUrl = useMutation(
+    trpc.organization.getBankAuthUrl.mutationOptions({
+      onSuccess: (data) => {
+        router.push(data.authUrl);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
+  // For reconfiguring an existing connection
+  const updateConnectionConfig = useMutation(
+    trpc.organization.updateBankConnectionConfig.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(t("configurationUpdated"));
+        router.push(`/${slug}/banks/accounts/${data.connectionId}`);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
+  // Initialize connection on mount (for new connections)
+  useEffect(() => {
+    if (!isReconfiguring && !pendingConnectionId && !initConnection.isPending) {
+      initConnection.mutate({ slug, providerId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReconfiguring, providerId, slug]);
 
   // Build default values from schema fields
   const buildDefaultValues = useMemo(() => {
@@ -72,7 +145,6 @@ export default function ConfigureProviderPage() {
       connectionName: connection?.name ?? "",
     };
 
-    // Initialize all fields from schema with their default values
     configData.schema.fields.forEach((field) => {
       if (field.defaultValue !== undefined) {
         defaults[field.name] = field.defaultValue;
@@ -85,34 +157,51 @@ export default function ConfigureProviderPage() {
       }
     });
 
-    // Override with existing config if available
     Object.assign(defaults, configData.defaultConfig);
-
     return defaults;
   }, [configData, connection?.name]);
 
-  // Create form with dynamic default values
+  // Create form
   const form = useForm({
     defaultValues: buildDefaultValues,
-    onSubmit: ({ value }) => {
-      // Extract connectionName and providerConfig
+    onSubmit: async ({ value }) => {
       const { connectionName: name, ...providerConfig } = value;
 
-      configureProvider.mutate({
-        slug,
-        providerId,
-        providerConfig,
-        connectionId: connectionId ?? undefined,
-        name: typeof name === "string" ? name.trim() || undefined : undefined,
-      });
+      if (isReconfiguring && connectionId) {
+        // Update existing connection config
+        updateConnectionConfig.mutate({
+          slug,
+          connectionId,
+          providerConfig: providerConfig as Record<string, unknown>,
+          name: typeof name === "string" ? name.trim() || undefined : undefined,
+        });
+      } else if (pendingConnectionId) {
+        // Save config to database
+        await saveBankConfig.mutateAsync({
+          slug,
+          connectionId: pendingConnectionId,
+          providerConfig: providerConfig as Record<string, unknown>,
+          connectionName:
+            typeof name === "string" ? name.trim() || undefined : undefined,
+        });
+
+        // Redirect based on flow type
+        if (oauthFlowType === "redirect") {
+          getAuthUrl.mutate({ slug, connectionId: pendingConnectionId });
+        } else {
+          // Manual consent flow - show instructions
+          toast.success(t("configSaved"));
+          setStep(2);
+        }
+      }
     },
   });
 
   type FormType = typeof form;
 
-  // Helper component for conditionally rendering fields based on dependencies
+  // Helper component for conditionally rendering fields
   function ConditionalField({
-    form,
+    form: f,
     dependsOn,
     children,
   }: {
@@ -125,14 +214,14 @@ export default function ConfigureProviderPage() {
     }
 
     return (
-      <form.Subscribe selector={(state) => state.values[dependsOn.field]}>
+      <f.Subscribe selector={(state) => state.values[dependsOn.field]}>
         {(dependentValue: unknown) => {
           if (dependentValue === dependsOn.value) {
             return <>{children}</>;
           }
           return null;
         }}
-      </form.Subscribe>
+      </f.Subscribe>
     );
   }
 
@@ -144,62 +233,19 @@ export default function ConfigureProviderPage() {
         ...configData.defaultConfig,
       };
 
-      // Set all field values
       Object.keys(updatedValues).forEach((key) => {
         form.setFieldValue(key as never, updatedValues[key] as never);
       });
     }
   }, [configData, connection?.name, form]);
 
-  // Configure provider mutation
-  const configureProvider = useMutation(
-    trpc.organization.configureProvider.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(
-          data.updated ? t("configurationUpdated") : t("providerConfigured"),
-        );
-        // Redirect to OAuth flow
-        startOAuth({ connectionId: data.connectionId });
-      },
-      onError: (error) => {
-        toast.error(error.message);
-      },
-    }),
-  );
-
-  // Get auth URL mutation
-  const getAuthUrl = useMutation(
-    trpc.organization.getBankAuthUrl.mutationOptions({
-      onSuccess: (data) => {
-        console.log("getAuthUrl", data);
-        router.push(data.url);
-      },
-      onError: (error) => {
-        toast.error(error.message);
-      },
-    }),
-  );
-
-  const startOAuth = ({ connectionId }: { connectionId: string }) => {
-    const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
-    getAuthUrl.mutate({
-      connectionId,
-      redirectUri,
-      slug,
-    });
-  };
-
-  // Track previous sandboxMode value to prevent infinite loop
+  // Qonto-specific sandbox mode logic
   const prevSandboxModeRef = useRef<boolean | undefined>(undefined);
-
-  // Watch sandboxMode and update dependent fields (using effect to avoid subscription issues)
   useEffect(() => {
     if (providerId !== "qonto") return;
 
     const unsubscribe = form.store.subscribe(() => {
       const sandboxMode = form.state.values.sandboxMode as boolean | undefined;
-
-      // Only update if sandboxMode actually changed
       if (sandboxMode === prevSandboxModeRef.current) return;
       prevSandboxModeRef.current = sandboxMode;
 
@@ -227,10 +273,78 @@ export default function ConfigureProviderPage() {
     return unsubscribe;
   }, [providerId, form]);
 
-  if (isLoadingSchema || !configData) {
+  const handleCopyUrl = async () => {
+    if (callbackUrl) {
+      await navigator.clipboard.writeText(callbackUrl);
+      setCopied(true);
+      toast.success(t("urlCopied"));
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (isLoadingSchema || !configData || initConnection.isPending) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="border-primary h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // For manual consent flow after config is saved - show waiting instructions
+  if (step === 2 && oauthFlowType === "manual-consent" && callbackUrl) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-8">
+        <div>
+          <Link
+            href={`/${slug}/banks/connect`}
+            className="text-muted-foreground hover:text-foreground mb-2 block text-sm"
+          >
+            {t("backToProviders")}
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {t("completeAuthorization")}
+          </h1>
+          <p className="text-muted-foreground">
+            {t("manualConsentDescription")}
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("nextSteps")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <ol className="list-inside list-decimal space-y-4">
+              <li>
+                {t("openBankApp", { providerName: providerInfo.displayName })}
+              </li>
+              <li>{t("navigateToApiSettings")}</li>
+              <li>{t("clickEnableAccess")}</li>
+              <li>{t("youWillBeRedirected")}</li>
+            </ol>
+
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-muted-foreground mb-2 text-sm">
+                {t("yourCallbackUrl")}
+              </p>
+              <code className="text-foreground block text-sm break-all">
+                {callbackUrl}
+              </code>
+            </div>
+
+            {setupGuideUrl && (
+              <a
+                href={setupGuideUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-sm font-medium"
+              >
+                {t("viewSetupGuide")}
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -252,23 +366,69 @@ export default function ConfigureProviderPage() {
         <p className="text-muted-foreground">
           {isReconfiguring ? t("reconfigureDescription") : t("description")}
         </p>
-        {configData.setupGuideUrl && (
-          <a
-            href={configData.setupGuideUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80 mt-2 inline-flex items-center gap-1 text-sm font-medium"
-          >
-            {t("viewSetupGuide")}
-            <ExternalLinkIcon className="h-3.5 w-3.5" />
-          </a>
-        )}
       </div>
+
+      {/* Step 1: Callback URL (for new connections only) */}
+      {!isReconfiguring && callbackUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-sm">
+                1
+              </span>
+              {t("registerCallbackUrl")}
+            </CardTitle>
+            <CardDescription>
+              {t("registerCallbackUrlDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={callbackUrl}
+                className="border-input bg-muted flex h-10 flex-1 rounded-md border px-3 py-2 font-mono text-sm"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyUrl}
+                className="shrink-0"
+              >
+                {copied ? (
+                  <CheckIcon className="h-4 w-4" />
+                ) : (
+                  <ClipboardCopyIcon className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {(setupGuideUrl ?? configData.setupGuideUrl) && (
+              <a
+                href={setupGuideUrl ?? configData.setupGuideUrl ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-sm font-medium"
+              >
+                {t("viewSetupGuide")}
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Connection Name Section */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("connectionName")}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {!isReconfiguring && (
+              <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-sm">
+                2
+              </span>
+            )}
+            {t("connectionName")}
+          </CardTitle>
           <CardDescription>{t("connectionNameDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -287,7 +447,7 @@ export default function ConfigureProviderPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="connection-name"
-                  className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-sm leading-none font-medium"
                 >
                   {t("connectionNameOptional")}
                 </label>
@@ -304,7 +464,7 @@ export default function ConfigureProviderPage() {
                   placeholder={t("connectionNamePlaceholder")}
                   maxLength={255}
                   disabled={form.state.isSubmitting}
-                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
                 />
                 {field.state.meta.errors.length > 0 && (
                   <p className="text-sm text-red-500">
@@ -317,9 +477,17 @@ export default function ConfigureProviderPage() {
         </CardContent>
       </Card>
 
+      {/* Provider Configuration */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("providerConfiguration")}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {!isReconfiguring && (
+              <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-sm">
+                3
+              </span>
+            )}
+            {t("providerConfiguration")}
+          </CardTitle>
           <CardDescription>
             {t("providerConfigurationDescription")}
           </CardDescription>
@@ -377,7 +545,7 @@ export default function ConfigureProviderPage() {
                     <div className="space-y-2">
                       <label
                         htmlFor={field.name}
-                        className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        className="text-sm leading-none font-medium"
                       >
                         {field.label}
                         {field.required && (
@@ -427,7 +595,7 @@ export default function ConfigureProviderPage() {
                             placeholder={field.description}
                             required={field.required}
                             disabled={form.state.isSubmitting}
-                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
                           />
                           {field.description && (
                             <p className="text-muted-foreground text-xs">
@@ -452,7 +620,7 @@ export default function ConfigureProviderPage() {
                             placeholder={field.description}
                             required={field.required}
                             disabled={form.state.isSubmitting}
-                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 font-mono text-xs file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 font-mono text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
                           />
                           {field.description && (
                             <p className="text-muted-foreground text-xs">
@@ -477,7 +645,7 @@ export default function ConfigureProviderPage() {
                             placeholder={field.description}
                             required={field.required}
                             disabled={form.state.isSubmitting}
-                            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
                           />
                           {field.description && (
                             <p className="text-muted-foreground text-xs">
@@ -510,14 +678,25 @@ export default function ConfigureProviderPage() {
               <form.Subscribe
                 selector={(state) => [state.isSubmitting, state.canSubmit]}
                 children={([isSubmitting, canSubmit]) => (
-                  <Button type="submit" disabled={!canSubmit || isSubmitting}>
-                    {isSubmitting
+                  <Button
+                    type="submit"
+                    disabled={
+                      !canSubmit ||
+                      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+                      isSubmitting ||
+                      saveBankConfig.isPending ||
+                      getAuthUrl.isPending
+                    }
+                  >
+                    {isSubmitting ||
+                    saveBankConfig.isPending ||
+                    getAuthUrl.isPending
                       ? isReconfiguring
                         ? t("updating")
-                        : t("configuring")
+                        : t("connecting")
                       : isReconfiguring
                         ? t("update")
-                        : t("configure")}
+                        : t("connect")}
                   </Button>
                 )}
               />

@@ -293,6 +293,15 @@ const messages = {
     editName: "Name bearbeiten",
     connectionNameMaxLength:
       "Verbindungsname muss 255 Zeichen oder weniger sein",
+    // Status badges
+    statusPendingConfig: "Einrichtung ausstehend",
+    statusPendingOAuth: "Autorisierung ausstehend",
+    statusExpired: "Abgelaufen",
+    statusDisconnected: "Getrennt",
+    // Pending connection actions
+    resume: "Fortsetzen",
+    deletePendingConfirm:
+      "Sind Sie sicher, dass Sie diese ausstehende Verbindung löschen möchten?",
   },
   BankConfigurePage: {
     backToProviders: "← Zurück zu Anbietern",
@@ -316,11 +325,30 @@ const messages = {
     cancel: "Abbrechen",
     configure: "Konfigurieren & Verbinden",
     update: "Aktualisieren & Erneut verbinden",
+    connect: "Verbinden",
+    connecting: "Verbindet...",
     configuring: "Konfiguriert...",
     updating: "Aktualisiert...",
     providerConfigured: "Anbieter konfiguriert",
     configurationUpdated: "Konfiguration aktualisiert",
+    configSaved:
+      "Konfiguration gespeichert! Autorisieren Sie jetzt in Ihrer Bank-App.",
     viewSetupGuide: "Einrichtungsanleitung anzeigen",
+    registerCallbackUrl: "Callback-URL registrieren",
+    registerCallbackUrlDescription:
+      "Kopieren Sie diese URL und registrieren Sie sie in den API-Einstellungen Ihrer Bank, bevor Sie fortfahren.",
+    urlCopied: "URL in Zwischenablage kopiert",
+    completeAuthorization: "Autorisierung abschließen",
+    manualConsentDescription:
+      "Ihre Konfiguration wurde gespeichert. Schließen Sie jetzt die Autorisierung in Ihrer Bank-App ab.",
+    nextSteps: "Nächste Schritte",
+    openBankApp: "Öffnen Sie die {providerName} App oder Website",
+    navigateToApiSettings: "Navigieren Sie zu den API-Einstellungen",
+    clickEnableAccess:
+      'Klicken Sie auf "Zugriff aktivieren" oder "Autorisieren"',
+    youWillBeRedirected:
+      "Sie werden nach der Autorisierung automatisch hierher zurückgeleitet",
+    yourCallbackUrl: "Ihre registrierte Callback-URL:",
   },
   BankAccountsPage: {
     backToBanks: "← Zurück zu Banken",
@@ -447,6 +475,7 @@ const messages = {
     bankDisconnected: "Bank erfolgreich getrennt",
     webhookConfigured: "Webhook erfolgreich konfiguriert",
     connectionNameUpdated: "Verbindungsname aktualisiert",
+    pendingConnectionDeleted: "Ausstehende Verbindung gelöscht",
     paymentReceived: "Zahlung erhalten!",
     paymentReceivedDescription: "Die Zahlung wurde erfolgreich abgeschlossen.",
     paymentExpired: "Zahlung abgelaufen",

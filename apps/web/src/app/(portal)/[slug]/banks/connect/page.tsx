@@ -223,6 +223,22 @@ export default function ConnectBankPage() {
     }),
   );
 
+  const deletePendingConnection = useMutation(
+    trpc.organization.deletePendingConnection.mutationOptions({
+      onSuccess: () => {
+        toast.success(tToast("pendingConnectionDeleted"));
+        void queryClient.invalidateQueries({
+          queryKey: trpc.organization.getBankConnections.queryKey({
+            slug,
+          }),
+        });
+      },
+      onError: (error: { message: string }) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
   const handleDisconnect = (connectionId: string) => {
     if (!connectionId || !slug) return;
     if (!confirm(t("disconnectConfirm"))) return;
@@ -257,6 +273,77 @@ export default function ConnectBankPage() {
 
   const handleCancelEditName = () => {
     setEditingConnectionId(null);
+  };
+
+  const handleDeletePending = (connectionId: string) => {
+    if (!connectionId || !slug) return;
+    if (!confirm(t("deletePendingConfirm"))) return;
+
+    deletePendingConnection.mutate({
+      slug,
+      connectionId,
+    });
+  };
+
+  // Helper to check if connection is in a pending state
+  const isPendingConnection = (status: string) => {
+    return (
+      status === "PENDING_CONFIG" ||
+      status === "PENDING_OAUTH" ||
+      status === "EXPIRED"
+    );
+  };
+
+  // Helper to get status badge
+  const getStatusBadge = (connection: {
+    status: string;
+    hasCredentials: boolean;
+    webhookUrl: string | null;
+  }) => {
+    switch (connection.status) {
+      case "PENDING_CONFIG":
+        return (
+          <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+            {t("statusPendingConfig")}
+          </span>
+        );
+      case "PENDING_OAUTH":
+        return (
+          <span className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+            {t("statusPendingOAuth")}
+          </span>
+        );
+      case "EXPIRED":
+        return (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+            {t("statusExpired")}
+          </span>
+        );
+      case "DISCONNECTED":
+        return (
+          <span className="inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
+            {t("statusDisconnected")}
+          </span>
+        );
+      case "CONNECTED":
+      default:
+        return (
+          <>
+            <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+              {tCommon("status.connected")}
+            </span>
+            {connection.webhookUrl ? (
+              <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                {t("webhookActive")}
+              </span>
+            ) : (
+              <span className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                {t("noWebhook")}
+              </span>
+            )}
+          </>
+        );
+    }
   };
 
   if (isLoading || !slug) {
@@ -347,6 +434,7 @@ export default function ConnectBankPage() {
               {connections.map((connection) => {
                 const displayName = connection.name ?? connection.providerName;
                 const hasCredentials = connection.hasCredentials;
+                const isPending = isPendingConnection(connection.status);
 
                 return (
                   <div key={connection.id} className="rounded-lg border">
@@ -402,26 +490,38 @@ export default function ConnectBankPage() {
                               ? t("oauth2Connection")
                               : t("manualConnection")}
                           </p>
-                          {hasCredentials && (
-                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                              <span className="inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                {tCommon("status.connected")}
-                              </span>
-                              {connection.webhookUrl ? (
-                                <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                  {t("webhookActive")}
-                                </span>
-                              ) : (
-                                <span className="inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                  {t("noWebhook")}
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            {getStatusBadge(connection)}
+                          </div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        {hasCredentials ? (
+                        {isPending ? (
+                          <>
+                            {/* Resume button for pending connections */}
+                            <Link
+                              href={`/${slug}/banks/connect/${connection.providerId}?connectionId=${connection.id}`}
+                            >
+                              <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                              >
+                                {t("resume")}
+                              </Button>
+                            </Link>
+                            {/* Delete button for pending connections */}
+                            <Button
+                              variant="destructive"
+                              onClick={() => handleDeletePending(connection.id)}
+                              disabled={deletePendingConnection.isPending}
+                              className="w-full sm:w-auto"
+                            >
+                              {deletePendingConnection.isPending
+                                ? tCommon("buttons.deleting")
+                                : tCommon("buttons.delete")}
+                            </Button>
+                          </>
+                        ) : hasCredentials ? (
                           <>
                             <Button
                               variant="outline"

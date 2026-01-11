@@ -71,10 +71,15 @@ export class CredentialManagerService implements ICredentialManagerService {
       throw new Error(`Bank connection not found: ${connectionId}`);
     }
 
-    // 2. Check credentials exist (null means OAuth not yet completed)
+    // 2. Check credentials and config exist (null means OAuth not yet completed)
     if (!connection.credentials) {
       throw new Error(
         `Bank connection not fully configured: credentials missing for ${connectionId}`,
+      );
+    }
+    if (!connection.providerConfig) {
+      throw new Error(
+        `Bank connection not fully configured: provider config missing for ${connectionId}`,
       );
     }
 
@@ -116,9 +121,10 @@ export class CredentialManagerService implements ICredentialManagerService {
       throw new Error("Provider refresh token implementation is missing");
     }
 
-    // 8. Refresh the token
+    // 8. Refresh the token (pass callbackUrl for providers like Revolut that need it)
     const newCredentials = await configuredProvider.refreshToken({
       refreshToken: credentials.refreshToken,
+      callbackUrl: connection.callbackUrl ?? undefined,
     });
 
     // 9. Encrypt and persist new credentials to database

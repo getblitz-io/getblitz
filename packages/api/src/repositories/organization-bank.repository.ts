@@ -71,8 +71,10 @@ export class OrganizationBankConnectionRepository
         providerId: data.providerId,
         providerConfig: data.providerConfig,
         credentials: data.credentials,
+        callbackUrl: data.callbackUrl,
         webhookUrl: data.webhookUrl,
         webhookSecret: data.webhookSecret,
+        name: data.name,
       },
     });
   }

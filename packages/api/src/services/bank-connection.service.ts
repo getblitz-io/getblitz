@@ -84,6 +84,9 @@ export class BankConnectionService implements IBankConnectionService {
     if (!connection) {
       return { success: false, error: "Connection not found" };
     }
+    if (!connection.providerConfig) {
+      return { success: false, error: "Connection not fully configured" };
+    }
 
     // Decrypt provider config and create configured provider instance
     const providerConfig = this.credentialManager.decryptProviderConfig(

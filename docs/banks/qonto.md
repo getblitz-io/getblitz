@@ -9,6 +9,16 @@ Before you begin, you'll need:
 - A Qonto business account (or access to the sandbox environment for testing)
 - Access to the [Qonto Developer Portal](https://developers.qonto.com/)
 
+## Understanding the Qonto OAuth Flow
+
+Qonto uses a standard **redirect OAuth flow**:
+
+1. GetBlitz generates a unique callback URL for your connection
+2. You register this URL in the Qonto Developer Portal
+3. You enter your credentials in GetBlitz
+4. GetBlitz redirects you to Qonto for authorization
+5. After approval, Qonto redirects back to your callback URL
+
 ## Step 1: Sign Up for the Developer Portal
 
 1. Go to [Qonto Developer Portal](https://developers.qonto.com/)
@@ -55,34 +65,55 @@ For a completely isolated test environment:
    - **Balance amount**: Starting balance (e.g., `100000` EUR)
 5. Submit the form
 
-## Step 3: Create OAuth2 Credentials
+## Step 3: Start Configuration in GetBlitz
+
+Before creating OAuth2 credentials in Qonto, start the configuration in GetBlitz to get your callback URL:
+
+1. Navigate to **Banks** → **Connect**
+2. Select **Qonto** as the provider
+3. **Copy the Callback URL** displayed in Step 1 of the configuration page
+   - This URL is unique to your connection attempt and looks like:
+   - `https://your-getblitz.com/banks/callback/your-org.abc123def456`
+
+> **Important**: Keep this page open - you'll need it after creating OAuth2 credentials in Qonto.
+
+## Step 4: Create OAuth2 Credentials in Qonto
 
 To integrate GetBlitz with your Qonto account, you need OAuth2 credentials:
 
 1. Go to the [Developer Portal](https://developers.qonto.com/)
 2. Navigate to the OAuth2 applications section
 3. Create a new OAuth2 application with:
-   - **Redirect URI**: Your GetBlitz instance callback URL (e.g., `https://your-domain.com/api/banks/callback/qonto`)
+   - **Redirect URI**: Paste the callback URL from GetBlitz (from Step 3)
    - **Scopes**: Select `organization.read` and `webhook` scopes
 
 4. Save your **Client ID** and **Client Secret**
 
-## Step 4: Configure GetBlitz
+## Step 5: Complete Configuration in GetBlitz
 
-In your GetBlitz dashboard:
+Return to the GetBlitz configuration page:
 
-1. Navigate to **Banks** → **Connect**
-2. Select **Qonto** as the provider
-3. Enter your OAuth2 credentials:
+1. Enter your OAuth2 credentials:
    - **Client ID**: From the Developer Portal
    - **Client Secret**: From the Developer Portal
    - **Sandbox Mode**: Enable for testing, disable for production
    - **Sandbox Token** (if sandbox mode): Available from the Developer Portal
+   - **OAuth Base URL**: Auto-filled based on sandbox mode
+   - **API Base URL**: Auto-filled based on sandbox mode
 
-4. Complete the OAuth2 authorization flow
-5. Select the bank accounts you want to use for payments
+2. Click **Connect**
+3. You'll be redirected to Qonto to authorize the connection
+4. After approval, you'll be returned to GetBlitz
 
-## Step 5: Configure Webhooks
+## Step 6: Select Bank Accounts
+
+After successful authorization:
+
+1. GetBlitz will display your Qonto accounts
+2. Select the accounts you want to use for payments
+3. Complete the setup
+
+## Webhooks
 
 GetBlitz will automatically set up webhooks when you complete the connection. The webhook will listen for transaction events to automatically detect incoming payments.
 
@@ -91,10 +122,11 @@ GetBlitz will automatically set up webhooks when you complete the connection. Th
 When you're ready to go live:
 
 1. Get your **Production credentials** from the [Developer Portal](https://developers.qonto.com/sign-in/)
-2. In GetBlitz, reconfigure your Qonto connection:
+2. In GetBlitz, create a new Qonto connection:
    - Disable **Sandbox Mode**
    - Enter your production **Client ID** and **Client Secret**
    - Remove the **Sandbox Token**
+   - Register the new callback URL in Qonto's production OAuth2 application
 
 > **Important**: The `X-Qonto-Staging-Token` header is not necessary in production.
 
@@ -109,8 +141,14 @@ When you're ready to go live:
 
 ### OAuth2 Authorization Fails
 
-- Verify your redirect URI matches exactly what's configured in the Developer Portal
+- Verify your redirect URI in Qonto matches **exactly** the callback URL from GetBlitz
 - Ensure you're using the correct Client ID and Client Secret for your environment
+
+### Callback URL Expired
+
+- If your GetBlitz session expired before completing authorization, start over by clicking "Connect" again on the Qonto provider
+- A new callback URL will be generated
+- You'll need to update the redirect URI in your Qonto OAuth2 application
 
 ### Webhooks Not Receiving Events
 

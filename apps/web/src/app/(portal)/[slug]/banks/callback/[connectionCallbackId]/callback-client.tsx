@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
@@ -37,54 +37,30 @@ function LoadingSpinner() {
   );
 }
 
-/**
- * Parse state param to extract slug
- * Format: providerId:slug:randomId
- */
-function parseState(
-  state: string,
-): { connectionId: string; slug: string; randomId: string } | null {
-  const parts = state.split(":");
-  if (parts.length < 3) return null;
-  return {
-    connectionId: parts[0] ?? "",
-    slug: parts[1] ?? "",
-    randomId: parts[2] ?? "",
-  };
-}
-
-interface BankCallbackClientProps {
-  providerId: string;
+interface CallbackClientProps {
+  slug: string;
+  connectionCallbackId: string; // This comes from URL params, but is actually the connectionId
   code?: string;
-  state?: string;
+  error?: string;
 }
 
-export function BankCallbackClient({
-  providerId,
+export function CallbackClient({
+  slug,
+  connectionCallbackId: callbackId,
   code,
-  state,
-}: BankCallbackClientProps) {
+  error: authError,
+}: CallbackClientProps) {
   const router = useRouter();
   const trpc = useTRPC();
   const [isRetrying, setIsRetrying] = useState(false);
   const hasCalledRef = useRef(false);
 
-  // Parse slug from state
-  const parsedState = useMemo(() => {
-    if (!state) return null;
-    return parseState(state);
-  }, [state]);
-
-  const connectionId = parsedState?.connectionId;
-  const slug = parsedState?.slug;
-  const randomId = parsedState?.randomId;
-
-  // Exchange Code
-  const exchangeCode = useMutation(
-    trpc.organization.completeBankConnection.mutationOptions({
+  // Complete OAuth mutation
+  const completeOAuth = useMutation(
+    trpc.organization.completeBankOAuth.mutationOptions({
       onSuccess: (data) => {
-        toast.success("Code exchanged successfully");
-        router.push(`/${data.slug}/banks/accounts/${data.connectionId}`);
+        toast.success("Bank connected successfully");
+        router.push(`/${slug}/banks/accounts/${data.connectionId}`);
       },
       onError: (error) => {
         toast.error(error.message);
@@ -94,28 +70,45 @@ export function BankCallbackClient({
   );
 
   useEffect(() => {
-    if (
-      code &&
-      providerId &&
-      connectionId &&
-      randomId &&
-      slug &&
-      !hasCalledRef.current
-    ) {
+    if (code && callbackId && !hasCalledRef.current) {
       hasCalledRef.current = true;
-      const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
-      exchangeCode.mutate({
-        connectionId,
+      completeOAuth.mutate({
         slug,
+        callbackId,
         code,
-        randomId,
-        redirectUri,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, providerId, connectionId, randomId, slug]);
+  }, [code, callbackId, slug]);
 
-  if (!code || !state || !connectionId || !randomId) {
+  // Handle OAuth error from bank
+  if (authError) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Authorization Failed</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              The bank declined the authorization request. This might be because
+              the request was cancelled or the authorization expired.
+            </p>
+            <p className="text-muted-foreground text-sm">Error: {authError}</p>
+            <Button
+              onClick={() => router.push(`/${slug}/banks/connect`)}
+              className="w-full"
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Missing required parameters
+  if (!code || !callbackId) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="w-full max-w-md">
@@ -127,8 +120,11 @@ export function BankCallbackClient({
               The callback request is missing required parameters. Please try
               connecting your bank account again.
             </p>
-            <Button onClick={() => router.push("/")} className="w-full">
-              Go Home
+            <Button
+              onClick={() => router.push(`/${slug}/banks/connect`)}
+              className="w-full"
+            >
+              Go Back
             </Button>
           </CardContent>
         </Card>
@@ -136,7 +132,8 @@ export function BankCallbackClient({
     );
   }
 
-  if (exchangeCode.isError) {
+  // Handle error state
+  if (completeOAuth.isError) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="w-full max-w-md">
@@ -151,16 +148,11 @@ export function BankCallbackClient({
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  if (!code || !state || !connectionId || !randomId || !slug)
-                    return;
                   setIsRetrying(true);
-                  const redirectUri = `${window.location.origin}/banks/callback/${providerId}`;
-                  exchangeCode.mutate({
-                    connectionId,
+                  completeOAuth.mutate({
                     slug,
-                    randomId,
+                    callbackId,
                     code,
-                    redirectUri,
                   });
                 }}
                 disabled={isRetrying}
@@ -182,6 +174,7 @@ export function BankCallbackClient({
     );
   }
 
+  // Loading state
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <Card className="w-full max-w-md">

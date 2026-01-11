@@ -143,8 +143,11 @@ model Invitation {
 }
 
 enum BankConnectionStatus {
-  CONNECTED
-  DISCONNECTED
+  PENDING_CONFIG // Created, awaiting provider config
+  PENDING_OAUTH // Config saved, awaiting OAuth completion
+  CONNECTED // OAuth complete, credentials stored
+  DISCONNECTED // Manually disconnected
+  EXPIRED // Auto-expired (never completed)
 }
 
 model OrganizationBankConnection {
@@ -155,20 +158,25 @@ model OrganizationBankConnection {
   providerId     String               @db.VarChar(50)
   // Custom name for this connection (optional, defaults to provider name)
   name           String?              @db.VarChar(255)
+  callbackId     String?              @db.VarChar(255)
   // Encrypted provider configuration (clientId, clientSecret, URLs, etc.)
-  providerConfig String               @db.Text
+  // Nullable during PENDING_CONFIG state before user submits configuration
+  providerConfig String?              @db.Text
   // Encrypted OAuth credentials (accessToken, refreshToken, expiresAt)
   credentials    String?              @db.Text
+  // OAuth callback URL used during connection setup (needed for token refresh)
+  callbackUrl    String?              @db.Text
   isSandbox      Boolean              @default(false)
   webhookUrl     String?              @db.Text
   webhookSecret  String?              @db.Text
-  status         BankConnectionStatus @default(CONNECTED)
+  status         BankConnectionStatus @default(PENDING_CONFIG)
   expiresAt      DateTime?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
   bankAccounts BankAccount[]
 
+  @@unique([callbackId, organizationId])
   @@index([organizationId])
   @@index([providerId])
   @@map("organization_bank_account")
