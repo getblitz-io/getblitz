@@ -479,6 +479,33 @@ const messages = {
     providerConfigured: "Provider configured",
     configurationUpdated: "Configuration updated",
   },
+  BankCallbackPage: {
+    title: "Completing Connection",
+    description:
+      "Exchanging authorization code and setting up your bank connection...",
+    success: "Bank connected successfully",
+    authFailed: {
+      title: "Authorization Failed",
+      description:
+        "The bank declined the authorization request. This might be because the request was cancelled or the authorization expired.",
+      error: "Error: {error}",
+    },
+    invalidRequest: {
+      title: "Invalid Request",
+      description:
+        "The callback request is missing required parameters. Please try connecting your bank account again.",
+    },
+    connectionError: {
+      title: "Connection Error",
+      description:
+        "We couldn't complete the bank connection. This might be due to a temporary issue or an expired authorization.",
+      retrying: "Retrying...",
+    },
+    buttons: {
+      tryAgain: "Try Again",
+      goBack: "Go Back",
+    },
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));

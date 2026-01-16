@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 
 import { CallbackClient } from "./callback-client";
 
@@ -13,9 +14,10 @@ export default async function BankCallbackPage({
 }: CallbackPageProps) {
   const { slug, connectionCallbackId } = await params;
   const { code, error } = await searchParams;
+  const t = await getTranslations("Common.buttons");
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{t("loading")}</div>}>
       <CallbackClient
         slug={slug}
         connectionCallbackId={connectionCallbackId}

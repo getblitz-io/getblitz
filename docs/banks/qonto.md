@@ -73,7 +73,7 @@ Before creating OAuth2 credentials in Qonto, start the configuration in GetBlitz
 2. Select **Qonto** as the provider
 3. **Copy the Callback URL** displayed in Step 1 of the configuration page
    - This URL is unique to your connection attempt and looks like:
-   - `https://your-getblitz.com/banks/callback/your-org.abc123def456`
+   - `https://your-getblitz.com/[orgId]/banks/callback/[connectionId]` e.g. `https://your-getblitz.com/acme/banks/callback/abc123def456`
 
 > **Important**: Keep this page open - you'll need it after creating OAuth2 credentials in Qonto.
 

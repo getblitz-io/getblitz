@@ -492,6 +492,33 @@ const messages = {
     providerConfigured: "Anbieter konfiguriert",
     configurationUpdated: "Konfiguration aktualisiert",
   },
+  BankCallbackPage: {
+    title: "Vervollständigung der Verbindung",
+    description:
+      "Autorisierungscode wird ausgetauscht und Ihre Bankverbindung eingerichtet...",
+    success: "Bank erfolgreich verbunden",
+    authFailed: {
+      title: "Autorisierung fehlgeschlagen",
+      description:
+        "Die Bank hat die Autorisierungsanfrage abgelehnt. Dies kann daran liegen, dass die Anfrage abgebrochen wurde oder die Autorisierung abgelaufen ist.",
+      error: "Fehler: {error}",
+    },
+    invalidRequest: {
+      title: "Ungültige Anfrage",
+      description:
+        "Der Callback-Anfrage fehlen erforderliche Parameter. Bitte versuchen Sie erneut, Ihr Bankkonto zu verbinden.",
+    },
+    connectionError: {
+      title: "Verbindungsfehler",
+      description:
+        "Wir konnten die Bankverbindung nicht abschließen. Dies kann an einem vorübergehenden Problem oder einer abgelaufenen Autorisierung liegen.",
+      retrying: "Wiederholung...",
+    },
+    buttons: {
+      tryAgain: "Erneut versuchen",
+      goBack: "Zurück",
+    },
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));

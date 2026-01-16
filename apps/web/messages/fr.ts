@@ -488,6 +488,33 @@ const messages = {
     providerConfigured: "Fournisseur configuré",
     configurationUpdated: "Configuration mise à jour",
   },
+  BankCallbackPage: {
+    title: "Finalisation de la connexion",
+    description:
+      "Échange du code d'autorisation et configuration de votre connexion bancaire...",
+    success: "Banque connectée avec succès",
+    authFailed: {
+      title: "Échec de l'autorisation",
+      description:
+        "La banque a décliné la demande d'autorisation. Cela peut être dû à l'annulation de la demande ou à l'expiration de l'autorisation.",
+      error: "Erreur : {error}",
+    },
+    invalidRequest: {
+      title: "Requête invalide",
+      description:
+        "La requête de rappel manque de paramètres requis. Veuillez essayer de reconnecter votre compte bancaire.",
+    },
+    connectionError: {
+      title: "Erreur de connexion",
+      description:
+        "Nous n'avons pas pu terminer la connexion bancaire. Cela peut être dû à un problème temporaire ou à une autorisation expirée.",
+      retrying: "Nouvelle tentative...",
+    },
+    buttons: {
+      tryAgain: "Réessayer",
+      goBack: "Retour",
+    },
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));
