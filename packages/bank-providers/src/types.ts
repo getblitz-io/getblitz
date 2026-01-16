@@ -96,9 +96,11 @@ export interface BankProvider {
   verifyAndParseWebhook({
     request,
     secret,
+    credentials,
   }: {
     request: Request;
     secret?: string;
+    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult>;
 
   // Auth flows (for merchant setup)
@@ -149,4 +151,22 @@ export interface BankProvider {
 
   // Helper to check if provider supports token refresh
   supportsTokenRefresh(): boolean;
+
+  // Helper to check if provider supports sandbox simulation
+  supportsSandboxSimulation(): boolean;
+
+  // Sandbox simulation (for providers that support it)
+  simulateSandboxPayment?({
+    credentials,
+    accountId,
+    amount,
+    currency,
+    reference,
+  }: {
+    credentials: BankCredentials;
+    accountId: string;
+    amount: number;
+    currency: string;
+    reference: string;
+  }): Promise<{ success: boolean; error?: string }>;
 }

@@ -5,6 +5,7 @@ import type {
   CreateChallengeInput,
   CreateChallengeResult,
   IBankAccountRepository,
+  ICredentialManagerService,
   IPaymentSessionRepository,
   IPaymentSessionService,
   IPaymentSettlementService,
@@ -20,6 +21,7 @@ export class PaymentSessionService implements IPaymentSessionService {
     private readonly paymentSessionRepository: IPaymentSessionRepository,
     private readonly bankAccountRepository: IBankAccountRepository,
     private readonly paymentSettlementService: IPaymentSettlementService,
+    private readonly credentialManagerService: ICredentialManagerService,
   ) {}
 
   /**
@@ -199,6 +201,7 @@ export class PaymentSessionService implements IPaymentSessionService {
 
   /**
    * Simulate a payment (for testing/development)
+   * For Revolut in sandbox mode, uses Revolut's sandbox API for realistic testing.
    */
   async simulatePayment({
     sessionId,
@@ -221,7 +224,62 @@ export class PaymentSessionService implements IPaymentSessionService {
       return { success: false, error: "Payment session expired" };
     }
 
-    // Simulate payment settlement
+    // Check if provider supports sandbox simulation
+    const connection = session.bankAccount.organizationBankConnection;
+    const providerId = connection.providerId;
+
+    // Try sandbox simulation for providers that support it
+    if (connection.providerConfig && connection.credentials) {
+      const providerConfig =
+        this.credentialManagerService.decryptProviderConfig(
+          connection.providerConfig,
+        );
+      const provider = ProviderRegistry.createProvider(
+        providerId,
+        providerConfig,
+      );
+
+      if (
+        provider.supportsSandboxSimulation() &&
+        provider.simulateSandboxPayment
+      ) {
+        // Get valid credentials (may refresh if needed)
+        const { credentials } =
+          await this.credentialManagerService.getValidCredentials({
+            connectionId: connection.id,
+          });
+
+        // Use the external account ID from the bank account
+        const accountId = session.bankAccount.externalAccountId;
+        const amount = session.amountCents / 100; // Convert cents to major units
+
+        const sandboxResult = await provider.simulateSandboxPayment({
+          credentials,
+          accountId,
+          amount,
+          currency: session.currency,
+          reference: session.referenceId,
+        });
+
+        if (!sandboxResult.success) {
+          return {
+            success: false,
+            error: sandboxResult.error ?? "Sandbox simulation failed",
+          };
+        }
+
+        // For sandbox simulation, the webhook will handle the actual settlement
+        // Return success - the payment will be marked as paid when the webhook arrives
+        return {
+          success: true,
+          message:
+            "Payment simulated via provider sandbox API. Awaiting webhook confirmation.",
+          sessionId: session.id,
+        };
+      }
+    }
+
+    // Fallback: Direct settlement simulation for providers without sandbox API
     const result = await this.paymentSettlementService.settle({
       input: {
         referenceId: session.referenceId,

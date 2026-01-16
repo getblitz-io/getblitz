@@ -34,9 +34,11 @@ export abstract class BaseBankProvider implements BankProvider {
   abstract verifyAndParseWebhook({
     request,
     secret,
+    credentials,
   }: {
     request: Request;
     secret?: string;
+    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult>;
 
   abstract validateAccount({
@@ -100,5 +102,9 @@ export abstract class BaseBankProvider implements BankProvider {
 
   supportsTokenRefresh(): boolean {
     return this.authType === "oauth2";
+  }
+
+  supportsSandboxSimulation(): boolean {
+    return false;
   }
 }

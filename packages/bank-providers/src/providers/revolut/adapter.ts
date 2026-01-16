@@ -11,33 +11,67 @@ import type {
 import { BaseBankProvider } from "../../base-provider";
 
 /**
- * Revolut webhook payload schema
- * Based on Revolut Business API webhook format
+ * Revolut transaction leg schema (used in full transaction responses)
  */
-export const RevolutWebhookPayloadSchema = z.object({
-  event: z.string(),
+const RevolutTransactionLegSchema = z.object({
+  leg_id: z.string().optional(),
+  amount: z.number(),
+  currency: z.string(),
+  description: z.string().optional(),
+  account_id: z.string().optional(),
+});
+
+/**
+ * Full Revolut transaction schema (from API response)
+ * @see https://developer.revolut.com/docs/business/get-transaction
+ */
+const RevolutTransactionSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  state: z.string(),
+  request_id: z.string().optional(),
+  created_at: z.string().optional(),
+  completed_at: z.string().optional(),
+  reference: z.string().optional(),
+  legs: z.array(RevolutTransactionLegSchema).optional(),
+});
+
+type RevolutTransaction = z.infer<typeof RevolutTransactionSchema>;
+
+/**
+ * TransactionCreated webhook payload - contains full transaction data
+ */
+const TransactionCreatedPayloadSchema = z.object({
+  event: z.literal("TransactionCreated"),
+  timestamp: z.string(),
+  data: RevolutTransactionSchema,
+});
+
+/**
+ * TransactionStateChanged webhook payload - contains minimal data
+ * Requires API call to fetch full transaction details
+ */
+const TransactionStateChangedPayloadSchema = z.object({
+  event: z.literal("TransactionStateChanged"),
   timestamp: z.string(),
   data: z.object({
     id: z.string(),
-    type: z.string().optional(),
-    state: z.string().optional(),
     request_id: z.string().optional(),
-    created_at: z.string().optional(),
-    completed_at: z.string().optional(),
-    reference: z.string().optional(),
-    legs: z
-      .array(
-        z.object({
-          leg_id: z.string().optional(),
-          amount: z.number(),
-          currency: z.string(),
-          description: z.string().optional(),
-          account_id: z.string().optional(),
-        }),
-      )
-      .optional(),
+    old_state: z.string(),
+    new_state: z.string(),
   }),
 });
+
+/**
+ * Combined Revolut webhook payload schema
+ * Handles both TransactionCreated (full) and TransactionStateChanged (minimal) events
+ */
+export const RevolutWebhookPayloadSchema = z.discriminatedUnion("event", [
+  TransactionCreatedPayloadSchema,
+  TransactionStateChangedPayloadSchema,
+]);
+
+type RevolutWebhookPayload = z.infer<typeof RevolutWebhookPayloadSchema>;
 
 /**
  * Revolut provider configuration
@@ -245,12 +279,65 @@ export class RevolutProvider extends BaseBankProvider {
     }
   }
 
+  /**
+   * Fetch a transaction by ID from the Revolut API.
+   * Used when receiving TransactionStateChanged webhooks that don't include full transaction data.
+   * @see https://developer.revolut.com/docs/business/get-transaction
+   */
+  private async getTransaction({
+    credentials,
+    transactionId,
+    idType = "transaction",
+  }: {
+    credentials: BankCredentials;
+    transactionId: string;
+    idType: "transaction" | "request";
+  }): Promise<RevolutTransaction | null> {
+    const url =
+      idType === "transaction"
+        ? `/api/1.0/transaction/${transactionId}`
+        : `/api/1.0/request/${transactionId}?id_type=request`;
+    try {
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        headers: {
+          Authorization: `Bearer ${credentials.accessToken}`,
+        },
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        console.error(
+          `Failed to fetch Revolut transaction ${transactionId}: ${response.status} ${body}`,
+        );
+        return null;
+      }
+
+      const data = await response.json();
+      const parsed = RevolutTransactionSchema.safeParse(data);
+
+      if (!parsed.success) {
+        console.error(
+          `Invalid Revolut transaction response: ${parsed.error.message}`,
+        );
+        return null;
+      }
+
+      return parsed.data;
+    } catch (error) {
+      console.error("Error fetching Revolut transaction:", error);
+      return null;
+    }
+  }
+
   async verifyAndParseWebhook({
     request,
     secret,
+    credentials,
   }: {
     request: Request;
     secret?: string;
+    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult> {
     const rawBody = await request.text();
 
@@ -270,10 +357,11 @@ export class RevolutProvider extends BaseBankProvider {
       }
 
       // Validate timestamp (5 minute tolerance)
-      const webhookTime = new Date(timestampHeader).getTime();
+      // Revolut-Request-Timestamp is Unix timestamp in milliseconds
+      const webhookTime = parseInt(timestampHeader, 10);
       const now = Date.now();
-      if (Math.abs(now - webhookTime) > 5 * 60 * 1000) {
-        return { valid: false, error: "Webhook timestamp too old" };
+      if (isNaN(webhookTime) || Math.abs(now - webhookTime) > 5 * 60 * 1000) {
+        return { valid: false, error: "Webhook timestamp too old or invalid" };
       }
 
       // Parse signatures (format: v1=sig1,v1=sig2)
@@ -285,8 +373,9 @@ export class RevolutProvider extends BaseBankProvider {
         })
         .filter(Boolean);
 
-      // Compute expected signature
-      const signedPayload = `${timestampHeader}.${rawBody}`;
+      // Compute expected signature per Revolut docs:
+      // payload_to_sign = v1.{timestamp}.{raw_payload}
+      const signedPayload = `v1.${timestampHeader}.${rawBody}`;
       const expectedSignature = createHmac("sha256", secret)
         .update(signedPayload)
         .digest("hex");
@@ -308,13 +397,29 @@ export class RevolutProvider extends BaseBankProvider {
         };
       }
 
-      const { data } = parsed.data;
+      // 1. Resolve full transaction
+      const { transaction, error: resolveError } =
+        await this.resolveWebhookTransaction(parsed.data, credentials);
 
-      // Extract reference from request_id or reference field
-      const referenceId =
-        this.extractReferenceId(data.reference) ??
-        this.extractReferenceId(data.request_id);
+      if (resolveError || !transaction) {
+        return {
+          valid: false,
+          error: resolveError ?? "Failed to resolve transaction",
+        };
+      }
 
+      // 2. Validate transaction structure
+      const firstLeg = transaction.legs?.[0];
+      const validation = this.validateWebhookTransaction(transaction);
+      if (!validation.valid || !firstLeg) {
+        return {
+          valid: false,
+          error: validation.error ?? "Invalid transaction",
+        };
+      }
+
+      // 3. Extract reference from description field
+      const referenceId = this.extractReferenceId(firstLeg.description);
       if (!referenceId) {
         return {
           valid: false,
@@ -322,15 +427,13 @@ export class RevolutProvider extends BaseBankProvider {
         };
       }
 
-      // Get amount from first leg if available
-      const firstLeg = data.legs?.[0];
-      const amountCents = firstLeg ? Math.round(firstLeg.amount * 100) : 0;
-      const currency = firstLeg?.currency ?? "EUR";
+      const amountCents = Math.round(firstLeg.amount * 100);
+      const currency = firstLeg.currency;
 
       return {
         valid: true,
         referenceId,
-        txHash: data.id,
+        txHash: transaction.id,
         amountCents,
         currency,
         rawPayload: payload,
@@ -341,6 +444,78 @@ export class RevolutProvider extends BaseBankProvider {
         error: "Failed to parse Revolut webhook payload",
       };
     }
+  }
+
+  /**
+   * Resolves the full transaction data from a webhook payload.
+   * If the event is TransactionCreated, it already contains the data.
+   * If it's TransactionStateChanged, we fetch the full transaction from the API.
+   */
+  private async resolveWebhookTransaction(
+    webhookData: RevolutWebhookPayload,
+    credentials?: BankCredentials,
+  ): Promise<{ transaction?: RevolutTransaction; error?: string }> {
+    if (webhookData.event === "TransactionCreated") {
+      if (webhookData.data.state !== "completed") {
+        return {
+          error: `Transaction not completed yet (state: ${webhookData.data.state})`,
+        };
+      }
+      return { transaction: webhookData.data };
+    }
+
+    // TransactionStateChanged - minimal payload, need to fetch full transaction
+    if (webhookData.data.new_state !== "completed") {
+      return {
+        error: `Transaction state changed to ${webhookData.data.new_state}, not completed`,
+      };
+    }
+
+    // Need credentials to fetch full transaction
+    if (!credentials?.accessToken) {
+      return {
+        error:
+          "No access token available to fetch transaction details for TransactionStateChanged event",
+      };
+    }
+
+    const fetchedTransaction = await this.getTransaction({
+      credentials,
+      transactionId: webhookData.data.id,
+      idType: "transaction",
+    });
+
+    if (!fetchedTransaction) {
+      return {
+        error: `Failed to fetch transaction ${webhookData.data.id} from Revolut API`,
+      };
+    }
+
+    return { transaction: fetchedTransaction };
+  }
+
+  /**
+   * Validates that the transaction is a topup and has the expected structure.
+   */
+  private validateWebhookTransaction(transaction: RevolutTransaction): {
+    valid: boolean;
+    error?: string;
+  } {
+    if (transaction.type !== "topup") {
+      return {
+        valid: false,
+        error: `Invalid Revolut transaction type: ${transaction.type}. Expected topup.`,
+      };
+    }
+
+    if (transaction.legs?.length !== 1) {
+      return {
+        valid: false,
+        error: `Invalid Revolut transaction legs length: ${transaction.legs?.length ?? 0}. Expected 1.`,
+      };
+    }
+
+    return { valid: true };
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -577,6 +752,73 @@ export class RevolutProvider extends BaseBankProvider {
 
   override supportsTokenRefresh(): boolean {
     return true;
+  }
+
+  override supportsSandboxSimulation(): boolean {
+    return this.sandboxMode;
+  }
+
+  /**
+   * Simulate a payment in sandbox mode using Revolut's sandbox top-up API.
+   * This creates an incoming transaction with the specified reference,
+   * which will trigger Revolut's webhook for realistic end-to-end testing.
+   *
+   * @see https://developer.revolut.com/docs/guides/manage-accounts/api-usage-and-testing/test-flows-with-simulations
+   */
+  async simulateSandboxPayment({
+    credentials,
+    accountId,
+    amount,
+    currency,
+    reference,
+  }: {
+    credentials: BankCredentials;
+    accountId: string;
+    amount: number; // in major units (e.g., 10.50)
+    currency: string;
+    reference: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    if (!this.sandboxMode) {
+      return {
+        success: false,
+        error: "Sandbox simulation only available in sandbox mode",
+      };
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/1.0/sandbox/topup`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${credentials.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          account_id: accountId,
+          amount,
+          currency,
+          reference,
+          state: "completed",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return {
+          success: false,
+          error: `Revolut sandbox top-up failed: ${errorText}`,
+        };
+      }
+
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error:
+          err instanceof Error
+            ? err.message
+            : "Unknown error during sandbox simulation",
+      };
+    }
   }
 
   private extractReferenceId(text: string | undefined): string | null {
