@@ -207,7 +207,7 @@ Bank providers implement a standard interface in `packages/bank-providers`:
 interface BankProvider {
   id: string;
   displayName: string;
-  authType: "oauth2" | "api_key" | "certificate";
+  authType: "oauth2" | "api_key" | "certificate" | "none";
   isTestProvider: boolean;
 
   getSetupGuide(): string | null;
