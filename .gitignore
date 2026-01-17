@@ -53,3 +53,7 @@ dist/
 
 # tanstack
 .tanstack
+
+.cloudflared
+
+tmp

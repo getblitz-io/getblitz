@@ -2,6 +2,8 @@
  * Organization-related types for frontend display
  */
 
+import type { BankConnectionStatus } from "@getblitz/database";
+
 /**
  * Provider with connection status for an organization.
  */
@@ -27,6 +29,7 @@ export interface BankConnectionWithProvider {
   connectionId: string;
   providerId: string;
   hasCredentials: boolean;
+  status: BankConnectionStatus;
   webhookUrl: string | null;
   webhookSecret: string | null;
   createdAt: Date;

@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -6,8 +7,10 @@ import type {
   ProviderConfigSchema,
 } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
+import { BankConnectionStatus } from "@getblitz/database";
 
 import type { BankConnectionWithProvider } from "../interfaces";
+import { env } from "../env";
 import { ConflictError, ForbiddenError, NotFoundError } from "../interfaces";
 import {
   createTRPCRouter,
@@ -128,9 +131,13 @@ export const organizationRouter = createTRPCRouter({
               message: "Connection not found",
             });
           }
-          defaultConfig = ctx.services.credentialManager.decryptProviderConfig(
-            connection.providerConfig,
-          );
+          // Only decrypt if providerConfig exists (might be null for PENDING_CONFIG)
+          if (connection.providerConfig) {
+            defaultConfig =
+              ctx.services.credentialManager.decryptProviderConfig(
+                connection.providerConfig,
+              );
+          }
         }
 
         return {
@@ -141,23 +148,27 @@ export const organizationRouter = createTRPCRouter({
       },
     ),
 
-  // Configure a provider for an organization (step 1: save config before OAuth)
-  configureProvider: organizationProcedure
+  // Update an existing bank connection's config (for reconfiguring)
+  updateBankConnectionConfig: organizationProcedure
     .input(
       z.object({
-        slug: z.string(),
-        providerId: z.string(),
-        providerConfig: z.record(z.string(), z.unknown()), // Dynamic config based on provider
-        connectionId: z.string().optional(), // Optional: if provided, update existing connection
-        name: z.string().optional(), // Optional: custom name for the connection
+        connectionId: z.string(),
+        providerConfig: z.record(z.string(), z.unknown()),
+        name: z.string().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const provider = ProviderRegistry.getProvider(input.providerId);
-      if (!provider) {
+      const connection = await ctx.prisma.organizationBankConnection.findFirst({
+        where: {
+          id: input.connectionId,
+          organizationId: ctx.organization.id,
+        },
+      });
+
+      if (!connection) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid provider",
+          code: "NOT_FOUND",
+          message: "Connection not found",
         });
       }
 
@@ -167,186 +178,15 @@ export const organizationRouter = createTRPCRouter({
           input.providerConfig as ProviderConfig,
         );
 
-      // If connectionId is provided, update existing connection
-      if (input.connectionId) {
-        const existingConnection =
-          await ctx.prisma.organizationBankConnection.findUnique({
-            where: { id: input.connectionId },
-          });
-
-        if (!existingConnection) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Connection not found",
-          });
-        }
-
-        // Verify connection belongs to the organization
-        if (existingConnection.organizationId !== ctx.organization.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
-        }
-
-        // Update existing connection's config and optionally name
-        const updateData: { providerConfig: string; name?: string } = {
-          providerConfig: encryptedConfig,
-        };
-        if (input.name !== undefined) {
-          updateData.name = input.name;
-        }
-
-        await ctx.prisma.organizationBankConnection.update({
-          where: { id: existingConnection.id },
-          data: updateData,
-        });
-        return { connectionId: existingConnection.id, updated: true };
-      }
-
-      // Create new connection with null credentials (will be filled after OAuth)
-      // Note: We now allow multiple connections per provider
-      const connection = await ctx.prisma.organizationBankConnection.create({
+      await ctx.prisma.organizationBankConnection.update({
+        where: { id: connection.id },
         data: {
-          organizationId: ctx.organization.id,
-          providerId: input.providerId,
           providerConfig: encryptedConfig,
-          credentials: null,
-          webhookUrl: null,
-          webhookSecret: null,
-          name: input.name ?? null,
+          ...(input.name !== undefined && { name: input.name }),
         },
       });
 
-      return { connectionId: connection.id, updated: false };
-    }),
-
-  // Get bank auth URL (for OAuth providers) - now uses saved provider config
-  getBankAuthUrl: organizationProcedure
-    .input(
-      z.object({
-        connectionId: z.string(),
-        redirectUri: z.url(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      // Find the connection to get the provider config
-      const connection = await ctx.prisma.organizationBankConnection.findFirst({
-        where: {
-          id: input.connectionId,
-        },
-      });
-
-      if (!connection) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Provider not configured. Please configure the provider first.",
-        });
-      }
-
-      // Decrypt the provider config and create a configured provider instance
-      const providerConfig =
-        ctx.services.credentialManager.decryptProviderConfig(
-          connection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        connection.providerId,
-        providerConfig,
-      );
-
-      if (!provider.getAuthUrl) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provider does not support OAuth",
-        });
-      }
-
-      // Encode providerId and slug into state for callback identification
-      const state = `${connection.id}:${ctx.organization.slug}:${Math.random().toString(36).substring(7)}`;
-
-      return {
-        url: provider.getAuthUrl({ redirectUri: input.redirectUri, state }),
-        state,
-      };
-    }),
-
-  // Exchange bank OAuth code (uses previously configured provider config)
-  completeBankConnection: organizationProcedure
-    .input(
-      z.object({
-        connectionId: z.string(),
-        randomId: z.string(),
-        code: z.string(),
-        redirectUri: z.url(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      // Find the existing connection with provider config
-      const existingConnection =
-        await ctx.prisma.organizationBankConnection.findFirst({
-          where: {
-            id: input.connectionId,
-            organizationId: ctx.organization.id,
-          },
-        });
-
-      if (!existingConnection) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Provider not configured. Please configure the provider first.",
-        });
-      }
-
-      // Decrypt provider config and create configured provider instance
-      const providerConfig =
-        ctx.services.credentialManager.decryptProviderConfig(
-          existingConnection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        existingConnection.providerId,
-        providerConfig,
-      );
-
-      if (!provider.exchangeCode) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provider does not support OAuth",
-        });
-      }
-
-      try {
-        // Exchange code using configured provider
-        const credentials = await provider.exchangeCode({
-          code: input.code,
-          redirectUri: input.redirectUri,
-        });
-
-        // Encrypt and store credentials
-        const encryptedCredentials =
-          ctx.services.credentialManager.encryptCredentials(credentials);
-
-        await ctx.prisma.organizationBankConnection.update({
-          where: { id: existingConnection.id },
-          data: { credentials: encryptedCredentials },
-        });
-
-        // Attempt webhook creation - non-fatal if it fails
-        const webhookResult = await ctx.services.bankConnection.setupWebhook({
-          connectionId: existingConnection.id,
-          providerId: existingConnection.providerId,
-          credentials,
-        });
-
-        return {
-          connectionId: existingConnection.id,
-          webhookError: webhookResult.error,
-          slug: ctx.organization.slug,
-        };
-      } catch (error: unknown) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
+      return { connectionId: connection.id };
     }),
 
   // Setup or retry webhook for an existing bank connection
@@ -408,6 +248,13 @@ export const organizationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Organization bank connection not found",
+        });
+      }
+
+      if (!connection.providerConfig) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Connection is not fully configured",
         });
       }
 
@@ -501,6 +348,7 @@ export const organizationRouter = createTRPCRouter({
             connectionId: connection.id,
             providerId: connection.providerId,
             hasCredentials: !!connection.credentials,
+            status: connection.status,
             webhookUrl: connection.webhookUrl,
             webhookSecret: connection.webhookSecret,
             createdAt: connection.createdAt,
@@ -517,6 +365,7 @@ export const organizationRouter = createTRPCRouter({
           connectionId: connection.id,
           providerId: connection.providerId,
           hasCredentials: !!connection.credentials,
+          status: connection.status,
           webhookUrl: connection.webhookUrl,
           webhookSecret: connection.webhookSecret,
           createdAt: connection.createdAt,
@@ -733,4 +582,327 @@ export const organizationRouter = createTRPCRouter({
       handleServiceError(error);
     }
   }),
+
+  // ============================================================================
+  // OAUTH FLOW ROUTES (using database for state management)
+  // ============================================================================
+
+  /**
+   * Step 1: Initialize a bank connection
+   * Creates a DB record with PENDING_CONFIG status and unique callback URL
+   */
+  initBankConnection: organizationProcedure
+    .input(
+      z.object({
+        providerId: z.string(),
+        connectionName: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const provider = ProviderRegistry.getProvider(input.providerId);
+      if (!provider) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Unknown provider: ${input.providerId}`,
+        });
+      }
+
+      // Generate unique callback ID
+      const connectionCallbackId = randomBytes(16).toString("hex");
+      const callbackUrl = `${env.NEXT_PUBLIC_APP_URL}/${ctx.organization.slug}/banks/callback/${connectionCallbackId}`;
+
+      // Create pending bank connection in database
+      const connection = await ctx.prisma.organizationBankConnection.create({
+        data: {
+          organizationId: ctx.organization.id,
+          providerId: input.providerId,
+          callbackId: connectionCallbackId,
+          callbackUrl,
+          name: input.connectionName ?? null,
+          status: BankConnectionStatus.PENDING_CONFIG,
+          // providerConfig is null until step 2 (saveBankConfig)
+        },
+      });
+
+      return {
+        connectionId: connection.id,
+        callbackUrl,
+        oauthFlowType: provider.oauthFlowType,
+        setupGuideUrl: provider.getSetupGuide(),
+      };
+    }),
+
+  /**
+   * Step 2: Save provider configuration for a pending connection
+   */
+  saveBankConfig: organizationProcedure
+    .input(
+      z.object({
+        connectionId: z.string(),
+        providerConfig: z.record(z.string(), z.unknown()),
+        connectionName: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Find the pending connection
+      const connection = await ctx.prisma.organizationBankConnection.findUnique(
+        {
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
+        },
+      );
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Pending connection not found",
+        });
+      }
+
+      // Verify the connection is in pending state
+      if (
+        connection.status !== BankConnectionStatus.PENDING_CONFIG &&
+        connection.status !== BankConnectionStatus.PENDING_OAUTH
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Connection is not in a pending state",
+        });
+      }
+
+      // Encrypt provider config
+      const encryptedConfig =
+        ctx.services.credentialManager.encryptProviderConfig(
+          input.providerConfig as ProviderConfig,
+        );
+
+      // Update connection with config and advance status
+      await ctx.prisma.organizationBankConnection.update({
+        where: { id: connection.id },
+        data: {
+          providerConfig: encryptedConfig,
+          name: input.connectionName ?? connection.name,
+          status: BankConnectionStatus.PENDING_OAUTH,
+        },
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * Step 3: Get bank auth URL (for redirect flow providers)
+   */
+  getBankAuthUrl: organizationProcedure
+    .input(
+      z.object({
+        connectionId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Find the pending connection
+      const connection = await ctx.prisma.organizationBankConnection.findUnique(
+        {
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
+        },
+      );
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Connection not found",
+        });
+      }
+
+      if (!connection.providerConfig) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider configuration not yet saved",
+        });
+      }
+
+      if (!connection.callbackUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Callback URL not configured",
+        });
+      }
+
+      // Decrypt provider config and create provider instance
+      const providerConfig =
+        ctx.services.credentialManager.decryptProviderConfig(
+          connection.providerConfig,
+        );
+      const provider = ProviderRegistry.createProvider(
+        connection.providerId,
+        providerConfig,
+      );
+
+      if (!provider.getAuthUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider does not support OAuth redirect flow",
+        });
+      }
+
+      // Use connectionId as state for verification in callback
+      const authUrl = provider.getAuthUrl({
+        redirectUri: connection.callbackUrl,
+        state: connection.id,
+      });
+
+      return { authUrl };
+    }),
+
+  /**
+   * Step 4: Complete OAuth and update the bank connection
+   * Called from the callback page after bank redirects back
+   * Uses organizationProcedure for security (validates org membership)
+   */
+  completeBankOAuth: organizationProcedure
+    .input(
+      z.object({
+        callbackId: z.string(),
+        code: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Find the pending connection
+      const connection = await ctx.prisma.organizationBankConnection.findUnique(
+        {
+          where: {
+            callbackId_organizationId: {
+              callbackId: input.callbackId,
+              organizationId: ctx.organization.id,
+            },
+          },
+        },
+      );
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Connection not found",
+        });
+      }
+
+      if (!connection.providerConfig) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider configuration not saved",
+        });
+      }
+
+      if (!connection.callbackUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Callback URL not configured",
+        });
+      }
+
+      // Decrypt provider config and create provider instance
+      const providerConfig =
+        ctx.services.credentialManager.decryptProviderConfig(
+          connection.providerConfig,
+        );
+      const provider = ProviderRegistry.createProvider(
+        connection.providerId,
+        providerConfig,
+      );
+
+      if (!provider.exchangeCode) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider does not support OAuth",
+        });
+      }
+
+      try {
+        // Exchange code for credentials
+        const credentials = await provider.exchangeCode({
+          code: input.code,
+          redirectUri: connection.callbackUrl,
+        });
+
+        // Encrypt credentials
+        const encryptedCredentials =
+          ctx.services.credentialManager.encryptCredentials(credentials);
+
+        // Update the connection with credentials and set status to CONNECTED
+        await ctx.prisma.organizationBankConnection.update({
+          where: { id: connection.id },
+          data: {
+            credentials: encryptedCredentials,
+            status: BankConnectionStatus.CONNECTED,
+          },
+        });
+
+        // Attempt webhook creation - non-fatal if it fails
+        const webhookResult = await ctx.services.bankConnection.setupWebhook({
+          connectionId: connection.id,
+          providerId: connection.providerId,
+          credentials,
+        });
+
+        return {
+          connectionId: connection.id,
+          webhookError: webhookResult.error,
+        };
+      } catch (error: unknown) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }),
+
+  /**
+   * Delete a pending (incomplete) bank connection
+   */
+  deletePendingConnection: organizationProcedure
+    .input(
+      z.object({
+        connectionId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const connection = await ctx.prisma.organizationBankConnection.findUnique(
+        {
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
+        },
+      );
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Connection not found",
+        });
+      }
+
+      // Only allow deletion of pending connections
+      if (
+        connection.status !== BankConnectionStatus.PENDING_CONFIG &&
+        connection.status !== BankConnectionStatus.PENDING_OAUTH &&
+        connection.status !== BankConnectionStatus.EXPIRED
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Cannot delete an active connection. Use disconnect instead.",
+        });
+      }
+
+      await ctx.prisma.organizationBankConnection.delete({
+        where: { id: connection.id },
+      });
+
+      return { success: true };
+    }),
 });

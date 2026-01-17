@@ -288,6 +288,15 @@ const messages = {
     manualConnection: "Manual connection",
     editName: "Edit name",
     connectionNameMaxLength: "Connection name must be 255 characters or less",
+    // Status badges
+    statusPendingConfig: "Pending Setup",
+    statusPendingOAuth: "Awaiting Authorization",
+    statusExpired: "Expired",
+    statusDisconnected: "Disconnected",
+    // Pending connection actions
+    resume: "Resume",
+    deletePendingConfirm:
+      "Are you sure you want to delete this pending connection?",
   },
   BankConfigurePage: {
     backToProviders: "← Back to Providers",
@@ -309,11 +318,28 @@ const messages = {
     cancel: "Cancel",
     configure: "Configure & Connect",
     update: "Update & Reconnect",
+    connect: "Connect",
+    connecting: "Connecting...",
     configuring: "Configuring...",
     updating: "Updating...",
     providerConfigured: "Provider configured",
     configurationUpdated: "Configuration updated",
+    configSaved: "Configuration saved! Now authorize in your bank app.",
     viewSetupGuide: "View Setup Guide",
+    registerCallbackUrl: "Register Callback URL",
+    registerCallbackUrlDescription:
+      "Copy this URL and register it in your bank's API settings before proceeding.",
+    urlCopied: "URL copied to clipboard",
+    completeAuthorization: "Complete Authorization",
+    manualConsentDescription:
+      "Your configuration has been saved. Now complete the authorization in your bank app.",
+    nextSteps: "Next Steps",
+    openBankApp: "Open the {providerName} app or website",
+    navigateToApiSettings: "Navigate to API settings",
+    clickEnableAccess: 'Click "Enable access" or "Authorize"',
+    youWillBeRedirected:
+      "You will be automatically redirected back here after authorization",
+    yourCallbackUrl: "Your registered callback URL:",
   },
   BankAccountsPage: {
     backToBanks: "← Back to Banks",
@@ -436,6 +462,7 @@ const messages = {
     bankDisconnected: "Bank disconnected successfully",
     webhookConfigured: "Webhook configured successfully",
     connectionNameUpdated: "Connection name updated",
+    pendingConnectionDeleted: "Pending connection deleted",
     paymentReceived: "Payment received!",
     paymentReceivedDescription: "The payment has been completed successfully.",
     paymentExpired: "Payment expired",
@@ -451,6 +478,33 @@ const messages = {
       "{count, plural, =1 {# account failed to connect} other {# accounts failed to connect}}",
     providerConfigured: "Provider configured",
     configurationUpdated: "Configuration updated",
+  },
+  BankCallbackPage: {
+    title: "Completing Connection",
+    description:
+      "Exchanging authorization code and setting up your bank connection...",
+    success: "Bank connected successfully",
+    authFailed: {
+      title: "Authorization Failed",
+      description:
+        "The bank declined the authorization request. This might be because the request was cancelled or the authorization expired.",
+      error: "Error: {error}",
+    },
+    invalidRequest: {
+      title: "Invalid Request",
+      description:
+        "The callback request is missing required parameters. Please try connecting your bank account again.",
+    },
+    connectionError: {
+      title: "Connection Error",
+      description:
+        "We couldn't complete the bank connection. This might be due to a temporary issue or an expired authorization.",
+      retrying: "Retrying...",
+    },
+    buttons: {
+      tryAgain: "Try Again",
+      goBack: "Go Back",
+    },
   },
 };
 

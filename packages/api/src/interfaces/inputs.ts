@@ -90,8 +90,10 @@ export interface UpdateOrganizationWebhookInput {
 export interface CreateOrganizationBankConnectionInput {
   organizationId: string;
   providerId: string;
-  providerConfig: string; // Encrypted provider configuration
+  providerConfig?: string | null; // Encrypted provider configuration (null in PENDING_CONFIG state)
   credentials?: string | null; // Encrypted OAuth credentials (null until OAuth complete)
+  callbackUrl?: string | null; // OAuth callback URL (needed for token refresh)
   webhookUrl?: string | null;
   webhookSecret?: string | null;
+  name?: string | null; // Optional connection name
 }

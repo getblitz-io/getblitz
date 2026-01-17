@@ -65,6 +65,7 @@ export class TestBankProvider extends BaseBankProvider {
   readonly displayName = "Test Bank";
   readonly domain = "localhost";
   readonly authType = "oauth2" as const;
+  readonly oauthFlowType = "redirect" as const;
   override readonly isTestProvider = true;
 
   private baseUrl: string;
@@ -291,6 +292,7 @@ export class TestBankProvider extends BaseBankProvider {
     refreshToken,
   }: {
     refreshToken: string;
+    callbackUrl?: string;
   }): Promise<BankCredentials> {
     // Call the test bank's token refresh endpoint
     const response = await fetch(`${this.baseUrl}/api/oauth/token`, {

@@ -105,7 +105,11 @@ describe("BankConnectionService", () => {
   });
 
   it("should fail if provider does not support webhooks", async () => {
-    const connection = { id: "conn-123", providerId: "test-bank" };
+    const connection = {
+      id: "conn-123",
+      providerId: "test-bank",
+      providerConfig: "enc:cfg",
+    };
     mockRepo.findById.mockResolvedValue(connection);
     mockedRegistry.createProvider.mockReturnValue(
       {} as unknown as BankProvider,

@@ -6,8 +6,8 @@ import { ProviderRegistry } from "@getblitz/bank-providers";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
+  ICredentialManagerService,
   IOrganizationBankConnectionRepository,
-  IOrganizationRepository,
   IPaymentSettlementService,
 } from "../interfaces";
 import { BankWebhookService } from "./bank-webhook.service";
@@ -28,13 +28,7 @@ vi.mock("../utils/logger", () => ({
 describe("BankWebhookService", () => {
   const mockedRegistry = ProviderRegistry as Mocked<typeof ProviderRegistry>;
   let service: BankWebhookService;
-  const mockOrgRepo = {
-    findById: vi.fn(),
-    findBySlug: vi.fn(),
-    findByUserId: vi.fn(),
-    getCountsByOrgIds: vi.fn(),
-    findMemberByUserAndOrg: vi.fn(),
-  };
+
   const mockConnRepo = {
     findById: vi.fn(),
     findByOrganizationIdAndProviderId: vi.fn(),
@@ -48,12 +42,20 @@ describe("BankWebhookService", () => {
     settle: vi.fn(),
     postSettle: vi.fn(),
   };
+  const mockCredentialManager = {
+    decryptCredentials: vi.fn().mockReturnValue({ accessToken: "test-token" }),
+    encryptCredentials: vi.fn(),
+    decryptProviderConfig: vi.fn(),
+    encryptProviderConfig: vi.fn(),
+    getValidCredentials: vi.fn(),
+    isTokenExpiringSoon: vi.fn(),
+  };
 
   beforeAll(() => {
     service = new BankWebhookService(
-      mockOrgRepo as unknown as IOrganizationRepository,
       mockConnRepo as unknown as IOrganizationBankConnectionRepository,
       mockSettlement as unknown as IPaymentSettlementService,
+      mockCredentialManager as unknown as ICredentialManagerService,
     );
   });
 
@@ -67,6 +69,7 @@ describe("BankWebhookService", () => {
       providerId: "test-bank",
       status: BankConnectionStatus.CONNECTED,
       webhookSecret: "secret",
+      credentials: "encrypted-credentials",
     };
     mockConnRepo.findById.mockResolvedValue(connection);
 

@@ -6,6 +6,7 @@ import type {
   AccountConfig,
   BankCredentials,
   BankProvider,
+  OAuthFlowType,
   ProviderConfig,
   ProviderConfigSchema,
   WebhookVerificationResult,
@@ -17,6 +18,7 @@ export abstract class BaseBankProvider implements BankProvider {
   abstract readonly displayName: string;
   abstract readonly domain: string;
   abstract readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  abstract readonly oauthFlowType: OAuthFlowType;
   readonly isTestProvider: boolean = false;
 
   // Documentation
@@ -32,9 +34,11 @@ export abstract class BaseBankProvider implements BankProvider {
   abstract verifyAndParseWebhook({
     request,
     secret,
+    credentials,
   }: {
     request: Request;
     secret?: string;
+    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult>;
 
   abstract validateAccount({
@@ -88,13 +92,19 @@ export abstract class BaseBankProvider implements BankProvider {
 
   async refreshToken?({
     refreshToken,
+    callbackUrl,
   }: {
     refreshToken: string;
+    callbackUrl?: string;
   }): Promise<BankCredentials> {
     throw new Error("refreshToken not implemented for this provider");
   }
 
   supportsTokenRefresh(): boolean {
     return this.authType === "oauth2";
+  }
+
+  supportsSandboxSimulation(): boolean {
+    return false;
   }
 }

@@ -71,8 +71,10 @@ export class OrganizationBankConnectionRepository
         providerId: data.providerId,
         providerConfig: data.providerConfig,
         credentials: data.credentials,
+        callbackUrl: data.callbackUrl,
         webhookUrl: data.webhookUrl,
         webhookSecret: data.webhookSecret,
+        name: data.name,
       },
     });
   }
@@ -98,6 +100,19 @@ export class OrganizationBankConnectionRepository
   async delete({ id }: { id: string }): Promise<OrganizationBankConnection> {
     return this.prisma.organizationBankConnection.delete({
       where: { id },
+    });
+  }
+
+  async updateMany({
+    where,
+    data,
+  }: {
+    where: Prisma.OrganizationBankConnectionWhereInput;
+    data: Prisma.OrganizationBankConnectionUpdateManyMutationInput;
+  }): Promise<Prisma.BatchPayload> {
+    return this.prisma.organizationBankConnection.updateMany({
+      where,
+      data,
     });
   }
 }

@@ -8,12 +8,7 @@ import { initAuth } from "@getblitz/auth";
 
 import { env } from "~/env";
 
-const baseUrl =
-  env.APPLICATION_ENV === "production"
-    ? env.PROJECT_URL
-    : env.APPLICATION_ENV === "preview" && env.COOLIFY_URL
-      ? env.COOLIFY_URL
-      : "http://localhost:3000";
+const baseUrl = env.NEXT_PUBLIC_APP_URL;
 
 export const auth = initAuth({
   baseUrl,

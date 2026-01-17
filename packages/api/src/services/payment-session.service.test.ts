@@ -8,6 +8,7 @@ import { Currency } from "@getblitz/database";
 import type {
   CreateChallengeInput,
   IBankAccountRepository,
+  ICredentialManagerService,
   IPaymentSessionRepository,
   IPaymentSettlementService,
 } from "../interfaces";
@@ -16,6 +17,7 @@ import { PaymentSessionService } from "./payment-session.service";
 vi.mock("@getblitz/bank-providers", () => ({
   ProviderRegistry: {
     getProvider: vi.fn(),
+    createProvider: vi.fn(),
   },
 }));
 
@@ -47,12 +49,21 @@ describe("PaymentSessionService", () => {
     settle: vi.fn(),
     postSettle: vi.fn(),
   };
+  const mockCredentialManager = {
+    getValidCredentials: vi.fn(),
+    decryptProviderConfig: vi.fn(),
+    decryptCredentials: vi.fn(),
+    encryptCredentials: vi.fn(),
+    encryptProviderConfig: vi.fn(),
+    isTokenExpiringSoon: vi.fn(),
+  };
 
   beforeAll(() => {
     service = new PaymentSessionService(
       mockSessionRepo as unknown as IPaymentSessionRepository,
       mockBankRepo as unknown as IBankAccountRepository,
       mockSettlement as unknown as IPaymentSettlementService,
+      mockCredentialManager as unknown as ICredentialManagerService,
     );
   });
 
@@ -164,12 +175,22 @@ describe("PaymentSessionService", () => {
     });
   });
 
-  it("should simulate payment", async () => {
+  it("should simulate payment (fallback without sandbox)", async () => {
     const session = {
       id: "session-1",
       referenceId: "ref-1",
       amountCents: 1000,
+      currency: "EUR",
       status: "PENDING",
+      bankAccount: {
+        externalAccountId: "ext-acc-1",
+        organizationBankConnection: {
+          id: "conn-1",
+          providerId: "qonto",
+          providerConfig: null, // No config = fallback to local simulation
+          credentials: null,
+        },
+      },
     };
     mockSessionRepo.findById.mockResolvedValue(session);
     mockSettlement.settle.mockResolvedValue({ success: true });
@@ -178,5 +199,52 @@ describe("PaymentSessionService", () => {
 
     expect(result.success).toBe(true);
     expect(mockSettlement.settle).toHaveBeenCalled();
+  });
+
+  it("should simulate payment via provider sandbox when supported", async () => {
+    const session = {
+      id: "session-1",
+      referenceId: "ref-1",
+      amountCents: 1000,
+      currency: "EUR",
+      status: "PENDING",
+      bankAccount: {
+        externalAccountId: "ext-acc-1",
+        organizationBankConnection: {
+          id: "conn-1",
+          providerId: "revolut",
+          providerConfig: "encrypted-config",
+          credentials: "encrypted-creds",
+        },
+      },
+    };
+    mockSessionRepo.findById.mockResolvedValue(session);
+    mockCredentialManager.decryptProviderConfig.mockReturnValue({
+      some: "config",
+    });
+    mockCredentialManager.getValidCredentials.mockResolvedValue({
+      credentials: { accessToken: "token" },
+    });
+
+    const mockProvider = {
+      supportsSandboxSimulation: vi.fn().mockReturnValue(true),
+      simulateSandboxPayment: vi.fn().mockResolvedValue({ success: true }),
+    };
+    mockedRegistry.createProvider.mockReturnValue(
+      mockProvider as unknown as BankProvider,
+    );
+
+    const result = await service.simulatePayment({ sessionId: "session-1" });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("via provider sandbox API");
+    expect(mockProvider.simulateSandboxPayment).toHaveBeenCalledWith({
+      credentials: { accessToken: "token" },
+      accountId: "ext-acc-1",
+      amount: 10,
+      currency: "EUR",
+      reference: "ref-1",
+    });
+    expect(mockSettlement.settle).not.toHaveBeenCalled();
   });
 });

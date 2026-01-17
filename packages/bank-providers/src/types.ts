@@ -47,6 +47,7 @@ export interface ProviderMetadata {
   displayName: string;
   domain: string;
   authType: "oauth2" | "api_key" | "certificate" | "none";
+  oauthFlowType: OAuthFlowType;
   setupGuideUrl: string | null;
   isTestProvider: boolean;
 }
@@ -56,7 +57,7 @@ export interface ProviderMetadata {
  */
 export interface ProviderConfigField {
   name: string;
-  type: "string" | "boolean" | "number";
+  type: "string" | "boolean" | "number" | "textarea";
   label: string;
   description?: string;
   required: boolean;
@@ -69,12 +70,15 @@ export interface ProviderConfigSchema {
   fields: ProviderConfigField[];
 }
 
+export type OAuthFlowType = "redirect" | "manual-consent" | "none";
+
 export interface BankProvider {
   // Static metadata (replaces Bank table fields)
   readonly id: string;
   readonly displayName: string;
   readonly domain: string;
   readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  readonly oauthFlowType: OAuthFlowType;
   readonly isTestProvider: boolean;
 
   // Documentation
@@ -92,9 +96,11 @@ export interface BankProvider {
   verifyAndParseWebhook({
     request,
     secret,
+    credentials,
   }: {
     request: Request;
     secret?: string;
+    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult>;
 
   // Auth flows (for merchant setup)
@@ -137,10 +143,30 @@ export interface BankProvider {
   // Token refresh (for OAuth2 providers)
   refreshToken?({
     refreshToken,
+    callbackUrl,
   }: {
     refreshToken: string;
+    callbackUrl?: string; // Optional: needed by some providers (e.g., Revolut) for JWT generation
   }): Promise<BankCredentials>;
 
   // Helper to check if provider supports token refresh
   supportsTokenRefresh(): boolean;
+
+  // Helper to check if provider supports sandbox simulation
+  supportsSandboxSimulation(): boolean;
+
+  // Sandbox simulation (for providers that support it)
+  simulateSandboxPayment?({
+    credentials,
+    accountId,
+    amount,
+    currency,
+    reference,
+  }: {
+    credentials: BankCredentials;
+    accountId: string;
+    amount: number;
+    currency: string;
+    reference: string;
+  }): Promise<{ success: boolean; error?: string }>;
 }

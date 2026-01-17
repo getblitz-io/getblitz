@@ -44,6 +44,7 @@ export class QontoProvider extends BaseBankProvider {
   readonly displayName = "Qonto";
   readonly domain = "qonto.com";
   readonly authType = "oauth2" as const;
+  readonly oauthFlowType = "redirect" as const;
 
   private clientId: string;
   private clientSecret: string;
@@ -411,6 +412,7 @@ export class QontoProvider extends BaseBankProvider {
     refreshToken,
   }: {
     refreshToken: string;
+    callbackUrl?: string;
   }): Promise<BankCredentials> {
     this.ensureConfigured();
     const response = await fetch(`${this.oauthBaseUrl}/oauth2/token`, {

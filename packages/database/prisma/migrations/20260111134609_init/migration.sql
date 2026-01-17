@@ -5,7 +5,7 @@ CREATE TYPE "Currency" AS ENUM ('EUR', 'USDC');
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'FAILED', 'EXPIRED');
 
 -- CreateEnum
-CREATE TYPE "BankConnectionStatus" AS ENUM ('CONNECTED', 'DISCONNECTED');
+CREATE TYPE "BankConnectionStatus" AS ENUM ('PENDING_CONFIG', 'PENDING_OAUTH', 'CONNECTED', 'DISCONNECTED', 'EXPIRED');
 
 -- CreateEnum
 CREATE TYPE "BankAccountStatus" AS ENUM ('ENABLED', 'DISABLED', 'BLOCKED');
@@ -112,12 +112,14 @@ CREATE TABLE "organization_bank_account" (
     "organizationId" TEXT NOT NULL,
     "providerId" VARCHAR(50) NOT NULL,
     "name" VARCHAR(255),
-    "providerConfig" TEXT NOT NULL,
+    "callbackId" VARCHAR(255),
+    "providerConfig" TEXT,
     "credentials" TEXT,
+    "callbackUrl" TEXT,
     "isSandbox" BOOLEAN NOT NULL DEFAULT false,
     "webhookUrl" TEXT,
     "webhookSecret" TEXT,
-    "status" "BankConnectionStatus" NOT NULL DEFAULT 'CONNECTED',
+    "status" "BankConnectionStatus" NOT NULL DEFAULT 'PENDING_CONFIG',
     "expiresAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -227,6 +229,9 @@ CREATE INDEX "organization_bank_account_organizationId_idx" ON "organization_ban
 
 -- CreateIndex
 CREATE INDEX "organization_bank_account_providerId_idx" ON "organization_bank_account"("providerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "organization_bank_account_callbackId_organizationId_key" ON "organization_bank_account"("callbackId", "organizationId");
 
 -- CreateIndex
 CREATE INDEX "organization_webhook_organizationId_idx" ON "organization_webhook"("organizationId");

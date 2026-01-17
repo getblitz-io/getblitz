@@ -3,6 +3,7 @@ import type { PrismaClient } from "@getblitz/database";
 import {
   ProviderRegistry,
   QontoProvider,
+  RevolutProvider,
   TestBankProvider,
 } from "@getblitz/bank-providers";
 import { prisma } from "@getblitz/database";
@@ -65,6 +66,7 @@ let container: ServiceContainer | null = null;
  */
 function initProviders() {
   ProviderRegistry.register(QontoProvider);
+  ProviderRegistry.register(RevolutProvider);
   ProviderRegistry.register(TestBankProvider);
 }
 
@@ -87,12 +89,18 @@ function createContainer(): ServiceContainer {
     new OrganizationBankConnectionRepository(prisma);
 
   // Create services (depend on repositories)
+  const securityService = new SecurityService();
   const webhookService = new WebhookService(paymentSessionRepository);
   const paymentSettlementService = new PaymentSettlementService(webhookService);
+  const credentialManagerService = new CredentialManagerService(
+    organizationBankConnectionRepository,
+    securityService,
+  );
   const paymentSessionService = new PaymentSessionService(
     paymentSessionRepository,
     bankAccountRepository,
     paymentSettlementService,
+    credentialManagerService,
   );
   const organizationService = new OrganizationService(
     organizationRepository,
@@ -103,16 +111,11 @@ function createContainer(): ServiceContainer {
     organizationBankConnectionRepository,
   );
   const apiKeyService = new ApiKeyService(apiKeyRepository);
-  const securityService = new SecurityService();
   const credentialCacheService = new CredentialCacheService();
-  const credentialManagerService = new CredentialManagerService(
-    organizationBankConnectionRepository,
-    securityService,
-  );
   const bankWebhookService = new BankWebhookService(
-    organizationRepository,
     organizationBankConnectionRepository,
     paymentSettlementService,
+    credentialManagerService,
   );
   const bankConnectionService = new BankConnectionService(
     organizationBankConnectionRepository,

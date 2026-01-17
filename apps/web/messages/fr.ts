@@ -291,6 +291,15 @@ const messages = {
     editName: "Modifier le nom",
     connectionNameMaxLength:
       "Le nom de connexion doit contenir 255 caractères ou moins",
+    // Status badges
+    statusPendingConfig: "Configuration en attente",
+    statusPendingOAuth: "En attente d'autorisation",
+    statusExpired: "Expiré",
+    statusDisconnected: "Déconnecté",
+    // Pending connection actions
+    resume: "Reprendre",
+    deletePendingConfirm:
+      "Êtes-vous sûr de vouloir supprimer cette connexion en attente ?",
   },
   BankConfigurePage: {
     backToProviders: "← Retour aux fournisseurs",
@@ -314,11 +323,29 @@ const messages = {
     cancel: "Annuler",
     configure: "Configurer et connecter",
     update: "Mettre à jour et reconnecter",
+    connect: "Connecter",
+    connecting: "Connexion...",
     configuring: "Configuration...",
     updating: "Mise à jour...",
     providerConfigured: "Fournisseur configuré",
     configurationUpdated: "Configuration mise à jour",
+    configSaved:
+      "Configuration enregistrée ! Autorisez maintenant dans votre application bancaire.",
     viewSetupGuide: "Voir le guide d'installation",
+    registerCallbackUrl: "Enregistrer l'URL de rappel",
+    registerCallbackUrlDescription:
+      "Copiez cette URL et enregistrez-la dans les paramètres API de votre banque avant de continuer.",
+    urlCopied: "URL copiée dans le presse-papiers",
+    completeAuthorization: "Terminer l'autorisation",
+    manualConsentDescription:
+      "Votre configuration a été enregistrée. Terminez maintenant l'autorisation dans votre application bancaire.",
+    nextSteps: "Prochaines étapes",
+    openBankApp: "Ouvrez l'application ou le site web {providerName}",
+    navigateToApiSettings: "Accédez aux paramètres API",
+    clickEnableAccess: "Cliquez sur 'Activer l'accès' ou 'Autoriser'",
+    youWillBeRedirected:
+      "Vous serez automatiquement redirigé ici après l'autorisation",
+    yourCallbackUrl: "Votre URL de rappel enregistrée :",
   },
   BankAccountsPage: {
     backToBanks: "← Retour aux banques",
@@ -444,6 +471,7 @@ const messages = {
     bankDisconnected: "Banque déconnectée avec succès",
     webhookConfigured: "Webhook configuré avec succès",
     connectionNameUpdated: "Nom de connexion mis à jour",
+    pendingConnectionDeleted: "Connexion en attente supprimée",
     paymentReceived: "Paiement reçu !",
     paymentReceivedDescription: "Le paiement a été complété avec succès.",
     paymentExpired: "Paiement expiré",
@@ -459,6 +487,33 @@ const messages = {
       "{count, plural, =1 {# compte n'a pas pu être connecté} other {# comptes n'ont pas pu être connectés}}",
     providerConfigured: "Fournisseur configuré",
     configurationUpdated: "Configuration mise à jour",
+  },
+  BankCallbackPage: {
+    title: "Finalisation de la connexion",
+    description:
+      "Échange du code d'autorisation et configuration de votre connexion bancaire...",
+    success: "Banque connectée avec succès",
+    authFailed: {
+      title: "Échec de l'autorisation",
+      description:
+        "La banque a décliné la demande d'autorisation. Cela peut être dû à l'annulation de la demande ou à l'expiration de l'autorisation.",
+      error: "Erreur : {error}",
+    },
+    invalidRequest: {
+      title: "Requête invalide",
+      description:
+        "La requête de rappel manque de paramètres requis. Veuillez essayer de reconnecter votre compte bancaire.",
+    },
+    connectionError: {
+      title: "Erreur de connexion",
+      description:
+        "Nous n'avons pas pu terminer la connexion bancaire. Cela peut être dû à un problème temporaire ou à une autorisation expirée.",
+      retrying: "Nouvelle tentative...",
+    },
+    buttons: {
+      tryAgain: "Réessayer",
+      goBack: "Retour",
+    },
   },
 };
 

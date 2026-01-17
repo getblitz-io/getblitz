@@ -4,17 +4,17 @@ import { BankConnectionStatus } from "@getblitz/database";
 import type {
   BankWebhookResult,
   IBankWebhookService,
+  ICredentialManagerService,
   IOrganizationBankConnectionRepository,
-  IOrganizationRepository,
   IPaymentSettlementService,
 } from "../interfaces";
 import { webhookLogger } from "../utils/logger";
 
 export class BankWebhookService implements IBankWebhookService {
   constructor(
-    private readonly organizationRepository: IOrganizationRepository,
     private readonly organizationBankConnectionRepository: IOrganizationBankConnectionRepository,
     private readonly paymentSettlementService: IPaymentSettlementService,
+    private readonly credentialManagerService: ICredentialManagerService,
   ) {}
 
   /**
@@ -72,11 +72,30 @@ export class BankWebhookService implements IBankWebhookService {
         };
       }
 
-      // 4. Verify webhook signature and parse payload
+      // 4. Get valid credentials (refreshing if needed) for providers that need to fetch transaction details
       const secret = connection.webhookSecret ?? undefined;
+      let credentials;
+      if (connection.credentials) {
+        try {
+          const result =
+            await this.credentialManagerService.getValidCredentials({
+              connectionId,
+            });
+          credentials = result.credentials;
+        } catch (error) {
+          webhookLogger.error(`Failed to get valid credentials`, {
+            connectionId,
+            error: String(error),
+          });
+          // Continue without credentials - some webhooks may work without them
+        }
+      }
+
+      // 5. Verify webhook signature and parse payload
       const webhookResult = await provider.verifyAndParseWebhook({
         request,
         secret,
+        credentials,
       });
 
       if (!webhookResult.valid) {
@@ -94,7 +113,7 @@ export class BankWebhookService implements IBankWebhookService {
         };
       }
 
-      // 5. Call paymentSettlementService.settle() with parsed notification data
+      // 6. Call paymentSettlementService.settle() with parsed notification data
       const result = await this.paymentSettlementService.settle({
         input: {
           referenceId: webhookResult.referenceId,

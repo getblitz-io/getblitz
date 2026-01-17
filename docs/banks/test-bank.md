@@ -13,6 +13,15 @@ The Test Bank provider is useful for:
 - Demonstrating the payment gateway functionality
 - CI/CD testing environments
 
+## Understanding the Test Bank OAuth Flow
+
+Test Bank uses a standard **redirect OAuth flow** (same as Qonto):
+
+1. GetBlitz generates a unique callback URL for your connection
+2. You configure the Base URL in GetBlitz
+3. GetBlitz redirects you to Test Bank for authorization
+4. After approval, Test Bank redirects back to your callback URL
+
 ## Prerequisites
 
 To use the Test Bank, you need to run the mock bank server:
@@ -28,9 +37,20 @@ This starts the mock bank server at `http://localhost:3003` by default.
 
 When connecting Test Bank in GetBlitz:
 
+1. Navigate to **Banks** → **Connect**
+2. Select **Test Bank** as the provider
+3. **Note the Callback URL** displayed in Step 1
+   - This URL looks like: `http://localhost:3000/banks/callback/your-org.abc123def456`
+   - The Test Bank automatically accepts this URL (no need to register it)
+4. Enter the configuration:
+
 | Field    | Default Value           | Description                           |
 | -------- | ----------------------- | ------------------------------------- |
 | Base URL | `http://localhost:3003` | URL where mock-bank server is running |
+
+5. Click **Connect**
+6. You'll be redirected to Test Bank's authorization page
+7. Click "Authorize" to complete the flow
 
 ## Test Accounts
 
@@ -47,7 +67,7 @@ The Test Bank provides the following pre-configured test accounts:
 The Test Bank simulates a complete OAuth2 flow:
 
 1. **Authorization**: Redirects to `http://localhost:3003/oauth/authorize`
-2. **Callback**: Returns an authorization code to your callback URL
+2. **Callback**: Returns an authorization code to your unique callback URL
 3. **Token Exchange**: Exchanges the code for access/refresh tokens
 
 Default OAuth2 credentials (hardcoded in adapter):
@@ -146,6 +166,11 @@ Where `XXXXXXXX` is an 8-character alphanumeric code (e.g., `GB-ABCD1234`).
 
 - The mock bank accepts any authorization code
 - Ensure you're calling the correct token endpoint: `/api/oauth/token`
+
+### Callback URL Issues
+
+- The Test Bank mock server accepts any callback URL, so no registration is needed
+- If authorization fails, ensure the mock bank server is running
 
 ## Limitations
 
