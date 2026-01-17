@@ -316,6 +316,7 @@ const messages = {
       "These credentials will be encrypted and stored securely",
     fieldRequired: "{fieldLabel} is required",
     cancel: "Cancel",
+    cancelling: "Cancelling...",
     configure: "Configure & Connect",
     update: "Update & Reconnect",
     connect: "Connect",

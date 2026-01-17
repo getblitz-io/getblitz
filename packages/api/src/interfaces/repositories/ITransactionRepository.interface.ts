@@ -5,4 +5,5 @@ import type { CreateTransactionInput } from "..";
 export interface ITransactionRepository {
   create({ data }: { data: CreateTransactionInput }): Promise<Transaction>;
   findBySessionId({ sessionId }: { sessionId: string }): Promise<Transaction[]>;
+  sumAmountBySessionId({ sessionId }: { sessionId: string }): Promise<number>;
 }

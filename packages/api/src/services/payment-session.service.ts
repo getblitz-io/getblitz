@@ -280,10 +280,11 @@ export class PaymentSessionService implements IPaymentSessionService {
     }
 
     // Fallback: Direct settlement simulation for providers without sandbox API
+    const simTxHash = `sim_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     const result = await this.paymentSettlementService.settle({
       input: {
         referenceId: session.referenceId,
-        txHash: `sim_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        txHash: simTxHash,
         amountCents: session.amountCents,
         rawPayload: {
           simulated: true,

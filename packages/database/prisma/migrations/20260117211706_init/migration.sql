@@ -10,6 +10,9 @@ CREATE TYPE "BankConnectionStatus" AS ENUM ('PENDING_CONFIG', 'PENDING_OAUTH', '
 -- CreateEnum
 CREATE TYPE "BankAccountStatus" AS ENUM ('ENABLED', 'DISABLED', 'BLOCKED');
 
+-- CreateEnum
+CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'EXPIRED');
+
 -- CreateTable
 CREATE TABLE "user" (
     "id" TEXT NOT NULL,
@@ -181,15 +184,14 @@ CREATE TABLE "payment_session" (
     "merchantReferenceId" VARCHAR(64),
     "amountCents" INTEGER NOT NULL,
     "currency" "Currency" NOT NULL DEFAULT 'EUR',
+    "amountPaidCents" INTEGER NOT NULL,
+    "amountPaidCurrency" "Currency" NOT NULL DEFAULT 'EUR',
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "clientToken" VARCHAR(255),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "bankAccountId" VARCHAR(36) NOT NULL,
-    "customerIban" VARCHAR(34),
-    "customerBic" VARCHAR(11),
-    "customerName" VARCHAR(255),
     "metadata" JSONB,
 
     CONSTRAINT "payment_session_pkey" PRIMARY KEY ("id")
@@ -200,6 +202,12 @@ CREATE TABLE "transaction" (
     "id" VARCHAR(36) NOT NULL,
     "paymentSessionId" VARCHAR(36) NOT NULL,
     "txHash" VARCHAR(255) NOT NULL,
+    "amountCents" INTEGER NOT NULL,
+    "currency" "Currency" NOT NULL DEFAULT 'EUR',
+    "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
+    "customerIban" VARCHAR(34),
+    "customerBic" VARCHAR(11),
+    "customerName" VARCHAR(255),
     "rawPayload" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

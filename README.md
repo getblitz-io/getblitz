@@ -150,12 +150,18 @@ Content-Type: application/json
 
 ### Webhook Events
 
-The gateway receives webhooks from connected bank providers:
+The gateway sends webhooks to merchants for payment events:
 
-```
-POST /api/webhooks/connection
-X-Provider-Signature: <HMAC-SHA256>
-```
+| Event             | Description                                   |
+| ----------------- | --------------------------------------------- |
+| `payment.success` | Payment completed (full amount received)      |
+| `payment.partial` | Partial payment received (for split payments) |
+| `payment.failed`  | Payment failed                                |
+| `payment.expired` | Payment session expired                       |
+
+All webhooks include `amountPaidCents` showing current progress toward the total `amountCents`.
+
+📚 **See [docs/webhooks.md](./docs/webhooks.md) for payload schema and signature verification.**
 
 ### SDK Integration
 

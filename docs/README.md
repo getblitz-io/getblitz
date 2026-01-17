@@ -11,7 +11,14 @@ Documentation for setting up and configuring bank providers:
 | Provider                          | Description                             |
 | --------------------------------- | --------------------------------------- |
 | [Qonto](./banks/qonto.md)         | Business banking integration via OAuth2 |
+| [Revolut](./banks/revolut.md)     | Business banking integration via OAuth2 |
 | [Test Bank](./banks/test-bank.md) | Mock provider for local development     |
+
+### Integration
+
+| Topic                     | Description                                          |
+| ------------------------- | ---------------------------------------------------- |
+| [Webhooks](./webhooks.md) | Webhook events, payloads, and signature verification |
 
 ### Additional Resources
 
@@ -22,7 +29,7 @@ Documentation for setting up and configuring bank providers:
 ## Getting Started
 
 1. **Development**: Start with the [Test Bank](./banks/test-bank.md) to build and test your integration locally
-2. **Production**: Follow the [Qonto guide](./banks/qonto.md) to set up real bank connectivity
+2. **Production**: Follow the [Qonto guide](./banks/qonto.md) or [Revolut guide](./banks/revolut.md) to set up real bank connectivity
 
 ## Adding New Documentation
 

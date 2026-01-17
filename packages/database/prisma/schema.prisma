@@ -253,6 +253,8 @@ model PaymentSession {
   merchantReferenceId String?       @db.VarChar(64)
   amountCents         Int
   currency            Currency      @default(EUR)
+  amountPaidCents     Int
+  amountPaidCurrency  Currency      @default(EUR)
   status              PaymentStatus @default(PENDING)
   expiresAt           DateTime
   clientToken         String?       @db.VarChar(255)
@@ -260,9 +262,6 @@ model PaymentSession {
   updatedAt           DateTime      @updatedAt
   bankAccountId       String        @db.VarChar(36)
   bankAccount         BankAccount   @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
-  customerIban        String?       @db.VarChar(34)
-  customerBic         String?       @db.VarChar(11)
-  customerName        String?       @db.VarChar(255)
   metadata            Json?
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -279,6 +278,12 @@ model Transaction {
   id               String   @id @default(uuid(7)) @db.VarChar(36)
   paymentSessionId String   @db.VarChar(36)
   txHash           String   @unique @db.VarChar(255)
+  amountCents      Int
+  currency         Currency @default(EUR)
+  status           TransactionStatus @default(PENDING)
+  customerIban     String?  @db.VarChar(34)
+  customerBic      String?  @db.VarChar(11)
+  customerName     String?  @db.VarChar(255)
   rawPayload       Json?
   createdAt        DateTime @default(now())
 
@@ -286,4 +291,11 @@ model Transaction {
 
   @@index([paymentSessionId])
   @@map("transaction")
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
 }

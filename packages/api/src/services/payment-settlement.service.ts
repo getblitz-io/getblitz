@@ -1,4 +1,4 @@
-import type { PaymentEvent } from "@getblitz/shared-types";
+import type { PaymentEvent, WebhookEventType } from "@getblitz/shared-types";
 import { prisma } from "@getblitz/database";
 import { publishPaymentEvent } from "@getblitz/redis";
 
@@ -18,92 +18,146 @@ export class PaymentSettlementService implements IPaymentSettlementService {
   constructor(private readonly webhookService: IWebhookService) {}
 
   /**
-   * Settle a payment session
+   * Settle a payment transaction for a session.
+   * Supports multiple transactions per session (e.g., group splitting a bill).
+   * Session is marked PAID when total paid >= required amount.
    */
   async settle({
     input,
   }: {
     input: SettlementInput;
   }): Promise<SettlementResult> {
-    const { referenceId, txHash, amountCents, rawPayload } = input;
+    const {
+      referenceId,
+      txHash,
+      amountCents,
+      currency,
+      customerIban,
+      customerBic,
+      customerName,
+      rawPayload,
+    } = input;
 
     try {
-      const result: SettlementResult = await prisma.$transaction(async (tx) => {
-        // Find session
-        const session = await tx.paymentSession.findUnique({
-          where: { referenceId },
-          include: { organization: true },
-        });
+      const result: SettlementResult & { webhookEvent?: WebhookEventType } =
+        await prisma.$transaction(async (tx) => {
+          // Find session
+          const session = await tx.paymentSession.findUnique({
+            where: { referenceId },
+            include: { organization: true },
+          });
 
-        if (!session) {
-          return { success: false, error: "Payment session not found" };
-        }
+          if (!session) {
+            return { success: false, error: "Payment session not found" };
+          }
 
-        if (session.status === "PAID") {
+          // Verify currency matches session currency to prevent accounting errors
+          if (currency && currency !== session.currency) {
+            return {
+              success: false,
+              error: `Currency mismatch: payment session requires ${session.currency}, but transaction was in ${currency}`,
+            };
+          }
+
+          if (session.status === "PAID") {
+            return {
+              success: true,
+              alreadyProcessed: true,
+              sessionId: session.id,
+              clientToken: session.clientToken ?? undefined,
+            };
+          }
+
+          if (session.status === "EXPIRED") {
+            return { success: false, error: "Payment session expired" };
+          }
+
+          // Check if this transaction already exists (idempotency)
+          const existingTx = await tx.transaction.findUnique({
+            where: { txHash },
+          });
+          if (existingTx) {
+            return {
+              success: true,
+              alreadyProcessed: true,
+              sessionId: session.id,
+              clientToken: session.clientToken ?? undefined,
+            };
+          }
+
+          // Create transaction record with amount details
+          await tx.transaction.create({
+            data: {
+              paymentSessionId: session.id,
+              txHash,
+              amountCents,
+              currency: currency ?? session.currency,
+              status: "COMPLETED",
+              customerIban,
+              customerBic,
+              customerName,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+              rawPayload: rawPayload
+                ? JSON.parse(JSON.stringify(rawPayload))
+                : undefined,
+            },
+          });
+
+          // Calculate total paid across all completed transactions
+          const totalPaidResult: { _sum: { amountCents: number | null } } =
+            await tx.transaction.aggregate({
+              where: {
+                paymentSessionId: session.id,
+                status: "COMPLETED",
+              },
+              _sum: { amountCents: true },
+            });
+          const totalPaidCents = totalPaidResult._sum.amountCents ?? 0;
+
+          // Determine if payment is complete
+          const isPaymentComplete = totalPaidCents >= session.amountCents;
+          const newStatus = isPaymentComplete ? "PAID" : "PENDING";
+
+          // Update session with new totals and status
+          await tx.paymentSession.update({
+            where: { id: session.id },
+            data: {
+              amountPaidCents: totalPaidCents,
+              amountPaidCurrency: currency ?? session.currency,
+              status: newStatus,
+            },
+          });
+
+          // Publish event to Redis for real-time notifications
+          if (isPaymentComplete) {
+            const event: PaymentEvent = {
+              type: "PAYMENT_SUCCESS",
+              referenceId: session.referenceId,
+              sessionId: session.id,
+              status: "PAID",
+              timestamp: new Date().toISOString(),
+              clientToken: session.clientToken ?? undefined,
+            };
+            await publishPaymentEvent(event);
+          }
+
           return {
             success: true,
-            alreadyProcessed: true,
+            txHash,
             sessionId: session.id,
             clientToken: session.clientToken ?? undefined,
-          };
-        }
-
-        if (session.status === "EXPIRED") {
-          return { success: false, error: "Payment session expired" };
-        }
-
-        if (session.amountCents !== amountCents) {
-          return {
-            success: false,
-            error: `Amount mismatch: expected ${session.amountCents}, got ${amountCents}`,
-          };
-        }
-
-        // Create transaction record (acts as settlement record)
-        await tx.transaction.create({
-          data: {
-            paymentSessionId: session.id,
-            txHash,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            rawPayload: rawPayload
-              ? JSON.parse(JSON.stringify(rawPayload))
-              : undefined,
-          },
+            webhookEvent: isPaymentComplete
+              ? "payment.success"
+              : "payment.partial",
+          } as SuccessfulSettlement & { webhookEvent: WebhookEventType };
         });
-
-        // Update session status
-        await tx.paymentSession.update({
-          where: { id: session.id },
-          data: { status: "PAID" },
-        });
-
-        // Prepare payment event for internal pub/sub
-        const event: PaymentEvent = {
-          type: "PAYMENT_SUCCESS",
-          referenceId: session.referenceId,
-          sessionId: session.id,
-          status: "PAID",
-          timestamp: new Date().toISOString(),
-          clientToken: session.clientToken ?? undefined,
-        };
-
-        // Publish event to Redis
-        await publishPaymentEvent(event);
-
-        return {
-          success: true,
-          txHash,
-          sessionId: session.id,
-          clientToken: session.clientToken ?? undefined,
-        } as SuccessfulSettlement;
-      });
 
       // Notify merchant via webhook if successful and not already processed
       if (result.success && result.sessionId && !result.alreadyProcessed) {
         await this.webhookService
           .notifyMerchant({
             sessionId: result.sessionId,
-            event: "payment.success",
+            event: result.webhookEvent ?? "payment.success",
           })
           .catch((err: unknown) => {
             console.error("Webhook notification failed:", err);

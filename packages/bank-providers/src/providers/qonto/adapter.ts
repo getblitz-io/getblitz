@@ -35,8 +35,6 @@ export interface QontoProviderConfig extends ProviderConfig {
   clientSecret: string;
   sandboxMode: boolean;
   sandboxToken?: string;
-  oauthBaseUrl: string;
-  thirdPartyBaseUrl: string;
 }
 
 export class QontoProvider extends BaseBankProvider {
@@ -50,8 +48,6 @@ export class QontoProvider extends BaseBankProvider {
   private clientSecret: string;
   private sandboxMode: boolean;
   private sandboxToken?: string;
-  private oauthBaseUrl: string;
-  private thirdPartyBaseUrl: string;
 
   constructor(config?: ProviderConfig) {
     super();
@@ -63,16 +59,18 @@ export class QontoProvider extends BaseBankProvider {
     this.clientSecret = cfg?.clientSecret ?? "";
     this.sandboxMode = cfg?.sandboxMode ?? false;
     this.sandboxToken = cfg?.sandboxToken;
-    this.oauthBaseUrl =
-      cfg?.oauthBaseUrl ??
-      (this.sandboxMode
-        ? "https://oauth-sandbox.staging.qonto.co"
-        : "https://oauth.qonto.com");
-    this.thirdPartyBaseUrl =
-      cfg?.thirdPartyBaseUrl ??
-      (this.sandboxMode
-        ? "https://thirdparty-sandbox.staging.qonto.co"
-        : "https://thirdparty.qonto.com");
+  }
+
+  private get oauthBaseUrl(): string {
+    return this.sandboxMode
+      ? "https://oauth-sandbox.staging.qonto.co"
+      : "https://oauth.qonto.com";
+  }
+
+  private get thirdPartyBaseUrl(): string {
+    return this.sandboxMode
+      ? "https://thirdparty-sandbox.staging.qonto.co"
+      : "https://thirdparty.qonto.com";
   }
 
   getSetupGuide(): string {
@@ -115,22 +113,6 @@ export class QontoProvider extends BaseBankProvider {
           secret: true,
           dependsOn: { field: "sandboxMode", value: true },
         },
-        {
-          name: "oauthBaseUrl",
-          type: "string",
-          label: "OAuth Base URL",
-          description: "Qonto OAuth2 endpoint URL",
-          required: true,
-          secret: false,
-        },
-        {
-          name: "thirdPartyBaseUrl",
-          type: "string",
-          label: "API Base URL",
-          description: "Qonto Third-Party API endpoint URL",
-          required: true,
-          secret: false,
-        },
       ],
     };
   }
@@ -141,12 +123,6 @@ export class QontoProvider extends BaseBankProvider {
       clientSecret: "",
       sandboxMode,
       sandboxToken: "",
-      oauthBaseUrl: sandboxMode
-        ? "https://oauth-sandbox.staging.qonto.co"
-        : "https://oauth.qonto.com",
-      thirdPartyBaseUrl: sandboxMode
-        ? "https://thirdparty-sandbox.staging.qonto.co"
-        : "https://thirdparty.qonto.com",
     };
   }
 
