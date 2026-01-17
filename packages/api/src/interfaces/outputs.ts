@@ -64,6 +64,7 @@ export interface ApiKeyValidationResult {
 
 export type WebhookEventType =
   | "payment.success"
+  | "payment.partial"
   | "payment.failed"
   | "payment.expired";
 

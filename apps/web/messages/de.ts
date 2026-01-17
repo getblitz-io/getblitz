@@ -323,6 +323,7 @@ const messages = {
       "Diese Anmeldedaten werden verschlüsselt und sicher gespeichert",
     fieldRequired: "{fieldLabel} ist erforderlich",
     cancel: "Abbrechen",
+    cancelling: "Wird abgebrochen...",
     configure: "Konfigurieren & Verbinden",
     update: "Aktualisieren & Erneut verbinden",
     connect: "Verbinden",

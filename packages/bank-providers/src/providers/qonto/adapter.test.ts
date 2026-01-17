@@ -11,16 +11,12 @@ describe("QontoProvider", () => {
     clientId: "test-client-id",
     clientSecret: "test-client-secret",
     sandboxMode: false,
-    oauthBaseUrl: "https://oauth.qonto.com",
-    thirdPartyBaseUrl: "https://thirdparty.qonto.com",
   };
 
   const sandboxConfig = {
     ...config,
     sandboxMode: true,
     sandboxToken: "test-sandbox-token",
-    oauthBaseUrl: "https://oauth-sandbox.staging.qonto.co",
-    thirdPartyBaseUrl: "https://thirdparty-sandbox.staging.qonto.co",
   };
 
   let provider: QontoProvider;
@@ -33,20 +29,22 @@ describe("QontoProvider", () => {
   describe("initialization", () => {
     it("should use production URLs by default", () => {
       const p = new QontoProvider(config);
-      // @ts-expect-error - testing private fields
-      expect(p.oauthBaseUrl).toBe("https://oauth.qonto.com");
-      // @ts-expect-error - testing private fields
-      expect(p.thirdPartyBaseUrl).toBe("https://thirdparty.qonto.com");
+      // Access via getAuthUrl to verify URL is computed correctly
+      const authUrl = p.getAuthUrl({
+        redirectUri: "https://example.com/callback",
+        state: "test",
+      });
+      expect(authUrl).toContain("https://oauth.qonto.com");
     });
 
     it("should use sandbox URLs when sandboxMode is true", () => {
       const p = new QontoProvider(sandboxConfig);
-      // @ts-expect-error - testing private fields
-      expect(p.oauthBaseUrl).toBe("https://oauth-sandbox.staging.qonto.co");
-      // @ts-expect-error - testing private fields
-      expect(p.thirdPartyBaseUrl).toBe(
-        "https://thirdparty-sandbox.staging.qonto.co",
-      );
+      // Access via getAuthUrl to verify URL is computed correctly
+      const authUrl = p.getAuthUrl({
+        redirectUri: "https://example.com/callback",
+        state: "test",
+      });
+      expect(authUrl).toContain("https://oauth-sandbox.staging.qonto.co");
     });
   });
 

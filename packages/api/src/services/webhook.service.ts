@@ -52,6 +52,7 @@ export class WebhookService implements IWebhookService {
       referenceId: session.referenceId,
       merchantReferenceId: session.merchantReferenceId ?? undefined,
       amountCents: session.amountCents,
+      amountPaidCents: session.amountPaidCents,
       currency: session.currency,
       provider,
       clientToken: session.clientToken ?? undefined,
@@ -98,6 +99,7 @@ export class WebhookService implements IWebhookService {
   }): boolean {
     switch (event) {
       case "payment.success":
+      case "payment.partial":
         return webhook.notifyPaymentSuccess;
       case "payment.failed":
         return webhook.notifyPaymentFailed;

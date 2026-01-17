@@ -23,6 +23,11 @@ export class TransactionRepository
       data: {
         paymentSessionId: data.paymentSessionId,
         txHash: data.txHash,
+        amountCents: data.amountCents,
+        currency: data.currency,
+        customerIban: data.customerIban,
+        customerBic: data.customerBic,
+        customerName: data.customerName,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         rawPayload: data.rawPayload
           ? JSON.parse(JSON.stringify(data.rawPayload))
@@ -40,5 +45,21 @@ export class TransactionRepository
       where: { paymentSessionId: sessionId },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  async sumAmountBySessionId({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<number> {
+    const result: { _sum: { amountCents: number | null } } =
+      await this.prisma.transaction.aggregate({
+        where: {
+          paymentSessionId: sessionId,
+          status: "COMPLETED",
+        },
+        _sum: { amountCents: true },
+      });
+    return result._sum.amountCents ?? 0;
   }
 }

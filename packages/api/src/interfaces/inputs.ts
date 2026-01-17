@@ -41,6 +41,11 @@ export interface UpdateWebhookInput {
 export interface CreateTransactionInput {
   paymentSessionId: string;
   txHash: string;
+  amountCents: number;
+  currency: Currency;
+  customerIban?: string;
+  customerBic?: string;
+  customerName?: string;
   rawPayload?: unknown;
 }
 
@@ -56,6 +61,10 @@ export interface SettlementInput {
   referenceId: string;
   txHash: string;
   amountCents: number;
+  currency?: Currency;
+  customerIban?: string;
+  customerBic?: string;
+  customerName?: string;
   rawPayload?: unknown;
 }
 

@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 
 export const WebhookEventTypeSchema = z.enum([
   "payment.success",
+  "payment.partial",
   "payment.failed",
   "payment.expired",
 ]);
@@ -13,6 +14,7 @@ export const MerchantWebhookPayloadSchema = z.object({
   referenceId: z.string(),
   merchantReferenceId: z.string().optional(),
   amountCents: z.number().int(),
+  amountPaidCents: z.number().int(),
   currency: z.string(),
   provider: z.string(),
   clientToken: z.string().optional(),

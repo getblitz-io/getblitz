@@ -82,6 +82,7 @@ export class PaymentSessionRepository
         referenceId: data.referenceId,
         merchantReferenceId: data.merchantReferenceId,
         amountCents: data.amountCents,
+        amountPaidCents: 0, // New sessions start with 0 paid
         currency: data.currency,
         expiresAt: data.expiresAt,
         status: "PENDING",

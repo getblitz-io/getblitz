@@ -51,13 +51,14 @@ describe("PaymentSettlementService", () => {
     rawPayload: { some: "data" },
   };
 
-  it("should settle payment successfully", async () => {
+  it("should settle payment successfully when full amount is paid", async () => {
     const session = {
       id: "session-123",
       referenceId: "ref-123",
       status: "PENDING",
       expiresAt: new Date(Date.now() + 10000),
       amountCents: 1000,
+      currency: "EUR",
       clientToken: "test-token",
       bankAccount: {},
     };
@@ -68,7 +69,9 @@ describe("PaymentSettlementService", () => {
         update: vi.fn().mockResolvedValue({}),
       },
       transaction: {
+        findUnique: vi.fn().mockResolvedValue(null), // No existing transaction (not duplicate)
         create: vi.fn().mockResolvedValue({}),
+        aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 1000 } }), // Full amount paid
       },
     };
 
@@ -86,7 +89,10 @@ describe("PaymentSettlementService", () => {
       expect.objectContaining({
         where: { id: "session-123" },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({ status: "PAID" }),
+        data: expect.objectContaining({
+          status: "PAID",
+          amountPaidCents: 1000,
+        }),
       }),
     );
 
@@ -94,6 +100,61 @@ describe("PaymentSettlementService", () => {
     expect(mockWebhookService.notifyMerchant).toHaveBeenCalledWith({
       sessionId: "session-123",
       event: "payment.success",
+    });
+  });
+
+  it("should emit payment.partial when partial amount is paid", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PENDING",
+      expiresAt: new Date(Date.now() + 10000),
+      amountCents: 1000,
+      currency: "EUR",
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const partialInput = {
+      referenceId: "ref-123",
+      txHash: "hash-456",
+      amountCents: 500, // Partial payment
+      rawPayload: { some: "data" },
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({}),
+        aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 500 } }), // Partial
+      },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({ input: partialInput });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.paymentSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "session-123" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({
+          status: "PENDING", // Still pending
+          amountPaidCents: 500,
+        }),
+      }),
+    );
+
+    // No Redis event for partial payments (only for completion)
+    expect(publishPaymentEvent).not.toHaveBeenCalled();
+    expect(mockWebhookService.notifyMerchant).toHaveBeenCalledWith({
+      sessionId: "session-123",
+      event: "payment.partial",
     });
   });
 
@@ -107,6 +168,36 @@ describe("PaymentSettlementService", () => {
     const mockTx = {
       paymentSession: {
         findUnique: vi.fn().mockResolvedValue(session),
+      },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({ input });
+
+    expect(result.success).toBe(true);
+    expect(result.alreadyProcessed).toBe(true);
+    expect(publishPaymentEvent).not.toHaveBeenCalled();
+  });
+
+  it("should return success if transaction already exists (idempotency)", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PENDING",
+      expiresAt: new Date(Date.now() + 10000),
+      amountCents: 1000,
+      currency: "EUR",
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue({ id: "existing-tx" }), // Already exists
       },
     };
 
@@ -159,26 +250,51 @@ describe("PaymentSettlementService", () => {
     }
   });
 
-  it("should fail if amount mismatch", async () => {
+  it("should handle overpayment gracefully", async () => {
     const session = {
+      id: "session-123",
+      referenceId: "ref-123",
       status: "PENDING",
       expiresAt: new Date(Date.now() + 10000),
-      amountCents: 2000,
+      amountCents: 1000,
+      currency: "EUR",
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const overpayInput = {
+      referenceId: "ref-123",
+      txHash: "hash-456",
+      amountCents: 1500, // Overpayment
+      rawPayload: { some: "data" },
     };
 
     const mockTx = {
       paymentSession: {
         findUnique: vi.fn().mockResolvedValue(session),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({}),
+        aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 1500 } }),
       },
     };
 
     mockTransaction(mockTx);
 
-    const result = await service.settle({ input });
+    const result = await service.settle({ input: overpayInput });
 
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toContain("Amount mismatch");
-    }
+    expect(result.success).toBe(true);
+    expect(mockTx.paymentSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({
+          status: "PAID", // Completed (overpayment accepted)
+          amountPaidCents: 1500,
+        }),
+      }),
+    );
+    expect(publishPaymentEvent).toHaveBeenCalled();
   });
 });

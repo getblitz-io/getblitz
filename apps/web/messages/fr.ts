@@ -321,6 +321,7 @@ const messages = {
       "Ces identifiants seront chiffrés et stockés en toute sécurité",
     fieldRequired: "{fieldLabel} est obligatoire",
     cancel: "Annuler",
+    cancelling: "Annulation...",
     configure: "Configurer et connecter",
     update: "Mettre à jour et reconnecter",
     connect: "Connecter",
