@@ -51,6 +51,14 @@ export class PaymentSettlementService implements IPaymentSettlementService {
             return { success: false, error: "Payment session not found" };
           }
 
+          // Verify currency matches session currency to prevent accounting errors
+          if (currency && currency !== session.currency) {
+            return {
+              success: false,
+              error: `Currency mismatch: payment session requires ${session.currency}, but transaction was in ${currency}`,
+            };
+          }
+
           if (session.status === "PAID") {
             return {
               success: true,

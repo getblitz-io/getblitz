@@ -94,10 +94,22 @@ function verifyWebhook(
   return signature === expectedSignature;
 }
 
+// Configure Express to retain the raw body for signature verification
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      // @ts-expect-error - extending request
+      req.rawBody = buf;
+    },
+  }),
+);
+
 // Usage in your webhook handler
 app.post("/webhook", (req, res) => {
   const signature = req.headers["x-getblitz-signature"];
-  const payload = JSON.stringify(req.body);
+  // Use the raw request body for accurate signature verification
+  // JSON.stringify(req.body) may alter whitespace or key order
+  const payload = (req as typeof req & { rawBody: Buffer }).rawBody.toString();
 
   if (!verifyWebhook(payload, signature, process.env.WEBHOOK_SECRET)) {
     return res.status(401).send("Invalid signature");

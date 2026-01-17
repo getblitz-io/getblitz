@@ -1,6 +1,7 @@
 import type { Mocked } from "vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Currency } from "@getblitz/database";
 import { prisma } from "@getblitz/database";
 import { publishPaymentEvent } from "@getblitz/redis";
 
@@ -224,6 +225,42 @@ describe("PaymentSettlementService", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toBe("Payment session not found");
+    }
+  });
+
+  it("should fail if transaction currency mismatch", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PENDING",
+      expiresAt: new Date(Date.now() + 10000),
+      amountCents: 1000,
+      currency: "EUR" as Currency,
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const mismatchInput = {
+      referenceId: "ref-123",
+      txHash: "hash-456",
+      amountCents: 1000,
+      currency: "USD" as Currency, // Mismatch
+      rawPayload: { some: "data" },
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+      },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({ input: mismatchInput });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Currency mismatch");
     }
   });
 
