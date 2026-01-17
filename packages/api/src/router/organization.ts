@@ -905,44 +905,4 @@ export const organizationRouter = createTRPCRouter({
 
       return { success: true };
     }),
-
-  /**
-   * Cleanup expired pending connections
-   * Marks connections that have been in PENDING_CONFIG or PENDING_OAUTH
-   * for more than the specified hours as EXPIRED.
-   * Can be called by a cron job.
-   */
-  cleanupExpiredConnections: protectedProcedure
-    .input(
-      z.object({
-        maxAgeHours: z.number().min(1).max(168).default(48), // Default 48 hours, max 1 week
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const cutoffDate = new Date(
-        Date.now() - input.maxAgeHours * 60 * 60 * 1000,
-      );
-
-      const result = await ctx.prisma.organizationBankConnection.updateMany({
-        where: {
-          status: {
-            in: [
-              BankConnectionStatus.PENDING_CONFIG,
-              BankConnectionStatus.PENDING_OAUTH,
-            ],
-          },
-          createdAt: {
-            lt: cutoffDate,
-          },
-        },
-        data: {
-          status: BankConnectionStatus.EXPIRED,
-        },
-      });
-
-      return {
-        expiredCount: result.count,
-        cutoffDate,
-      };
-    }),
 });

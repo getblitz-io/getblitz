@@ -46,4 +46,11 @@ export interface IOrganizationBankConnectionRepository {
     >;
   }): Promise<OrganizationBankConnection>;
   delete({ id }: { id: string }): Promise<OrganizationBankConnection>;
+  updateMany({
+    where,
+    data,
+  }: {
+    where: Prisma.OrganizationBankConnectionWhereInput;
+    data: Prisma.OrganizationBankConnectionUpdateManyMutationInput;
+  }): Promise<Prisma.BatchPayload>;
 }

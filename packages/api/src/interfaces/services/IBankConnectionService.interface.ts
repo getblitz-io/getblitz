@@ -36,4 +36,8 @@ export interface IBankConnectionService {
     >;
   }): Promise<OrganizationBankConnection>;
   setupWebhook(params: SetupWebhookParams): Promise<SetupWebhookResult>;
+  cleanupExpiredConnections(): Promise<{
+    expiredCount: number;
+    cutoffDate: Date;
+  }>;
 }

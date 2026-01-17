@@ -102,4 +102,17 @@ export class OrganizationBankConnectionRepository
       where: { id },
     });
   }
+
+  async updateMany({
+    where,
+    data,
+  }: {
+    where: Prisma.OrganizationBankConnectionWhereInput;
+    data: Prisma.OrganizationBankConnectionUpdateManyMutationInput;
+  }): Promise<Prisma.BatchPayload> {
+    return this.prisma.organizationBankConnection.updateMany({
+      where,
+      data,
+    });
+  }
 }

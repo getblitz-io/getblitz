@@ -1,5 +1,6 @@
 import type { OrganizationBankConnection } from "@getblitz/database";
 import { ProviderRegistry } from "@getblitz/bank-providers";
+import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
   CreateOrganizationBankConnectionInput,
@@ -11,6 +12,8 @@ import type {
 } from "../interfaces";
 import { env } from "../env";
 import { NotFoundError } from "../interfaces";
+
+const EXPIRED_CONNECTIONS_MAX_AGE_HOURS = 24;
 
 export class BankConnectionService implements IBankConnectionService {
   constructor(
@@ -24,6 +27,34 @@ export class BankConnectionService implements IBankConnectionService {
     data: CreateOrganizationBankConnectionInput;
   }): Promise<OrganizationBankConnection> {
     return this.organizationBankConnectionRepository.create({ data });
+  }
+
+  async cleanupExpiredConnections() {
+    const cutoffDate = new Date(
+      Date.now() - EXPIRED_CONNECTIONS_MAX_AGE_HOURS * 60 * 60 * 1000,
+    );
+
+    const result = await this.organizationBankConnectionRepository.updateMany({
+      where: {
+        status: {
+          in: [
+            BankConnectionStatus.PENDING_CONFIG,
+            BankConnectionStatus.PENDING_OAUTH,
+          ],
+        },
+        createdAt: {
+          lt: cutoffDate,
+        },
+      },
+      data: {
+        status: BankConnectionStatus.EXPIRED,
+      },
+    });
+
+    return {
+      expiredCount: result.count,
+      cutoffDate,
+    };
   }
 
   async findById({
