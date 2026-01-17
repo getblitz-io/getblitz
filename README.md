@@ -191,11 +191,11 @@ GetBlitz supports multiple bank providers through a pluggable adapter system.
 
 ### Supported Providers
 
-| Provider      | Auth Type   | Description                   | Setup Guide                       |
-| ------------- | ----------- | ----------------------------- | --------------------------------- |
-| **Qonto**     | OAuth2      | Business banking for SMEs     | [View](./docs/banks/qonto.md)     |
-| **Revolut**   | Certificate | Business banking for SMEs     | [View](./docs/banks/revolut.md)   |
-| **Test Bank** | None        | Mock provider for development | [View](./docs/banks/test-bank.md) |
+| Provider    | Auth Type   | Description                   | Setup Guide                     |
+|-------------|-------------|-------------------------------|---------------------------------|
+| **Qonto**   | OAuth2      | Business banking for SMEs     | [View](./docs/banks/qonto.md)   |
+| **Revolut** | Certificate | Business banking for SMEs     | [View](./docs/banks/revolut.md) |
+| **Test Bank** | None        | Mock provider for development | [View](./docs/banks/test-bank.md)|
 
 > **Note**: Test Bank is automatically hidden in production environments.
 
