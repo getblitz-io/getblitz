@@ -5,6 +5,7 @@ import { env } from "./env";
 let redisClient: Redis | null = null;
 let redisPublisher: Redis | null = null;
 let redisSubscriber: Redis | null = null;
+let redisWorker: Redis | null = null;
 
 function getRedisUrl(): string {
   return env.REDIS_URL;
@@ -70,6 +71,24 @@ export function getRedisSubscriber(redisUrl?: string): Redis {
   return redisSubscriber;
 }
 
+export function getRedisWorkerClient(): Redis {
+  if (!redisWorker) {
+    redisWorker = new Redis(getRedisUrl(), {
+      maxRetriesPerRequest: null,
+      lazyConnect: true,
+    });
+
+    redisWorker.on("error", (err: Error) => {
+      console.error("Redis Client Error:", err);
+    });
+
+    redisWorker.on("connect", () => {
+      console.log("Redis Client Connected");
+    });
+  }
+  return redisWorker;
+}
+
 export async function closeRedisConnections(): Promise<void> {
   if (redisClient) {
     await redisClient.quit();
@@ -82,5 +101,9 @@ export async function closeRedisConnections(): Promise<void> {
   if (redisSubscriber) {
     await redisSubscriber.quit();
     redisSubscriber = null;
+  }
+  if (redisWorker) {
+    await redisWorker.quit();
+    redisWorker = null;
   }
 }

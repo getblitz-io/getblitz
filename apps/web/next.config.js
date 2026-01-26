@@ -20,7 +20,9 @@ const config = {
     "@getblitz/shared-types",
     "@getblitz/ui",
     "@getblitz/validators",
+    "@getblitz/validators",
     "@getblitz/websocket",
+    "@getblitz/queue",
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */
