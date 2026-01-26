@@ -41,5 +41,5 @@ export function initExpireSessionsWorker(): void {
   // Register the repeatable job
   void registerExpireSessionsJob();
 
-  console.log(`Worker '${EXPIRE_SESSIONS_QUEUE_NAME}' initialized`);
+  cronLogger.info(`Worker '${EXPIRE_SESSIONS_QUEUE_NAME}' initialized`);
 }

@@ -3,6 +3,7 @@ import { createWorker } from "@getblitz/queue";
 
 import type { WebhookJobPayload } from "./webhook.queue";
 import { getContainer } from "../container";
+import { webhookLogger } from "../utils";
 import { WEBHOOK_QUEUE_NAME } from "./webhook.queue";
 
 /**
@@ -14,7 +15,7 @@ export function initWebhookWorker() {
     WEBHOOK_QUEUE_NAME,
     async (job: Job<WebhookJobPayload>) => {
       const { sessionId, event } = job.data;
-      console.log(
+      webhookLogger.info(
         `Processing webhook job for session: ${sessionId}, event: ${event}`,
       );
       const container = getContainer();
@@ -22,7 +23,9 @@ export function initWebhookWorker() {
       try {
         await webhookService.processWebhookForSession({ sessionId, event });
       } catch (error) {
-        console.error(`Failed to process webhook job ${job.id}:`, error);
+        webhookLogger.error(`Failed to process webhook job ${job.id}:`, {
+          error: String(error),
+        });
         throw error;
       }
     },
@@ -31,5 +34,5 @@ export function initWebhookWorker() {
     },
   );
 
-  console.log(`Worker '${WEBHOOK_QUEUE_NAME}' initialized`);
+  webhookLogger.info(`Worker '${WEBHOOK_QUEUE_NAME}' initialized`);
 }

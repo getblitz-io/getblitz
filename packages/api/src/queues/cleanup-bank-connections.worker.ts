@@ -45,5 +45,7 @@ export function initCleanupBankConnectionsWorker(): void {
   // Register the repeatable job
   void registerCleanupBankConnectionsJob();
 
-  console.log(`Worker '${CLEANUP_BANK_CONNECTIONS_QUEUE_NAME}' initialized`);
+  cronLogger.info(
+    `Worker '${CLEANUP_BANK_CONNECTIONS_QUEUE_NAME}' initialized`,
+  );
 }
