@@ -8,6 +8,7 @@ import type {
   IWebhookService,
   WebhookEventType,
 } from "../interfaces";
+import { addWebhookJob } from "../queues/webhook.queue";
 
 export class WebhookService implements IWebhookService {
   constructor(
@@ -19,6 +20,19 @@ export class WebhookService implements IWebhookService {
    * Implements a cascade: Organization level first, then BankAccount level override
    */
   async notifyMerchant({
+    sessionId,
+    event,
+  }: {
+    sessionId: string;
+    event: WebhookEventType;
+  }): Promise<void> {
+    await addWebhookJob({ sessionId, event });
+  }
+
+  /**
+   * Internal method called by the worker to actually process the webhook delivery
+   */
+  async processWebhookForSession({
     sessionId,
     event,
   }: {
@@ -71,6 +85,8 @@ export class WebhookService implements IWebhookService {
     if (session.organization.webhooks.length === 0) {
       return;
     }
+
+    // We want to await these in the worker so we know if it succeeded
     const requests: Promise<void>[] = [];
     for (const webhook of session.organization.webhooks) {
       if (this.shouldNotifyOrg({ webhook, event })) {
@@ -83,11 +99,8 @@ export class WebhookService implements IWebhookService {
         );
       }
     }
-    // no await so we don't block the main thread
-    // todo: move to a background job
-    Promise.all(requests).catch((err) =>
-      console.error("Webhook notification failed:", err),
-    );
+
+    await Promise.allSettled(requests);
   }
 
   private shouldNotifyOrg({

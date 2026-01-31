@@ -21,7 +21,7 @@ catalog:
   '@vitejs/plugin-react': 5.1.0
   better-auth: 1.4.10
   eslint: ^9.38.0
-  ioredis: 5.8.2
+  ioredis: 5.9.1
   nanoid: ^5.0.9
   next-intl: ^4.7.0
   prettier: ^3.6.2
