@@ -18,7 +18,7 @@ export function initAuth<
 }) {
   const config = {
     database: prismaAdapter(prisma, {
-      provider: "mysql",
+      provider: "postgresql",
     }),
     baseURL: options.baseUrl,
     secret: options.secret,
