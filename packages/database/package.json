@@ -28,6 +28,7 @@
     "@prisma/client": "^7.2.0",
     "@t3-oss/env-core": "catalog:",
     "dotenv": "^17.2.3",
+    "pg": "^8.16.0",
     "zod": "catalog:"
   },
   "devDependencies": {
