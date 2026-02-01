@@ -24,8 +24,8 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
     "@t3-oss/env-core": "catalog:",
     "dotenv": "^17.2.3",
     "pg": "^8.16.0",
@@ -38,7 +38,7 @@
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "prisma": "^7.2.0",
+    "prisma": "^7.3.0",
     "typescript": "catalog:"
   },
   "prettier": "@getblitz/prettier-config"
