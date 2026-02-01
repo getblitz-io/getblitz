@@ -29,7 +29,10 @@ export function initExpireSessionsWorker(): void {
           timestamp: now.toISOString(),
         });
       } catch (error) {
-        cronLogger.error("Error expiring sessions", { error: String(error) });
+        cronLogger.error("Error expiring sessions", {
+          error: String(error),
+          stack: error instanceof Error ? error.stack : "no stack",
+        });
         throw error;
       }
     },
