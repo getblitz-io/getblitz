@@ -10,6 +10,8 @@ import { prisma } from "@getblitz/database";
 
 import { ApiKeyRepository } from "../repositories/api-key.repository";
 import { BankAccountRepository } from "../repositories/bank-account.repository";
+import { CustomerRepository } from "../repositories/customer.repository";
+import { InvoiceRepository } from "../repositories/invoice.repository";
 import { OrganizationBankConnectionRepository } from "../repositories/organization-bank.repository";
 import { OrganizationWebhookRepository } from "../repositories/organization-webhook.repository";
 import { OrganizationRepository } from "../repositories/organization.repository";
@@ -21,6 +23,8 @@ import { BankConnectionService } from "../services/bank-connection.service";
 import { BankWebhookService } from "../services/bank-webhook.service";
 import { CredentialCacheService } from "../services/credential-cache.service";
 import { CredentialManagerService } from "../services/credential-manager.service";
+import { CustomerService } from "../services/customer.service";
+import { InvoiceService } from "../services/invoice.service";
 import { OrganizationService } from "../services/organization.service";
 // Services
 import { PaymentSessionService } from "../services/payment-session.service";
@@ -45,6 +49,8 @@ export interface ServiceContainer {
   bankAccountRepository: BankAccountRepository;
   organizationWebhookRepository: OrganizationWebhookRepository;
   organizationBankConnectionRepository: OrganizationBankConnectionRepository;
+  invoiceRepository: InvoiceRepository;
+  customerRepository: CustomerRepository;
 
   // Services
   paymentSessionService: PaymentSessionService;
@@ -57,6 +63,8 @@ export interface ServiceContainer {
   bankWebhookService: BankWebhookService;
   credentialManagerService: CredentialManagerService;
   bankConnectionService: BankConnectionService;
+  invoiceService: InvoiceService;
+  customerService: CustomerService;
 }
 
 let container: ServiceContainer | null = null;
@@ -87,6 +95,8 @@ function createContainer(): ServiceContainer {
   );
   const organizationBankConnectionRepository =
     new OrganizationBankConnectionRepository(prisma);
+  const invoiceRepository = new InvoiceRepository(prisma);
+  const customerRepository = new CustomerRepository(prisma);
 
   // Create services (depend on repositories)
   const securityService = new SecurityService();
@@ -121,6 +131,13 @@ function createContainer(): ServiceContainer {
     organizationBankConnectionRepository,
     credentialManagerService,
   );
+  const customerService = new CustomerService(customerRepository);
+  const invoiceService = new InvoiceService(
+    invoiceRepository,
+    paymentSessionService,
+    customerService,
+    prisma,
+  );
 
   return {
     prisma,
@@ -131,6 +148,8 @@ function createContainer(): ServiceContainer {
     bankAccountRepository,
     organizationWebhookRepository,
     organizationBankConnectionRepository,
+    invoiceRepository,
+    customerRepository,
     paymentSessionService,
     paymentSettlementService,
     organizationService,
@@ -141,6 +160,8 @@ function createContainer(): ServiceContainer {
     bankWebhookService,
     credentialManagerService,
     bankConnectionService,
+    invoiceService,
+    customerService,
   };
 }
 

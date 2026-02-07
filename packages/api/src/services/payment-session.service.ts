@@ -1,3 +1,6 @@
+import QRCode from "qrcode";
+
+import type { Prisma } from "@getblitz/database";
 import { ProviderRegistry } from "@getblitz/bank-providers";
 
 import type {
@@ -10,6 +13,7 @@ import type {
   IPaymentSessionService,
   IPaymentSettlementService,
   PaymentSessionWithOrg,
+  QrCodeResult,
   SessionDetailsResult,
   SimulatePaymentResult,
 } from "../interfaces";
@@ -27,13 +31,18 @@ export class PaymentSessionService implements IPaymentSessionService {
   /**
    * Create a new payment challenge/session
    */
-  async createChallenge({
-    input,
-    baseUrl,
-  }: {
-    input: CreateChallengeInput;
-    baseUrl: string;
-  }): Promise<CreateChallengeResult> {
+  async createChallenge(
+    {
+      input,
+      baseUrl,
+      expiresInMinutes,
+    }: {
+      input: CreateChallengeInput;
+      baseUrl: string;
+      expiresInMinutes?: number | null; // null = no expiration
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<CreateChallengeResult> {
     const {
       organizationId,
       amount,
@@ -45,10 +54,13 @@ export class PaymentSessionService implements IPaymentSessionService {
     // Validate merchantReferenceId uniqueness per organization if provided
     if (merchantReferenceId) {
       const existingSession =
-        await this.paymentSessionRepository.findByMerchantReferenceId({
-          organizationId,
-          merchantReferenceId,
-        });
+        await this.paymentSessionRepository.findByMerchantReferenceId(
+          {
+            organizationId,
+            merchantReferenceId,
+          },
+          tx,
+        );
       if (existingSession) {
         throw new Error(
           `A payment with merchantReferenceId "${merchantReferenceId}" already exists for this organization`,
@@ -80,21 +92,27 @@ export class PaymentSessionService implements IPaymentSessionService {
     // Generate unique reference ID
     const referenceId = generateReferenceId();
 
-    // Set expiration (15 minutes from now)
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    // Set expiration
+    const expiresAt =
+      expiresInMinutes === null
+        ? null
+        : new Date(Date.now() + (expiresInMinutes ?? 15) * 60 * 1000);
 
     // Create payment session
-    const paymentSession = await this.paymentSessionRepository.create({
-      data: {
-        organizationId,
-        bankAccountId: bankAccount.id,
-        referenceId,
-        merchantReferenceId,
-        amountCents: amount,
-        currency,
-        expiresAt,
+    const paymentSession = await this.paymentSessionRepository.create(
+      {
+        data: {
+          organizationId,
+          bankAccountId: bankAccount.id,
+          referenceId,
+          merchantReferenceId,
+          amountCents: amount,
+          currency,
+          expiresAt,
+        },
       },
-    });
+      tx,
+    );
 
     // Generate payment URL
     const paymentUrl = `${baseUrl}/pay/${paymentSession.id}`;
@@ -104,7 +122,7 @@ export class PaymentSessionService implements IPaymentSessionService {
       referenceId,
       merchantReferenceId,
       paymentUrl,
-      expiresAt: paymentSession.expiresAt.toISOString(),
+      expiresAt: paymentSession.expiresAt?.toISOString() ?? null,
       connectionId: bankAccount.organizationBankConnection.id,
     };
   }
@@ -143,7 +161,11 @@ export class PaymentSessionService implements IPaymentSessionService {
     }
 
     // Check if expired and update status
-    if (session.status === "PENDING" && session.expiresAt < new Date()) {
+    if (
+      session.status === "PENDING" &&
+      session.expiresAt &&
+      session.expiresAt < new Date()
+    ) {
       await this.paymentSessionRepository.updateStatus({
         id: session.id,
         status: "EXPIRED",
@@ -175,7 +197,7 @@ export class PaymentSessionService implements IPaymentSessionService {
       amountCents: session.amountCents,
       currency: session.currency,
       status: session.status,
-      expiresAt: session.expiresAt.toISOString(),
+      expiresAt: session.expiresAt?.toISOString() ?? null,
       organization: {
         name: session.organization.name,
       },
@@ -322,5 +344,25 @@ export class PaymentSessionService implements IPaymentSessionService {
     options?: { take?: number };
   }): Promise<PaymentSessionWithOrg[]> {
     return this.paymentSessionRepository.findByOrgIds({ orgIds, options });
+  }
+
+  async getQrCodeBase64({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<QrCodeResult | null> {
+    const session = await this.getSessionDetails({ sessionId });
+    if (!session?.sepaQrString) return null;
+
+    const qrCodeBuffer = await QRCode.toBuffer(session.sepaQrString, {
+      type: "png",
+      width: 400,
+      margin: 2,
+    });
+
+    return {
+      qrCodeBase64: `data:image/png;base64,${qrCodeBuffer.toString("base64")}`,
+      qrString: session.sepaQrString,
+    };
   }
 }

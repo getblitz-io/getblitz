@@ -4,12 +4,14 @@
 
 import type { Currency, PaymentStatus } from "@getblitz/database";
 
+import type { InvoiceLineItem } from "./inputs";
+
 export interface CreateChallengeResult {
   sessionId: string;
   referenceId: string;
   merchantReferenceId?: string;
   paymentUrl: string;
-  expiresAt: string;
+  expiresAt: string | null; // Nullable for non-expiring payments
   connectionId: string;
 }
 
@@ -19,7 +21,7 @@ export interface SessionDetailsResult {
   amountCents: number;
   currency: Currency;
   status: PaymentStatus;
-  expiresAt: string;
+  expiresAt: string | null; // Nullable for non-expiring payments
   organization: {
     name: string;
   };
@@ -78,4 +80,61 @@ export interface BankWebhookResult {
     | "INTERNAL_ERROR";
   alreadyProcessed?: boolean;
   referenceId?: string;
+}
+
+// Invoice-related output types
+
+export interface CreateInvoiceResult {
+  invoiceId: string;
+  referenceId: string;
+  invoiceUrl: string;
+  paymentUrl: string;
+  expiresAt: string | null;
+}
+
+export interface InvoiceDetailsResult {
+  invoiceId: string;
+  referenceId: string;
+  invoiceNumber: string | null;
+
+  // Financial summary
+  amountCents: number;
+  currency: Currency;
+  subtotalCents: number;
+  taxRateBps: number;
+  taxAmountCents: number;
+  discountCents: number;
+  lineItems: InvoiceLineItem[] | null;
+
+  // Status
+  status: PaymentStatus;
+  expiresAt: string | null;
+  dueDate: string | null;
+
+  // Customer info
+  customerEmail: string | null;
+  customerName: string | null;
+  customerAddress: string | null;
+  customerTaxId: string | null;
+
+  // Invoice content
+  description: string | null;
+  notes: string | null;
+
+  // Organization with logo
+  organization: {
+    name: string;
+    logo: string | null;
+  };
+
+  // Security
+  isPasswordProtected: boolean;
+
+  // Payment session for QR code
+  paymentSession: SessionDetailsResult;
+}
+
+export interface QrCodeResult {
+  qrCodeBase64: string;
+  qrString: string;
 }

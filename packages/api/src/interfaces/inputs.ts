@@ -11,7 +11,7 @@ export interface CreatePaymentSessionInput {
   merchantReferenceId?: string;
   amountCents: number;
   currency: Currency;
-  expiresAt: Date;
+  expiresAt: Date | null; // Nullable for non-expiring payments
 }
 
 export interface CreateBankAccountInput {
@@ -105,4 +105,113 @@ export interface CreateOrganizationBankConnectionInput {
   webhookUrl?: string | null;
   webhookSecret?: string | null;
   name?: string | null; // Optional connection name
+}
+
+// Invoice-related input types
+
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+
+export interface CreateInvoiceInput {
+  organizationId: string;
+  amountCents: number; // Total amount (for payment session)
+  currency: Currency;
+  bankAccountId?: string;
+  merchantReferenceId?: string;
+
+  // Customer information
+  customerEmail: string;
+  customerName?: string;
+  customerAddress?: string;
+  customerTaxId?: string;
+
+  // Invoice details
+  description?: string;
+  notes?: string;
+  dueDate?: Date;
+  invoiceNumber?: string;
+
+  // Financial details
+  lineItems?: InvoiceLineItem[];
+  subtotalCents: number;
+  taxRateBps?: number; // Tax rate in basis points (1900 = 19%)
+  taxAmountCents?: number;
+  discountCents?: number;
+
+  // Security
+  password?: string; // Plain text - will be hashed before storage
+
+  // Expiration
+  expiresInMinutes?: number | null; // null = no expiration
+
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateInvoiceDbInput {
+  organizationId: string;
+  referenceId: string;
+  paymentSessionId: string;
+  customerId?: string;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  customerAddress?: string | null;
+  customerTaxId?: string | null;
+  description?: string;
+  notes?: string;
+  dueDate?: Date;
+  invoiceNumber?: string;
+  lineItems?: InvoiceLineItem[];
+  subtotalCents: number;
+  taxRateBps: number;
+  taxAmountCents: number;
+  discountCents: number;
+  passwordHash?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateInvoiceInput {
+  id: string;
+  organizationId: string;
+  // Customer information (updatable)
+  customerId?: string;
+  customerEmail?: string;
+  customerName?: string;
+  customerAddress?: string;
+  customerTaxId?: string;
+  // Invoice content (updatable)
+  description?: string;
+  notes?: string;
+  dueDate?: Date;
+  invoiceNumber?: string;
+  // Financial details (updatable)
+  lineItems?: InvoiceLineItem[];
+  subtotalCents?: number;
+  taxRateBps?: number;
+  taxAmountCents?: number;
+  discountCents?: number;
+  // Security
+  password?: string; // Plain text - will be hashed if provided
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateInvoiceDbInput {
+  customerId?: string;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  customerAddress?: string | null;
+  customerTaxId?: string | null;
+  description?: string;
+  notes?: string;
+  dueDate?: Date;
+  invoiceNumber?: string;
+  lineItems?: InvoiceLineItem[];
+  subtotalCents?: number;
+  taxRateBps?: number;
+  taxAmountCents?: number;
+  discountCents?: number;
+  passwordHash?: string;
+  metadata?: Record<string, unknown>;
 }

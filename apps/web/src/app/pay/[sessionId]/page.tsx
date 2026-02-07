@@ -44,9 +44,11 @@ export default async function PaymentPage({
               {t("paymentWidget")}
             </div>
 
-            <p className="text-muted-foreground text-center text-xs">
-              {t("expires")} {new Date(session.expiresAt).toLocaleString()}
-            </p>
+            {session.expiresAt && (
+              <p className="text-muted-foreground text-center text-xs">
+                {t("expires")} {new Date(session.expiresAt).toLocaleString()}
+              </p>
+            )}
           </div>
         )}
 

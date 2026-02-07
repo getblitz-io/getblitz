@@ -5,7 +5,12 @@ import { notFound, redirect } from "next/navigation";
 import { GearIcon, HomeIcon } from "@radix-ui/react-icons";
 import { getTranslations } from "next-intl/server";
 
-import { BuildingIcon, CreditCardIcon } from "@getblitz/icon";
+import {
+  BuildingIcon,
+  CreditCardIcon,
+  CustomerIcon,
+  InvoiceIcon,
+} from "@getblitz/icon";
 
 import { auth, getSession } from "~/auth/server";
 import { api } from "~/trpc/server";
@@ -46,6 +51,8 @@ export default async function OrgLayout({
     { href: `/${slug}`, labelKey: "dashboard", icon: "home" },
     { href: `/${slug}/banks`, labelKey: "banks", icon: "building" },
     { href: `/${slug}/payments`, labelKey: "payments", icon: "credit-card" },
+    { href: `/${slug}/customers`, labelKey: "customers", icon: "users" },
+    { href: `/${slug}/invoices`, labelKey: "invoices", icon: "receipt" },
     { href: `/${slug}/settings`, labelKey: "settings", icon: "settings" },
   ] as const;
 
@@ -136,12 +143,14 @@ export default async function OrgLayout({
 function NavIcon({
   name,
 }: {
-  name: "home" | "building" | "credit-card" | "settings";
+  name: "home" | "building" | "credit-card" | "users" | "receipt" | "settings";
 }) {
   const icons = {
     home: <HomeIcon className="h-4 w-4" />,
     building: <BuildingIcon className="h-4 w-4" />,
     "credit-card": <CreditCardIcon className="h-4 w-4" />,
+    users: <CustomerIcon className="h-4 w-4" />,
+    receipt: <InvoiceIcon className="h-4 w-4" />,
     settings: <GearIcon className="h-4 w-4" />,
   };
   return icons[name];

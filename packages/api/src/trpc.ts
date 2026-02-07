@@ -17,6 +17,8 @@ import type { ApiKeyService } from "./services/api-key.service";
 import type { BankConnectionService } from "./services/bank-connection.service";
 import type { CredentialCacheService } from "./services/credential-cache.service";
 import type { CredentialManagerService } from "./services/credential-manager.service";
+import type { CustomerService } from "./services/customer.service";
+import type { InvoiceService } from "./services/invoice.service";
 import type { OrganizationService } from "./services/organization.service";
 import type { PaymentSessionService } from "./services/payment-session.service";
 import type { PaymentSettlementService } from "./services/payment-settlement.service";
@@ -38,6 +40,8 @@ export interface TRPCServices {
   credentialCache: CredentialCacheService;
   credentialManager: CredentialManagerService;
   bankConnection: BankConnectionService;
+  invoice: InvoiceService;
+  customer: CustomerService;
 }
 
 /**
@@ -80,6 +84,8 @@ export const createTRPCContext = async (opts: {
       credentialCache: container.credentialCacheService,
       credentialManager: container.credentialManagerService,
       bankConnection: container.bankConnectionService,
+      invoice: container.invoiceService,
+      customer: container.customerService,
     },
     prisma: container.prisma,
   };

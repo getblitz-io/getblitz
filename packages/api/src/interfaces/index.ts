@@ -17,6 +17,11 @@ export type {
   SettlementInput,
   UpdateOrganizationWebhookInput,
   UpdateWebhookInput,
+  CreateInvoiceInput,
+  CreateInvoiceDbInput,
+  UpdateInvoiceInput,
+  UpdateInvoiceDbInput,
+  InvoiceLineItem,
 } from "./inputs";
 
 // Output types
@@ -28,6 +33,9 @@ export type {
   SettlementResult,
   SimulatePaymentResult,
   WebhookEventType,
+  CreateInvoiceResult,
+  InvoiceDetailsResult,
+  QrCodeResult,
 } from "./outputs";
 
 // Prisma composite types
@@ -37,17 +45,21 @@ export type {
   OrganizationWithDetails,
   PaymentSessionWithOrg,
   PaymentSessionWithRelations,
+  InvoiceWithOrg,
+  InvoiceWithRelations,
 } from "./prisma-types";
 
 // Repository interfaces
 export type {
   IApiKeyRepository,
   IBankAccountRepository,
+  ICustomerRepository,
   IOrganizationBankConnectionRepository,
   IOrganizationRepository,
   IOrganizationWebhookRepository,
   IPaymentSessionRepository,
   ITransactionRepository,
+  IInvoiceRepository,
 } from "./repositories";
 
 // Service interfaces
@@ -57,12 +69,14 @@ export type {
   IBankConnectionService,
   IBankWebhookService,
   ICredentialManagerService,
+  ICustomerService,
   IOrganizationService,
   IPaymentSessionService,
   IPaymentSettlementService,
   IWebhookService,
   SetupWebhookParams,
   SetupWebhookResult,
+  IInvoiceService,
 } from "./services";
 
 // Errors

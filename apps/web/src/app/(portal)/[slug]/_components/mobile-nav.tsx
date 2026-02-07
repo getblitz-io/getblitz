@@ -7,7 +7,12 @@ import { GearIcon, HamburgerMenuIcon, HomeIcon } from "@radix-ui/react-icons";
 import { useTranslations } from "next-intl";
 
 import type { Session } from "@getblitz/auth";
-import { BuildingIcon, CreditCardIcon } from "@getblitz/icon";
+import {
+  BuildingIcon,
+  CreditCardIcon,
+  CustomerIcon,
+  InvoiceIcon,
+} from "@getblitz/icon";
 import {
   Sheet,
   SheetClose,
@@ -35,6 +40,8 @@ const navItems = [
   { path: "", labelKey: "dashboard", icon: "home" },
   { path: "/banks", labelKey: "banks", icon: "building" },
   { path: "/payments", labelKey: "payments", icon: "credit-card" },
+  { path: "/customers", labelKey: "customers", icon: "users" },
+  { path: "/invoices", labelKey: "invoices", icon: "receipt" },
   { path: "/settings", labelKey: "settings", icon: "settings" },
 ] as const;
 
@@ -108,12 +115,14 @@ function MenuIcon({ className }: { className?: string }) {
 function NavIcon({
   name,
 }: {
-  name: "home" | "building" | "credit-card" | "settings";
+  name: "home" | "building" | "credit-card" | "users" | "receipt" | "settings";
 }) {
   const icons = {
     home: <HomeIcon className="h-4 w-4" />,
     building: <BuildingIcon className="h-4 w-4" />,
     "credit-card": <CreditCardIcon className="h-4 w-4" />,
+    users: <CustomerIcon className="h-4 w-4" />,
+    receipt: <InvoiceIcon className="h-4 w-4" />,
     settings: <GearIcon className="h-4 w-4" />,
   };
   return icons[name];
