@@ -12,14 +12,9 @@ export function parseDeviceDetails(headers: Headers): DeviceDetails {
   return {
     ipAddress,
     userAgent,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    deviceType: result.device?.type ?? "desktop", // Default to desktop if type is undefined (common for desktop browsers)
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    deviceOs:
-      `${result.os?.name ?? "Unknown"} ${result.os?.version ?? ""}`.trim(),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    deviceBrowser:
-      `${result.browser?.name ?? "Unknown"} ${result.browser?.version ?? ""}`.trim(),
+    deviceType: result.device.type ?? "desktop", // Default to desktop if type is undefined (common for desktop browsers)
+    deviceOs: `${result.os.name} ${result.os.version}`.trim(),
+    deviceBrowser: `${result.browser.name} ${result.browser.version}`.trim(),
   };
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
@@ -81,6 +82,15 @@ export default function EditCustomerPage() {
       });
     },
   });
+
+  useEffect(() => {
+    if (customer) {
+      form.setFieldValue("name", customer.name ?? "");
+      form.setFieldValue("email", customer.email ?? "");
+      form.setFieldValue("address", customer.address ?? "");
+      form.setFieldValue("taxId", customer.taxId ?? "");
+    }
+  }, [form, customer]);
 
   if (isLoading) {
     return (
