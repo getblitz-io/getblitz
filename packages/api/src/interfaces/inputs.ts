@@ -2,7 +2,7 @@
  * Input types for creating/updating entities
  */
 
-import type { Currency } from "@getblitz/database";
+import type { Currency, Invoice, Prisma } from "@getblitz/database";
 
 export interface CreatePaymentSessionInput {
   organizationId: string;
@@ -115,103 +115,53 @@ export interface InvoiceLineItem {
   unitPriceCents: number;
 }
 
-export interface CreateInvoiceInput {
-  organizationId: string;
-  amountCents: number; // Total amount (for payment session)
-  currency: Currency;
-  bankAccountId?: string;
-  merchantReferenceId?: string;
+// Invoice-related data types for database operations
 
-  // Customer information
-  customerEmail: string;
-  customerName?: string;
-  customerAddress?: string;
-  customerTaxId?: string;
+export type InvoiceCreateData = Omit<
+  Pick<
+    Invoice,
+    | "organizationId"
+    | "referenceId"
+    | "customerEmail"
+    | "subtotalCents"
+    | "taxRateBps"
+    | "taxAmountCents"
+    | "discountCents"
+    | "totalCents"
+    | "currency"
+    | "bankAccountId"
+  >,
+  "lineItems"
+> & { lineItems: Prisma.InputJsonValue } & Partial<
+    Omit<
+      Pick<
+        Invoice,
+        | "paymentSessionId"
+        | "customerId"
+        | "customerName"
+        | "customerTaxId"
+        | "customerAddress"
+        | "description"
+        | "notes"
+        | "dueDate"
+        | "invoiceNumber"
+        | "passwordHash"
+        | "expiresAt"
+        | "status"
+      >,
+      "metadata"
+    >
+  > & { metadata?: Prisma.InputJsonValue };
 
-  // Invoice details
-  description?: string;
-  notes?: string;
-  dueDate?: Date;
-  invoiceNumber?: string;
+export type InvoiceUpdateData = Partial<
+  Omit<InvoiceCreateData, "organizationId" | "referenceId"> &
+    Pick<Invoice, "paymentSessionId">
+>;
 
-  // Financial details
-  lineItems?: InvoiceLineItem[];
-  subtotalCents: number;
-  taxRateBps?: number; // Tax rate in basis points (1900 = 19%)
-  taxAmountCents?: number;
-  discountCents?: number;
-
-  // Security
-  password?: string; // Plain text - will be hashed before storage
-
-  // Expiration
-  expiresInMinutes?: number | null; // null = no expiration
-
-  metadata?: Record<string, unknown>;
-}
-
-export interface CreateInvoiceDbInput {
-  organizationId: string;
-  referenceId: string;
-  paymentSessionId: string;
-  customerId?: string;
-  customerEmail?: string | null;
-  customerName?: string | null;
-  customerAddress?: string | null;
-  customerTaxId?: string | null;
-  description?: string;
-  notes?: string;
-  dueDate?: Date;
-  invoiceNumber?: string;
-  lineItems?: InvoiceLineItem[];
-  subtotalCents: number;
-  taxRateBps: number;
-  taxAmountCents: number;
-  discountCents: number;
-  passwordHash?: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface UpdateInvoiceInput {
-  id: string;
-  organizationId: string;
-  // Customer information (updatable)
-  customerId?: string;
-  customerEmail?: string;
-  customerName?: string;
-  customerAddress?: string;
-  customerTaxId?: string;
-  // Invoice content (updatable)
-  description?: string;
-  notes?: string;
-  dueDate?: Date;
-  invoiceNumber?: string;
-  // Financial details (updatable)
-  lineItems?: InvoiceLineItem[];
-  subtotalCents?: number;
-  taxRateBps?: number;
-  taxAmountCents?: number;
-  discountCents?: number;
-  // Security
-  password?: string; // Plain text - will be hashed if provided
-  metadata?: Record<string, unknown>;
-}
-
-export interface UpdateInvoiceDbInput {
-  customerId?: string;
-  customerEmail?: string | null;
-  customerName?: string | null;
-  customerAddress?: string | null;
-  customerTaxId?: string | null;
-  description?: string;
-  notes?: string;
-  dueDate?: Date;
-  invoiceNumber?: string;
-  lineItems?: InvoiceLineItem[];
-  subtotalCents?: number;
-  taxRateBps?: number;
-  taxAmountCents?: number;
-  discountCents?: number;
-  passwordHash?: string;
-  metadata?: Record<string, unknown>;
+export interface DeviceDetails {
+  ipAddress: string;
+  userAgent: string;
+  deviceType: string;
+  deviceOs: string;
+  deviceBrowser: string;
 }

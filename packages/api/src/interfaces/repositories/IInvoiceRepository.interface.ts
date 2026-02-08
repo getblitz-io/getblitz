@@ -1,24 +1,35 @@
 import type { Invoice, Prisma } from "@getblitz/database";
 
 import type {
-  CreateInvoiceDbInput,
+  InvoiceCreateData,
+  InvoiceUpdateData,
   InvoiceWithOrg,
   InvoiceWithRelations,
-  UpdateInvoiceDbInput,
 } from "..";
 
 export interface IInvoiceRepository {
-  create(
-    { data }: { data: CreateInvoiceDbInput },
-    tx?: Prisma.TransactionClient,
-  ): Promise<Invoice>;
+  create({
+    data,
+    tx,
+  }: {
+    data: InvoiceCreateData;
+    tx?: Prisma.TransactionClient;
+  }): Promise<Invoice>;
 
-  findById({ id }: { id: string }): Promise<InvoiceWithRelations | null>;
+  findById({
+    id,
+    organizationId,
+  }: {
+    id: string;
+    organizationId?: string;
+  }): Promise<InvoiceWithRelations | null>;
 
   findByReferenceId({
     referenceId,
+    type,
   }: {
     referenceId: string;
+    type: "referenceId" | "id";
   }): Promise<InvoiceWithRelations | null>;
 
   findByOrgIds({
@@ -33,11 +44,13 @@ export interface IInvoiceRepository {
     id,
     organizationId,
     data,
+    tx,
   }: {
     id: string;
     organizationId: string;
-    data: UpdateInvoiceDbInput;
-  }): Promise<Invoice>;
+    data: InvoiceUpdateData;
+    tx?: Prisma.TransactionClient;
+  }): Promise<InvoiceWithRelations>;
 
   delete({
     id,

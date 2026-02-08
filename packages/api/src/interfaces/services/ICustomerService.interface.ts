@@ -33,4 +33,9 @@ export interface ICustomerService {
   ): Promise<Customer[]>;
   updateCustomer(input: UpdateCustomerInput): Promise<Customer>;
   deleteCustomer(id: string, organizationId: string): Promise<Customer>;
+  searchCustomers(params: {
+    organizationId: string;
+    query: string;
+    take?: number;
+  }): Promise<Customer[]>;
 }

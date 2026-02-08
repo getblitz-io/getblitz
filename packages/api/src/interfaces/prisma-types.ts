@@ -104,12 +104,21 @@ export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
         };
       };
     };
+    bankAccount: {
+      include: {
+        organizationBankConnection: true;
+      };
+    };
   };
 }>;
-
 export type InvoiceWithOrg = Prisma.InvoiceGetPayload<{
   include: {
     organization: { select: { id: true; name: true; logo: true } };
     paymentSession: { select: { status: true; expiresAt: true } };
+    bankAccount: {
+      include: {
+        organizationBankConnection: true;
+      };
+    };
   };
 }>;

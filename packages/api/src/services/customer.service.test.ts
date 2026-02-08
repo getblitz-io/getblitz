@@ -17,6 +17,7 @@ describe("CustomerService", () => {
     findByEmail: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    search: vi.fn(),
   };
 
   const mockCustomer: Customer = {
@@ -284,6 +285,41 @@ describe("CustomerService", () => {
         expect.anything(),
         mockTx,
       );
+    });
+  });
+
+  describe("searchCustomers", () => {
+    it("should search customers by query", async () => {
+      const customers = [mockCustomer];
+      mockCustomerRepo.search.mockResolvedValue(customers);
+
+      const result = await service.searchCustomers({
+        organizationId: "org-1",
+        query: "test",
+      });
+
+      expect(result).toEqual(customers);
+      expect(mockCustomerRepo.search).toHaveBeenCalledWith({
+        organizationId: "org-1",
+        query: "test",
+        take: undefined,
+      });
+    });
+
+    it("should pass take option when provided", async () => {
+      mockCustomerRepo.search.mockResolvedValue([]);
+
+      await service.searchCustomers({
+        organizationId: "org-1",
+        query: "test",
+        take: 5,
+      });
+
+      expect(mockCustomerRepo.search).toHaveBeenCalledWith({
+        organizationId: "org-1",
+        query: "test",
+        take: 5,
+      });
     });
   });
 });

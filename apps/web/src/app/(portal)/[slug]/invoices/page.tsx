@@ -5,10 +5,15 @@ import { Card, CardContent } from "@getblitz/ui";
 import { Button } from "@getblitz/ui/button";
 
 import { api } from "~/trpc/server";
+import { PreviewButton } from "./_components";
 
 const statusColors = {
-  PENDING: "bg-amber-500/10 text-amber-600",
+  DRAFT: "bg-amber-500/10 text-amber-600",
+  FINALIZED: "bg-amber-500/10 text-amber-600",
   PAID: "bg-green-500/10 text-green-600",
+  CANCELLED: "bg-red-500/10 text-red-600",
+  // Payment statuses
+  PENDING: "bg-amber-500/10 text-amber-600",
   FAILED: "bg-red-500/10 text-red-600",
   EXPIRED: "bg-gray-500/10 text-gray-600",
 } as const;
@@ -45,30 +50,48 @@ export default async function InvoicesPage({
           <div className="space-y-3 sm:hidden">
             {invoices.map((invoice) => (
               <Link key={invoice.id} href={`/${slug}/invoices/${invoice.id}`}>
-                <Card className="hover:bg-muted/50 p-4 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <code className="block truncate font-mono text-sm">
-                        {invoice.referenceId}
-                      </code>
-                      <p className="text-muted-foreground mt-1 truncate text-sm">
-                        {invoice.customerName ??
-                          invoice.customerEmail ??
-                          tCommon("noCustomer")}
-                      </p>
+                <Card className="active:bg-muted/50 transition-colors">
+                  <div className="flex flex-col gap-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <code className="block truncate font-mono text-sm font-medium">
+                            {invoice.referenceId}
+                          </code>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColors[invoice.status]}`}
+                          >
+                            {tCommon(`status.${invoice.status.toLowerCase()}`)}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground mt-1 truncate text-sm">
+                          {invoice.customerName ??
+                            invoice.customerEmail ??
+                            tCommon("noCustomer")}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">
+                          €{(invoice.subtotalCents / 100).toFixed(2)}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {invoice.createdAt.toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">
-                        €{(invoice.subtotalCents / 100).toFixed(2)}
-                      </p>
-                      <span
-                        className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[invoice.paymentSession.status]}`}
-                      >
-                        {tCommon(
-                          `status.${invoice.paymentSession.status.toLowerCase()}`,
-                        )}
-                      </span>
-                    </div>
+
+                    {!invoice.paymentSession && (
+                      <div className="flex justify-end border-t pt-2">
+                        <div>
+                          <PreviewButton
+                            slug={slug}
+                            invoiceId={invoice.id}
+                            size="sm"
+                            classNames={{ button: "w-full sm:w-auto" }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Card>
               </Link>
@@ -86,6 +109,7 @@ export default async function InvoicesPage({
                     <th className="p-4 font-medium">{t("amount")}</th>
                     <th className="p-4 font-medium">{t("status")}</th>
                     <th className="p-4 font-medium">{t("created")}</th>
+                    <th className="p-4 font-medium">{t("actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -109,16 +133,31 @@ export default async function InvoicesPage({
                         </span>
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[invoice.paymentSession.status]}`}
-                        >
-                          {tCommon(
-                            `status.${invoice.paymentSession.status.toLowerCase()}`,
-                          )}
-                        </span>
+                        {invoice.paymentSession ? (
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[invoice.paymentSession.status]}`}
+                          >
+                            {tCommon(
+                              `status.${invoice.paymentSession.status.toLowerCase()}`,
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                            {tCommon("status.draft")}
+                          </span>
+                        )}
                       </td>
                       <td className="text-muted-foreground p-4 text-sm">
                         {invoice.createdAt.toLocaleString()}
+                      </td>
+                      <td className="p-4">
+                        {!invoice.paymentSession && (
+                          <PreviewButton
+                            slug={slug}
+                            invoiceId={invoice.id}
+                            size="icon"
+                          />
+                        )}
                       </td>
                     </tr>
                   ))}

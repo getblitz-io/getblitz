@@ -40,10 +40,12 @@
     "bcryptjs": "^3.0.3",
     "better-auth": "catalog:",
     "bullmq": "^5.0.0",
+    "decimal.js": "catalog:",
     "nanoid": "catalog:",
     "qrcode": "catalog:",
     "rate-limiter-flexible": "^5.0.5",
     "superjson": "2.2.3",
+    "ua-parser-js": "^2.0.9",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -54,10 +56,12 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "catalog:",
     "@types/qrcode": "catalog:",
+    "@types/ua-parser-js": "^0.7.39",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:test"
+    "vitest": "catalog:test",
+    "vitest-mock-extended": "catalog:test"
   },
   "prettier": "@getblitz/prettier-config"
 }

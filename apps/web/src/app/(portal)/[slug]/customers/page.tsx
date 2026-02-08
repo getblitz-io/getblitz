@@ -41,20 +41,27 @@ export default async function CustomersPage({
                 key={customer.id}
                 href={`/${slug}/customers/${customer.id}`}
               >
-                <Card className="hover:bg-muted/50 p-4 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">
-                        {customer.name ?? tCommon("noName")}
-                      </p>
-                      <p className="text-muted-foreground mt-1 truncate text-sm">
-                        {customer.email}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-muted-foreground text-xs">
-                        {customer.createdAt.toLocaleDateString()}
-                      </p>
+                <Card className="active:bg-muted/50 transition-colors">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">
+                          {customer.name ?? tCommon("noName")}
+                        </p>
+                        <p className="text-muted-foreground mt-1 truncate text-sm">
+                          {customer.email}
+                        </p>
+                        {customer.taxId && (
+                          <p className="text-muted-foreground mt-0.5 truncate font-mono text-xs">
+                            {customer.taxId}
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-muted-foreground text-xs">
+                          {customer.createdAt.toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </Card>

@@ -17,11 +17,10 @@ export type {
   SettlementInput,
   UpdateOrganizationWebhookInput,
   UpdateWebhookInput,
-  CreateInvoiceInput,
-  CreateInvoiceDbInput,
-  UpdateInvoiceInput,
-  UpdateInvoiceDbInput,
   InvoiceLineItem,
+  DeviceDetails,
+  InvoiceCreateData,
+  InvoiceUpdateData,
 } from "./inputs";
 
 // Output types
@@ -77,6 +76,10 @@ export type {
   SetupWebhookParams,
   SetupWebhookResult,
   IInvoiceService,
+  IPreviewService,
+  CreatePreviewTokenParams,
+  VerifyPreviewTokenParams,
+  VerifyPreviewTokenResult,
 } from "./services";
 
 // Errors

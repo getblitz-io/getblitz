@@ -1,62 +1,26 @@
 import type { Invoice, Prisma, PrismaClient } from "@getblitz/database";
+import { InvoiceStatus } from "@getblitz/database";
 
 import type {
-  CreateInvoiceDbInput,
   IInvoiceRepository,
+  InvoiceCreateData,
+  InvoiceUpdateData,
   InvoiceWithOrg,
   InvoiceWithRelations,
-  UpdateInvoiceDbInput,
 } from "../interfaces";
 
 export class InvoiceRepository implements IInvoiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(
-    { data }: { data: CreateInvoiceDbInput },
-    tx?: Prisma.TransactionClient,
-  ): Promise<InvoiceWithRelations> {
-    const {
-      organizationId,
-      referenceId,
-      paymentSessionId,
-      customerEmail,
-      customerName,
-      customerAddress,
-      customerTaxId,
-      description,
-      notes,
-      dueDate,
-      invoiceNumber,
-      lineItems,
-      subtotalCents,
-      taxRateBps,
-      taxAmountCents,
-      discountCents,
-      passwordHash,
-      metadata,
-    } = data;
-
+  async create({
+    data,
+    tx,
+  }: {
+    data: InvoiceCreateData;
+    tx?: Prisma.TransactionClient;
+  }): Promise<Invoice> {
     return (tx ?? this.prisma).invoice.create({
-      data: {
-        organizationId,
-        referenceId,
-        paymentSessionId,
-        customerEmail,
-        customerName,
-        customerAddress,
-        customerTaxId,
-        description,
-        notes,
-        dueDate,
-        invoiceNumber,
-        lineItems: lineItems as unknown as Prisma.InputJsonValue,
-        subtotalCents,
-        taxRateBps,
-        taxAmountCents,
-        discountCents,
-        passwordHash,
-        metadata: metadata as Prisma.InputJsonValue,
-      },
+      data,
       include: {
         organization: true,
         paymentSession: {
@@ -68,13 +32,25 @@ export class InvoiceRepository implements IInvoiceRepository {
             },
           },
         },
+        bankAccount: {
+          include: {
+            organizationBankConnection: true,
+          },
+        },
       },
     });
   }
 
-  async findById({ id }: { id: string }): Promise<InvoiceWithRelations | null> {
+  async findById({
+    id,
+    organizationId,
+  }: {
+    id: string;
+    organizationId?: string;
+  }): Promise<InvoiceWithRelations | null> {
+    const where = organizationId ? { id, organizationId } : { id };
     return this.prisma.invoice.findUnique({
-      where: { id },
+      where,
       include: {
         organization: true,
         paymentSession: {
@@ -84,6 +60,11 @@ export class InvoiceRepository implements IInvoiceRepository {
                 organizationBankConnection: true,
               },
             },
+          },
+        },
+        bankAccount: {
+          include: {
+            organizationBankConnection: true,
           },
         },
       },
@@ -92,11 +73,15 @@ export class InvoiceRepository implements IInvoiceRepository {
 
   async findByReferenceId({
     referenceId,
+    type,
   }: {
     referenceId: string;
+    type: "referenceId" | "id";
   }): Promise<InvoiceWithRelations | null> {
+    const where =
+      type === "referenceId" ? { referenceId } : { id: referenceId };
     return this.prisma.invoice.findUnique({
-      where: { referenceId },
+      where,
       include: {
         organization: true,
         paymentSession: {
@@ -106,6 +91,11 @@ export class InvoiceRepository implements IInvoiceRepository {
                 organizationBankConnection: true,
               },
             },
+          },
+        },
+        bankAccount: {
+          include: {
+            organizationBankConnection: true,
           },
         },
       },
@@ -139,6 +129,11 @@ export class InvoiceRepository implements IInvoiceRepository {
             expiresAt: true,
           },
         },
+        bankAccount: {
+          include: {
+            organizationBankConnection: true,
+          },
+        },
       },
     });
   }
@@ -147,17 +142,32 @@ export class InvoiceRepository implements IInvoiceRepository {
     id,
     organizationId,
     data,
+    tx,
   }: {
     id: string;
     organizationId: string;
-    data: UpdateInvoiceDbInput;
-  }): Promise<Invoice> {
-    return this.prisma.invoice.update({
+    data: InvoiceUpdateData;
+    tx?: Prisma.TransactionClient;
+  }): Promise<InvoiceWithRelations> {
+    return (tx ?? this.prisma).invoice.update({
       where: { id, organizationId },
-      data: {
-        ...data,
-        lineItems: data.lineItems as unknown as Prisma.InputJsonValue,
-        metadata: data.metadata as Prisma.InputJsonValue,
+      data,
+      include: {
+        organization: true,
+        paymentSession: {
+          include: {
+            bankAccount: {
+              include: {
+                organizationBankConnection: true,
+              },
+            },
+          },
+        },
+        bankAccount: {
+          include: {
+            organizationBankConnection: true,
+          },
+        },
       },
     });
   }
@@ -169,8 +179,11 @@ export class InvoiceRepository implements IInvoiceRepository {
     id: string;
     organizationId: string;
   }): Promise<Invoice> {
-    return this.prisma.invoice.delete({
+    return this.prisma.invoice.update({
       where: { id, organizationId },
+      data: {
+        status: InvoiceStatus.CANCELLED,
+      },
     });
   }
 }

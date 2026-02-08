@@ -1,17 +1,41 @@
+import bcrypt from "bcryptjs";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Prisma } from "@getblitz/database";
 import type { MockPrismaClient } from "@getblitz/database/mocked";
+import type { CreateInvoiceInput } from "@getblitz/validators";
 import { Currency } from "@getblitz/database";
 import { createMockPrismaClient } from "@getblitz/database/mocked";
 
 import type {
-  CreateInvoiceInput,
   ICustomerService,
   IInvoiceRepository,
   IPaymentSessionService,
 } from "../interfaces";
 import { InvoiceService } from "./invoice.service";
+
+const mockConsume = vi.fn();
+const mockGet = vi.fn();
+
+vi.mock("rate-limiter-flexible", () => {
+  return {
+    RateLimiterRedis: class {
+      consume = mockConsume;
+      get = mockGet;
+    },
+  };
+});
+
+vi.mock("@getblitz/redis", () => ({
+  getRedisClient: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock("../env", () => ({
+  env: {
+    ENCRYPTION_KEY: "mock-encryption-key-must-be-at-least-32-chars-long",
+    NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+  },
+}));
 
 describe("InvoiceService", () => {
   let service: InvoiceService;
@@ -59,15 +83,25 @@ describe("InvoiceService", () => {
 
   it("should create invoice in transaction", async () => {
     const input: CreateInvoiceInput = {
-      organizationId: "org-1",
+      slug: "test-org",
       amountCents: 1000,
       currency: Currency.EUR,
       customerEmail: "test@example.com",
       description: "Test Invoice",
       dueDate: new Date(),
       invoiceNumber: "INV-001",
-      lineItems: [],
+      lineItems: [
+        {
+          description: "Test Item",
+          quantity: 1,
+          unitPriceCents: 1000,
+        },
+      ],
       subtotalCents: 1000,
+      taxRateBps: 0,
+      taxAmountCents: 0,
+      discountCents: 0,
+      bankAccountId: "bank-1",
     };
 
     mockCustomerService.getOrCreateCustomer.mockResolvedValue({
@@ -88,6 +122,7 @@ describe("InvoiceService", () => {
 
     const result = await service.createInvoice({
       input,
+      organizationId: "org-1",
       baseUrl: "https://pay.test",
     });
 
@@ -102,13 +137,136 @@ describe("InvoiceService", () => {
       expect.anything(),
       mockPrisma,
     );
-    expect(mockPaymentSessionService.createChallenge).toHaveBeenCalledWith(
-      expect.anything(),
-      mockPrisma,
-    );
     expect(mockInvoiceRepo.create).toHaveBeenCalledWith(
-      expect.anything(),
-      mockPrisma,
+      expect.objectContaining({
+        tx: mockPrisma,
+      }),
     );
+  });
+
+  describe("getInvoiceByReference", () => {
+    const mockDeviceDetails = {
+      ipAddress: "127.0.0.1",
+      userAgent: "test-agent",
+      deviceType: "desktop",
+      deviceOs: "mac",
+      deviceBrowser: "chrome",
+    };
+
+    it("should allow access with correct password", async () => {
+      const password = "password123";
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      mockInvoiceRepo.findByReferenceId.mockResolvedValue({
+        id: "inv-1",
+        referenceId: "INV-RND",
+        passwordHash: hashedPassword,
+        organization: { name: "Test Org" },
+        bankAccount: {
+          organizationBankConnection: { providerId: "prov-1" },
+          accountName: "Test Account",
+          accountIban: "DE123",
+        },
+        status: "FINALIZED",
+        paymentSession: {
+          id: "sess-1",
+          referenceId: "ref-1",
+          amountCents: 1000,
+          currency: "EUR",
+          status: "PENDING",
+        },
+      });
+
+      // Mock rate limiter to allow
+      mockGet.mockResolvedValue(null);
+
+      const result = await service.getInvoiceByReference({
+        referenceId: "INV-RND",
+        password,
+        mode: "public",
+        deviceDetails: mockDeviceDetails,
+      });
+
+      expect(result).toBeDefined();
+      expect(result?.invoiceId).toBe("inv-1");
+    });
+
+    it("should consume point and throw error on incorrect password", async () => {
+      const password = "password123";
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      mockInvoiceRepo.findByReferenceId.mockResolvedValue({
+        id: "inv-1",
+        referenceId: "INV-RND",
+        passwordHash: hashedPassword,
+        organization: { name: "Test Org" },
+        bankAccount: {
+          organizationBankConnection: { providerId: "prov-1" },
+          accountName: "Test Account",
+          accountIban: "DE123",
+        },
+        status: "FINALIZED",
+        paymentSession: {
+          id: "sess-1",
+          referenceId: "ref-1",
+          amountCents: 1000,
+          currency: "EUR",
+          status: "PENDING",
+        },
+      });
+
+      mockGet.mockResolvedValue(null);
+      mockConsume.mockResolvedValue({});
+
+      await expect(
+        service.getInvoiceByReference({
+          referenceId: "INV-RND",
+          password: "wrong-password",
+          mode: "public",
+          deviceDetails: mockDeviceDetails,
+        }),
+      ).rejects.toThrow("Invalid password");
+
+      expect(mockConsume).toHaveBeenCalled();
+    });
+
+    it("should throw TOO_MANY_REQUESTS when blocked", async () => {
+      mockInvoiceRepo.findByReferenceId.mockResolvedValue({
+        id: "inv-1",
+        referenceId: "INV-RND",
+        passwordHash: "some-hash",
+        organization: { name: "Test Org" },
+        bankAccount: {
+          organizationBankConnection: { providerId: "prov-1" },
+          accountName: "Test Account",
+          accountIban: "DE123",
+        },
+        status: "FINALIZED",
+        paymentSession: {
+          id: "sess-1",
+          referenceId: "ref-1",
+          amountCents: 1000,
+          currency: "EUR",
+          status: "PENDING",
+        },
+      });
+
+      mockGet.mockResolvedValue({
+        remainingPoints: 0,
+        msBeforeNext: 10000,
+      });
+
+      await expect(
+        service.getInvoiceByReference({
+          referenceId: "INV-RND",
+          password: "any-password",
+          mode: "public",
+          deviceDetails: mockDeviceDetails,
+        }),
+      ).rejects.toThrow("Too many failed attempts");
+
+      // Should not verify password if blocked
+      // We can't easily spy on bcrypt.compare here without mocking it, but verifying functionality via error code is good.
+    });
   });
 });

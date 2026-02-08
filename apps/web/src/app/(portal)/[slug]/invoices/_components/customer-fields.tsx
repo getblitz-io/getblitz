@@ -23,6 +23,9 @@ interface CustomerFieldsProps {
   onTaxIdChange: (value: string) => void;
   emailRequired?: boolean;
   emailError?: string;
+  nameError?: string;
+  addressError?: string;
+  taxIdError?: string;
 }
 
 export function CustomerFields({
@@ -36,6 +39,9 @@ export function CustomerFields({
   onTaxIdChange,
   emailRequired = false,
   emailError,
+  nameError,
+  addressError,
+  taxIdError,
 }: CustomerFieldsProps) {
   const t = useTranslations("InvoicesPage");
   const tCommon = useTranslations("Common");
@@ -68,6 +74,7 @@ export function CustomerFields({
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
           />
+          {nameError && <p className="text-sm text-red-500">{nameError}</p>}
         </div>
 
         <div className="space-y-2">
@@ -78,6 +85,9 @@ export function CustomerFields({
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
           />
+          {addressError && (
+            <p className="text-sm text-red-500">{addressError}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -88,6 +98,7 @@ export function CustomerFields({
             value={taxId}
             onChange={(e) => onTaxIdChange(e.target.value)}
           />
+          {taxIdError && <p className="text-sm text-red-500">{taxIdError}</p>}
         </div>
       </CardContent>
     </Card>

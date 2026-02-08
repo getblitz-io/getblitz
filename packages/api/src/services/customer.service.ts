@@ -102,4 +102,12 @@ export class CustomerService implements ICustomerService {
 
     return this.createCustomer(input, tx);
   }
+
+  async searchCustomers(params: {
+    organizationId: string;
+    query: string;
+    take?: number;
+  }): Promise<Customer[]> {
+    return this.customerRepo.search(params);
+  }
 }

@@ -1,11 +1,17 @@
+import type { z } from "zod";
+
 import type { Invoice } from "@getblitz/database";
+import type {
+  CreateInvoiceInputSchema,
+  UpdateInvoiceInputSchema,
+} from "@getblitz/validators";
 
 import type {
-  CreateInvoiceInput,
   CreateInvoiceResult,
+  DeviceDetails,
   InvoiceDetailsResult,
   InvoiceWithOrg,
-  UpdateInvoiceInput,
+  InvoiceWithRelations,
 } from "..";
 
 export interface IInvoiceService {
@@ -13,24 +19,34 @@ export interface IInvoiceService {
     input,
     baseUrl,
   }: {
-    input: CreateInvoiceInput;
+    input: z.infer<typeof CreateInvoiceInputSchema>;
     baseUrl: string;
   }): Promise<CreateInvoiceResult>;
 
-  getInvoiceDetails({
+  getInvoiceById({
     invoiceId,
-    password,
   }: {
     invoiceId: string;
-    password?: string;
-  }): Promise<InvoiceDetailsResult | null>;
+  }): Promise<InvoiceWithRelations | null>;
+
+  markInvoiceAsFinalized({
+    organizationId,
+    invoiceId,
+  }: {
+    organizationId: string;
+    invoiceId: string;
+  }): Promise<InvoiceWithRelations>;
 
   getInvoiceByReference({
     referenceId,
     password,
+    mode,
+    deviceDetails,
   }: {
     referenceId: string;
     password?: string;
+    mode: "public" | "preview";
+    deviceDetails: DeviceDetails;
   }): Promise<InvoiceDetailsResult | null>;
 
   listByOrgIds({
@@ -49,7 +65,11 @@ export interface IInvoiceService {
     password: string;
   }): Promise<boolean>;
 
-  updateInvoice({ input }: { input: UpdateInvoiceInput }): Promise<Invoice>;
+  updateInvoice({
+    input,
+  }: {
+    input: z.infer<typeof UpdateInvoiceInputSchema>;
+  }): Promise<InvoiceWithRelations>;
 
   deleteInvoice({
     id,

@@ -21,6 +21,8 @@ interface PasswordFieldsProps {
   isPasswordProtected?: boolean;
   removePassword?: boolean;
   onRemovePasswordToggle?: () => void;
+  passwordError?: string;
+  passwordConfirmError?: string;
 }
 
 export function PasswordFields({
@@ -31,6 +33,8 @@ export function PasswordFields({
   isPasswordProtected = false,
   removePassword = false,
   onRemovePasswordToggle,
+  passwordError,
+  passwordConfirmError,
 }: PasswordFieldsProps) {
   const t = useTranslations("InvoicesPage");
   const tCommon = useTranslations("Common");
@@ -73,6 +77,9 @@ export function PasswordFields({
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
               />
+              {passwordError && (
+                <p className="text-sm text-red-500">{passwordError}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -83,6 +90,9 @@ export function PasswordFields({
                 value={passwordConfirm}
                 onChange={(e) => onPasswordConfirmChange(e.target.value)}
               />
+              {passwordConfirmError && (
+                <p className="text-sm text-red-500">{passwordConfirmError}</p>
+              )}
             </div>
           </div>
         )}

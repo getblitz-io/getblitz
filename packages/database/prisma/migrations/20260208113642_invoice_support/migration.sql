@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "InvoiceStatus" AS ENUM ('DRAFT', 'FINALIZED', 'PAID', 'CANCELLED');
+
 -- AlterTable
 ALTER TABLE "payment_session" ALTER COLUMN "expiresAt" DROP NOT NULL;
 
@@ -6,6 +9,7 @@ CREATE TABLE "invoice" (
     "id" VARCHAR(36) NOT NULL,
     "organizationId" VARCHAR(36) NOT NULL,
     "referenceId" VARCHAR(35) NOT NULL,
+    "status" "InvoiceStatus" NOT NULL DEFAULT 'DRAFT',
     "customerId" VARCHAR(36),
     "customerEmail" VARCHAR(255),
     "customerName" VARCHAR(255),
@@ -15,13 +19,17 @@ CREATE TABLE "invoice" (
     "notes" TEXT,
     "dueDate" TIMESTAMP(3),
     "invoiceNumber" VARCHAR(50),
+    "expiresAt" TIMESTAMP(3),
     "lineItems" JSONB,
     "subtotalCents" INTEGER NOT NULL,
     "taxRateBps" INTEGER NOT NULL DEFAULT 0,
     "taxAmountCents" INTEGER NOT NULL DEFAULT 0,
     "discountCents" INTEGER NOT NULL DEFAULT 0,
+    "totalCents" INTEGER NOT NULL DEFAULT 0,
+    "currency" "Currency" NOT NULL DEFAULT 'EUR',
     "passwordHash" VARCHAR(255),
-    "paymentSessionId" VARCHAR(36) NOT NULL,
+    "paymentSessionId" VARCHAR(36),
+    "bankAccountId" VARCHAR(36) NOT NULL,
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -59,6 +67,9 @@ CREATE INDEX "invoice_referenceId_idx" ON "invoice"("referenceId");
 CREATE INDEX "invoice_customerId_idx" ON "invoice"("customerId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "invoice_organizationId_invoiceNumber_key" ON "invoice"("organizationId", "invoiceNumber");
+
+-- CreateIndex
 CREATE INDEX "customer_organizationId_idx" ON "customer"("organizationId");
 
 -- CreateIndex
@@ -72,6 +83,9 @@ ALTER TABLE "invoice" ADD CONSTRAINT "invoice_paymentSessionId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "invoice" ADD CONSTRAINT "invoice_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "invoice" ADD CONSTRAINT "invoice_bankAccountId_fkey" FOREIGN KEY ("bankAccountId") REFERENCES "bank_account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "customer" ADD CONSTRAINT "customer_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;

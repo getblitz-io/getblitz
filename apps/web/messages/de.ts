@@ -40,6 +40,10 @@ const messages = {
       failed: "Fehlgeschlagen",
       connected: "Verbunden",
       disconnected: "Getrennt",
+      canceled: "Abgebrochen",
+      cancelled: "Storniert",
+      draft: "Entwurf",
+      finalized: "Finalisiert",
     },
     labels: {
       email: "E-Mail",
@@ -513,6 +517,7 @@ const messages = {
     invoiceUpdated: "Rechnung erfolgreich aktualisiert",
     invoiceDeleted: "Rechnung erfolgreich gelöscht",
     linkCopied: "Link in Zwischenablage kopiert",
+    invoiceFinalized: "Rechnung erfolgreich finalisiert",
   },
   BankCallbackPage: {
     title: "Vervollständigung der Verbindung",
@@ -600,8 +605,10 @@ const messages = {
     customerSectionDescription:
       "Wählen Sie einen bestehenden Kunden aus oder erstellen Sie einen neuen",
     selectCustomer: "Kunde auswählen",
-    selectCustomerPlaceholder: "Wählen Sie einen Kunden...",
+    selectCustomerPlaceholder: "Kunden suchen...",
     createNewCustomer: "+ Neuen Kunden erstellen",
+    noCustomersFound: "Keine Kunden gefunden",
+    typeToSearch: "Tippen Sie, um Kunden zu suchen...",
     newCustomerDetails: "Neue Kundendetails",
     invoiceDetails: "Rechnungsdetails",
     amountLabel: "Betrag",
@@ -635,7 +642,10 @@ const messages = {
     customer: "Kunde",
     amount: "Betrag",
     created: "Erstellt",
+    actions: "Aktionen",
     financialDetails: "Finanzielle Details",
+    financialDetailsDescription:
+      "Steuersatz und Rabatt für diese Rechnung anpassen",
     subtotal: "Zwischensumme",
     tax: "Steuer",
     discount: "Rabatt",
@@ -674,6 +684,14 @@ const messages = {
     passwordMismatch: "Passwörter stimmen nicht überein",
     passwordProtected: "Passwortgeschützt",
     removePassword: "Passwort entfernen",
+    previewButton: "Vorschau",
+    finalizeButton: "Finalisieren",
+    confirmFinalize:
+      "Sind Sie sicher, dass Sie diese Rechnung finalisieren möchten? Sie wird schreibgeschützt.",
+    confirmCancel:
+      "Sind Sie sicher, dass Sie diese Rechnung stornieren möchten?",
+    cancelling: "Storniert...",
+    cancelButton: "Rechnung stornieren",
   },
   InvoicePaymentPage: {
     invoiceTitle: "Rechnung",
@@ -705,13 +723,23 @@ const messages = {
     reference: "Referenz",
     customer: "Kunde",
     iban: "IBAN",
+    bic: "BIC",
     account: "Konto",
+    bankName: "Bankname",
     description: "Beschreibung",
     dueDate: "Fälligkeitsdatum",
     expires: "Läuft ab",
     subtotal: "Zwischensumme",
     tax: "Steuer",
-    discount: "Rabatt",
+    amount: "Betrag",
+    amountWithCurrency: "Betrag ({currency})",
+    confirmCancel:
+      "Sind Sie sicher, dass Sie diese Rechnung stornieren möchten?",
+    cancelling: "Storniert...",
+    cancelButton: "Rechnung stornieren",
+    previewMode: "Vorschau-Modus",
+    previewModeDescription:
+      "Diese Rechnung ist derzeit im Entwurf und nicht öffentlich sichtbar.",
   },
 };
 

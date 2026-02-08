@@ -2,7 +2,11 @@
  * Output/Result types for service operations
  */
 
-import type { Currency, PaymentStatus } from "@getblitz/database";
+import type {
+  Currency,
+  InvoiceStatus,
+  PaymentStatus,
+} from "@getblitz/database";
 
 import type { InvoiceLineItem } from "./inputs";
 
@@ -32,6 +36,8 @@ export interface SessionDetailsResult {
     };
     accountName: string;
     iban?: string;
+    bic?: string;
+    bankName?: string;
     walletAddressEvm?: string;
   } | null;
   provider: {
@@ -88,14 +94,13 @@ export interface CreateInvoiceResult {
   invoiceId: string;
   referenceId: string;
   invoiceUrl: string;
-  paymentUrl: string;
-  expiresAt: string | null;
 }
 
 export interface InvoiceDetailsResult {
   invoiceId: string;
   referenceId: string;
   invoiceNumber: string | null;
+  status: InvoiceStatus;
 
   // Financial summary
   amountCents: number;
@@ -107,7 +112,6 @@ export interface InvoiceDetailsResult {
   lineItems: InvoiceLineItem[] | null;
 
   // Status
-  status: PaymentStatus;
   expiresAt: string | null;
   dueDate: string | null;
 

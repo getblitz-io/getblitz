@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { LockClosedIcon } from "@radix-ui/react-icons";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 
 import {
@@ -18,12 +18,13 @@ import { toast } from "@getblitz/ui/toast";
 
 import { CopyButton } from "~/app/_components/copy-button";
 import { useTRPC } from "~/trpc/react";
+import { PreviewButton } from "../_components";
 
 const statusColors = {
-  PENDING: "bg-amber-500/10 text-amber-600",
+  DRAFT: "bg-amber-500/10 text-amber-600",
+  FINALIZED: "bg-amber-500/10 text-amber-600",
   PAID: "bg-green-500/10 text-green-600",
-  FAILED: "bg-red-500/10 text-red-600",
-  EXPIRED: "bg-gray-500/10 text-gray-600",
+  CANCELLED: "bg-gray-500/10 text-gray-600",
 } as const;
 
 interface LineItem {
@@ -38,21 +39,42 @@ export default function InvoiceDetailsPage() {
   const slug = params.slug as string;
   const invoiceId = params.invoiceId as string;
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const t = useTranslations("InvoicesPage");
   const tCommon = useTranslations("Common");
   const tToast = useTranslations("Toast");
 
   // Fetch invoice
   const { data: invoice, isLoading } = useQuery(
-    trpc.invoice.get.queryOptions({ invoiceId }),
+    trpc.invoice.getById.queryOptions({ invoiceId, slug }),
   );
 
   // Delete invoice mutation
   const deleteInvoice = useMutation(
     trpc.invoice.delete.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success(tToast("invoiceDeleted"));
-        router.push(`/${slug}/invoices`);
+        await queryClient.invalidateQueries({
+          queryKey: trpc.invoice.getById.queryKey({ invoiceId, slug }),
+        });
+        if (invoice?.status === "DRAFT") {
+          router.push(`/${slug}/invoices`);
+        }
+      },
+      onError: (error: { message: string }) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
+  // Finalize invoice mutation
+  const finalizeInvoice = useMutation(
+    trpc.invoice.finalize.mutationOptions({
+      onSuccess: async () => {
+        toast.success(tToast("invoiceFinalized"));
+        await queryClient.invalidateQueries({
+          queryKey: trpc.invoice.getById.queryKey({ invoiceId, slug }),
+        });
       },
       onError: (error: { message: string }) => {
         toast.error(error.message);
@@ -85,7 +107,7 @@ export default function InvoiceDetailsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href={`/${slug}/invoices`}
@@ -98,21 +120,55 @@ export default function InvoiceDetailsPage() {
           </h1>
           <p className="text-muted-foreground">{t("invoiceDetails")}</p>
         </div>
-        <div className="flex gap-2">
-          <Link href={`/${slug}/invoices/${invoiceId}/edit`}>
-            <Button variant="outline">{t("editButton")}</Button>
-          </Link>
-          <Button
-            variant="destructive"
-            disabled={deleteInvoice.isPending}
-            onClick={() => {
-              if (confirm(t("confirmDelete"))) {
-                deleteInvoice.mutate({ slug, id: invoiceId });
-              }
-            }}
-          >
-            {deleteInvoice.isPending ? t("deleting") : t("deleteButton")}
-          </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {invoice.status === "DRAFT" && (
+            <>
+              <Link
+                href={`/${slug}/invoices/${invoiceId}/edit`}
+                className="w-full sm:w-auto"
+              >
+                <Button variant="outline" className="w-full sm:w-auto">
+                  {t("editButton")}
+                </Button>
+              </Link>
+              <Button
+                variant="secondary"
+                className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto"
+                onClick={() => {
+                  if (confirm(t("confirmFinalize"))) {
+                    finalizeInvoice.mutate({ slug, id: invoiceId });
+                  }
+                }}
+              >
+                {t("finalizeButton")}
+              </Button>
+            </>
+          )}
+          {(invoice.status === "DRAFT" ||
+            (invoice.status === "FINALIZED" &&
+              invoice.paymentSession?.status !== "PAID")) && (
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              disabled={deleteInvoice.isPending}
+              onClick={() => {
+                const isDraft = invoice.status === "DRAFT";
+                if (
+                  confirm(isDraft ? t("confirmDelete") : t("confirmCancel"))
+                ) {
+                  deleteInvoice.mutate({ slug, id: invoiceId });
+                }
+              }}
+            >
+              {deleteInvoice.isPending
+                ? invoice.status === "DRAFT"
+                  ? t("deleting")
+                  : t("cancelling")
+                : invoice.status === "DRAFT"
+                  ? t("deleteButton")
+                  : t("cancelButton")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -122,7 +178,7 @@ export default function InvoiceDetailsPage() {
           <div className="flex items-center justify-between">
             <CardTitle>{t("status")}</CardTitle>
             <div className="flex items-center gap-2">
-              {invoice.isPasswordProtected && (
+              {invoice.passwordHash && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-600">
                   <LockClosedIcon className="h-3 w-3" />
                   {t("passwordProtected")}
@@ -242,7 +298,7 @@ export default function InvoiceDetailsPage() {
           <div className="border-t pt-2">
             <div className="flex justify-between text-lg font-semibold">
               <span>{t("total")}</span>
-              <span>€{(invoice.amountCents / 100).toFixed(2)}</span>
+              <span>€{(invoice.totalCents / 100).toFixed(2)}</span>
             </div>
           </div>
         </CardContent>
@@ -291,7 +347,7 @@ export default function InvoiceDetailsPage() {
           <CardTitle>{t("paymentLink")}</CardTitle>
           <CardDescription>{t("paymentLinkDescription")}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="bg-muted flex items-center justify-between rounded-lg p-3">
             <code className="truncate text-sm">
               {typeof window !== "undefined"
@@ -306,6 +362,9 @@ export default function InvoiceDetailsPage() {
               }
             />
           </div>
+          {invoice.status === "DRAFT" && (
+            <PreviewButton slug={slug} invoiceId={invoiceId} size="lg" />
+          )}
         </CardContent>
       </Card>
     </div>

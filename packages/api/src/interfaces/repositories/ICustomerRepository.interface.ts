@@ -16,4 +16,9 @@ export interface ICustomerRepository {
   ): Promise<Customer | null>;
   update(id: string, data: Prisma.CustomerUpdateInput): Promise<Customer>;
   delete(id: string): Promise<Customer>;
+  search(params: {
+    organizationId: string;
+    query: string;
+    take?: number;
+  }): Promise<Customer[]>;
 }

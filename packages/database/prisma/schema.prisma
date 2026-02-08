@@ -241,6 +241,7 @@ model BankAccount {
   status                       BankAccountStatus          @default(ENABLED)
 
   paymentSessions PaymentSession[]
+  invoices        Invoice[]
 
   @@unique([externalAccountId, organizationBankConnectionId])
   @@unique([accountIban, organizationBankConnectionId])
@@ -303,11 +304,19 @@ enum TransactionStatus {
   EXPIRED
 }
 
+enum InvoiceStatus {
+  DRAFT
+  FINALIZED
+  PAID
+  CANCELLED
+}
+
 // Invoice model for shareable invoices with extended payment features
 model Invoice {
   id             String   @id @default(uuid(7)) @db.VarChar(36)
   organizationId String   @db.VarChar(36)
   referenceId    String   @unique @db.VarChar(35)
+  status         InvoiceStatus @default(DRAFT)
 
   // Customer information
   customer       Customer? @relation(fields: [customerId], references: [id])
@@ -324,6 +333,7 @@ model Invoice {
   notes         String?   @db.Text // Additional notes/terms
   dueDate       DateTime?
   invoiceNumber String?   @db.VarChar(50) // Custom invoice number (e.g., INV-2024-001)
+  expiresAt     DateTime?
 
   // Financial details - line items stored as JSON for flexibility
   // Structure: [{ description, quantity, unitPriceCents }]
@@ -332,16 +342,21 @@ model Invoice {
   taxRateBps     Int  @default(0) // Tax rate in basis points (e.g., 1900 = 19%)
   taxAmountCents Int  @default(0) // Calculated tax amount
   discountCents  Int  @default(0) // Discount amount in cents
+  totalCents     Int  @default(0) // Total amount (subtotal + tax - discount)
+  currency       Currency @default(EUR)
 
   // Security
   passwordHash String? @db.VarChar(255) // bcrypt hash for password protection
 
   // Payment link
-  paymentSessionId String         @unique @db.VarChar(36)
-  paymentSession   PaymentSession @relation(fields: [paymentSessionId], references: [id], onDelete: Cascade)
+  paymentSessionId String?         @unique @db.VarChar(36)
+  paymentSession   PaymentSession? @relation(fields: [paymentSessionId], references: [id], onDelete: Cascade)
 
   // Organization relation
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  bankAccountId String @db.VarChar(36)
 
   // Metadata
   metadata  Json?
@@ -351,6 +366,7 @@ model Invoice {
   @@index([organizationId])
   @@index([referenceId])
   @@index([customerId])
+  @@unique([organizationId, invoiceNumber])
   @@map("invoice")
 }
 

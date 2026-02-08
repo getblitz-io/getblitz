@@ -24,12 +24,14 @@ interface LineItemsEditorProps {
   lineItems: LineItem[];
   onLineItemsChange: (lineItems: LineItem[]) => void;
   showSubtotal?: boolean;
+  error?: string;
 }
 
 export function LineItemsEditor({
   lineItems,
   onLineItemsChange,
   showSubtotal = true,
+  error,
 }: LineItemsEditorProps) {
   const t = useTranslations("InvoicesPage");
 
@@ -163,6 +165,7 @@ export function LineItemsEditor({
             )}
           </div>
         )}
+        {error && <p className="text-sm text-red-500">{error}</p>}
       </CardContent>
     </Card>
   );

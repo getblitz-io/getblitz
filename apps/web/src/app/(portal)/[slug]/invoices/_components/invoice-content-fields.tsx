@@ -13,6 +13,9 @@ interface InvoiceContentFieldsProps {
   onInvoiceNumberChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onNotesChange: (value: string) => void;
+  invoiceNumberError?: string;
+  descriptionError?: string;
+  notesError?: string;
 }
 
 export function InvoiceContentFields({
@@ -22,6 +25,9 @@ export function InvoiceContentFields({
   onInvoiceNumberChange,
   onDescriptionChange,
   onNotesChange,
+  invoiceNumberError,
+  descriptionError,
+  notesError,
 }: InvoiceContentFieldsProps) {
   const t = useTranslations("InvoicesPage");
 
@@ -39,6 +45,9 @@ export function InvoiceContentFields({
             value={invoiceNumber}
             onChange={(e) => onInvoiceNumberChange(e.target.value)}
           />
+          {invoiceNumberError && (
+            <p className="text-sm text-red-500">{invoiceNumberError}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -49,6 +58,9 @@ export function InvoiceContentFields({
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
           />
+          {descriptionError && (
+            <p className="text-sm text-red-500">{descriptionError}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -59,6 +71,7 @@ export function InvoiceContentFields({
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
           />
+          {notesError && <p className="text-sm text-red-500">{notesError}</p>}
         </div>
       </CardContent>
     </Card>

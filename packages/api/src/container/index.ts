@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@getblitz/database";
+import type { Redis } from "@getblitz/redis";
 // Bank Providers
 import {
   ProviderRegistry,
@@ -7,6 +8,7 @@ import {
   TestBankProvider,
 } from "@getblitz/bank-providers";
 import { prisma } from "@getblitz/database";
+import { getRedisClient } from "@getblitz/redis";
 
 import { ApiKeyRepository } from "../repositories/api-key.repository";
 import { BankAccountRepository } from "../repositories/bank-account.repository";
@@ -29,6 +31,7 @@ import { OrganizationService } from "../services/organization.service";
 // Services
 import { PaymentSessionService } from "../services/payment-session.service";
 import { PaymentSettlementService } from "../services/payment-settlement.service";
+import { PreviewService } from "../services/preview.service";
 import { SecurityService } from "../services/security.service";
 import { WebhookService } from "../services/webhook.service";
 import { TYPES } from "./types";
@@ -40,6 +43,7 @@ import { TYPES } from "./types";
 export interface ServiceContainer {
   // Core
   prisma: PrismaClient;
+  redis: Redis;
 
   // Repositories
   paymentSessionRepository: PaymentSessionRepository;
@@ -65,6 +69,7 @@ export interface ServiceContainer {
   bankConnectionService: BankConnectionService;
   invoiceService: InvoiceService;
   customerService: CustomerService;
+  previewService: PreviewService;
 }
 
 let container: ServiceContainer | null = null;
@@ -83,6 +88,8 @@ function initProviders() {
  */
 function createContainer(): ServiceContainer {
   initProviders();
+
+  const redis = getRedisClient();
 
   // Create repositories (depend on Prisma)
   const paymentSessionRepository = new PaymentSessionRepository(prisma);
@@ -138,9 +145,11 @@ function createContainer(): ServiceContainer {
     customerService,
     prisma,
   );
+  const previewService = new PreviewService(redis);
 
   return {
     prisma,
+    redis,
     paymentSessionRepository,
     organizationRepository,
     apiKeyRepository,
@@ -162,6 +171,7 @@ function createContainer(): ServiceContainer {
     bankConnectionService,
     invoiceService,
     customerService,
+    previewService,
   };
 }
 

@@ -57,4 +57,26 @@ export class CustomerRepository implements ICustomerRepository {
       where: { id },
     });
   }
+
+  async search({
+    organizationId,
+    query,
+    take = 10,
+  }: {
+    organizationId: string;
+    query: string;
+    take?: number;
+  }): Promise<Customer[]> {
+    return this.prisma.customer.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { email: { contains: query, mode: "insensitive" } },
+          { name: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      take,
+      orderBy: { name: "asc" },
+    });
+  }
 }

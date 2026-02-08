@@ -1,17 +1,15 @@
 import { z } from "zod";
 
+import {
+  CustomerFormSchema,
+  UpdateCustomerInputSchema,
+} from "@getblitz/validators";
+
 import { createTRPCRouter, organizationProcedure } from "../trpc";
 
 export const customerRouter = createTRPCRouter({
   create: organizationProcedure
-    .input(
-      z.object({
-        email: z.email(),
-        name: z.string().min(1).optional(),
-        address: z.string().optional(),
-        taxId: z.string().optional(),
-      }),
-    )
+    .input(CustomerFormSchema)
     .mutation(async ({ ctx, input }) => {
       return ctx.services.customer.createCustomer({
         organizationId: ctx.organization.id,
@@ -30,6 +28,21 @@ export const customerRouter = createTRPCRouter({
       return ctx.services.customer.listCustomers(ctx.organization.id, input);
     }),
 
+  search: organizationProcedure
+    .input(
+      z.object({
+        query: z.string().min(1).max(100),
+        take: z.number().min(1).max(50).default(10),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.services.customer.searchCustomers({
+        organizationId: ctx.organization.id,
+        query: input.query,
+        take: input.take,
+      });
+    }),
+
   get: organizationProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -37,15 +50,7 @@ export const customerRouter = createTRPCRouter({
     }),
 
   update: organizationProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        email: z.email().optional(),
-        name: z.string().min(1).optional(),
-        address: z.string().optional(),
-        taxId: z.string().optional(),
-      }),
-    )
+    .input(UpdateCustomerInputSchema.omit({ slug: true }))
     .mutation(async ({ ctx, input }) => {
       return ctx.services.customer.updateCustomer({
         organizationId: ctx.organization.id,
