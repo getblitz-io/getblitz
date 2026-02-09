@@ -48,14 +48,14 @@ export function CopyableField({
           size="icon"
           className="text-muted-foreground hover:text-foreground h-6 w-6 shrink-0"
           onClick={onCopy}
-          title={t("copy")}
+          title={t("actions.copy")}
         >
           {copied ? (
             <CheckIcon className="h-3.5 w-3.5 text-green-500" />
           ) : (
             <CopyIcon className="h-3.5 w-3.5" />
           )}
-          <span className="sr-only">{t("copy")}</span>
+          <span className="sr-only">{t("actions.copy")}</span>
         </Button>
       </div>
     </div>

@@ -724,6 +724,7 @@ const messages = {
     tax: "Taxe",
     amount: "Montant",
     amountWithCurrency: "Montant ({currency})",
+    discount: "Remise",
   },
 };
 

@@ -721,6 +721,7 @@ const messages = {
     previewMode: "Preview Mode",
     previewModeDescription:
       "This invoice is currently in draft status and not visible to the public.",
+    discount: "Discount",
   },
 };
 

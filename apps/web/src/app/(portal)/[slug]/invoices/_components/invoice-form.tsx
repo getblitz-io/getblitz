@@ -28,7 +28,6 @@ import {
   FinancialDetails,
   InvoiceContentFields,
   LineItemsEditor,
-  PasswordFields,
   PreviewButton,
 } from ".";
 
@@ -596,39 +595,6 @@ export function InvoiceForm({
               invoiceNumberError={fieldErrors.invoiceNumber}
               descriptionError={fieldErrors.description}
               notesError={fieldErrors.notes}
-            />
-          )}
-        </form.Subscribe>
-
-        {/* Expiration & Security (Create Mode) or Password Fields (Edit Mode) */}
-        <form.Subscribe
-          selector={(state) => ({
-            password: state.values.password,
-            passwordConfirm: state.values.passwordConfirm,
-            removePassword: state.values.removePassword,
-            fieldErrors: {
-              password: getErrorMessages(state.fieldMeta.password?.errors),
-              passwordConfirm: getErrorMessages(
-                state.fieldMeta.passwordConfirm?.errors,
-              ),
-            },
-          })}
-        >
-          {({ password, passwordConfirm, removePassword, fieldErrors }) => (
-            <PasswordFields
-              password={password ?? ""}
-              passwordConfirm={passwordConfirm ?? ""}
-              onPasswordChange={(v) => form.setFieldValue("password", v)}
-              onPasswordConfirmChange={(v) =>
-                form.setFieldValue("passwordConfirm", v)
-              }
-              isPasswordProtected={defaultValues?.isPasswordProtected}
-              removePassword={removePassword}
-              onRemovePasswordToggle={() =>
-                form.setFieldValue("removePassword", !removePassword)
-              }
-              passwordError={fieldErrors.password}
-              passwordConfirmError={fieldErrors.passwordConfirm}
             />
           )}
         </form.Subscribe>

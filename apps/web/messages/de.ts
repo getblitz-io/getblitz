@@ -740,6 +740,7 @@ const messages = {
     previewMode: "Vorschau-Modus",
     previewModeDescription:
       "Diese Rechnung ist derzeit im Entwurf und nicht öffentlich sichtbar.",
+    discount: "Gutschein",
   },
 };
 
