@@ -110,6 +110,8 @@ model Organization {
   secretKeys                  OrganizationSecretKey[]
   webhooks                    OrganizationWebhook[]
   organizationBankConnections OrganizationBankConnection[]
+  invoices                    Invoice[]
+  customers                   Customer[]
 
   @@unique([slug])
   @@map("organization")
@@ -239,6 +241,7 @@ model BankAccount {
   status                       BankAccountStatus          @default(ENABLED)
 
   paymentSessions PaymentSession[]
+  invoices        Invoice[]
 
   @@unique([externalAccountId, organizationBankConnectionId])
   @@unique([accountIban, organizationBankConnectionId])
@@ -256,7 +259,7 @@ model PaymentSession {
   amountPaidCents     Int
   amountPaidCurrency  Currency      @default(EUR)
   status              PaymentStatus @default(PENDING)
-  expiresAt           DateTime
+  expiresAt           DateTime?     // Nullable for non-expiring payments
   clientToken         String?       @db.VarChar(255)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -266,6 +269,7 @@ model PaymentSession {
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  invoice      Invoice?
 
   @@unique([organizationId, merchantReferenceId])
   @@index([organizationId])
@@ -298,4 +302,91 @@ enum TransactionStatus {
   COMPLETED
   FAILED
   EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  FINALIZED
+  PAID
+  CANCELLED
+}
+
+// Invoice model for shareable invoices with extended payment features
+model Invoice {
+  id             String   @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String   @db.VarChar(36)
+  referenceId    String   @unique @db.VarChar(35)
+  status         InvoiceStatus @default(DRAFT)
+
+  // Customer information
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  customerId     String?   @db.VarChar(36)
+
+  // Snapshot of customer details at time of invoice creation (in case customer is deleted/changed)
+  customerEmail   String? @db.VarChar(255)
+  customerName    String? @db.VarChar(255)
+  customerAddress String? @db.Text
+  customerTaxId   String? @db.VarChar(50) // VAT number, Tax ID, etc.
+
+  // Invoice details
+  description   String?   @db.Text
+  notes         String?   @db.Text // Additional notes/terms
+  dueDate       DateTime?
+  invoiceNumber String?   @db.VarChar(50) // Custom invoice number (e.g., INV-2024-001)
+  expiresAt     DateTime?
+
+  // Financial details - line items stored as JSON for flexibility
+  // Structure: [{ description, quantity, unitPriceCents }]
+  lineItems      Json? // Array of line items
+  subtotalCents  Int // Sum of line items before tax/discount
+  taxRateBps     Int  @default(0) // Tax rate in basis points (e.g., 1900 = 19%)
+  taxAmountCents Int  @default(0) // Calculated tax amount
+  discountCents  Int  @default(0) // Discount amount in cents
+  totalCents     Int  @default(0) // Total amount (subtotal + tax - discount)
+  currency       Currency @default(EUR)
+
+  // Security
+  passwordHash String? @db.VarChar(255) // bcrypt hash for password protection
+
+  // Payment link
+  paymentSessionId String?         @unique @db.VarChar(36)
+  paymentSession   PaymentSession? @relation(fields: [paymentSessionId], references: [id], onDelete: Cascade)
+
+  // Organization relation
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  bankAccountId String @db.VarChar(36)
+
+  // Metadata
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([referenceId])
+  @@index([customerId])
+  @@unique([organizationId, invoiceNumber])
+  @@map("invoice")
+}
+
+model Customer {
+  id             String       @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String       @db.VarChar(36)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email   String? @db.VarChar(255)
+  name    String? @db.VarChar(255)
+  address String? @db.Text
+  taxId   String? @db.VarChar(50)
+
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@unique([email, organizationId])
+  
+  @@map("customer")
 }

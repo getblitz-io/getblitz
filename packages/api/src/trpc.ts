@@ -17,12 +17,16 @@ import type { ApiKeyService } from "./services/api-key.service";
 import type { BankConnectionService } from "./services/bank-connection.service";
 import type { CredentialCacheService } from "./services/credential-cache.service";
 import type { CredentialManagerService } from "./services/credential-manager.service";
+import type { CustomerService } from "./services/customer.service";
+import type { InvoiceService } from "./services/invoice.service";
 import type { OrganizationService } from "./services/organization.service";
 import type { PaymentSessionService } from "./services/payment-session.service";
 import type { PaymentSettlementService } from "./services/payment-settlement.service";
+import type { PreviewService } from "./services/preview.service";
 import type { SecurityService } from "./services/security.service";
 import type { WebhookService } from "./services/webhook.service";
 import { getContainer } from "./container";
+import { parseDeviceDetails } from "./utils/urlParser";
 
 /**
  * Services interface for type-safe access in procedures
@@ -38,6 +42,9 @@ export interface TRPCServices {
   credentialCache: CredentialCacheService;
   credentialManager: CredentialManagerService;
   bankConnection: BankConnectionService;
+  invoice: InvoiceService;
+  customer: CustomerService;
+  previewService: PreviewService;
 }
 
 /**
@@ -54,12 +61,15 @@ export interface TRPCServices {
  */
 
 export const createTRPCContext = async (opts: {
+  request: Request;
   headers: Headers;
   auth: Auth;
 }): Promise<{
+  headers: Headers;
   session: Session | null;
   services: TRPCServices;
   prisma: PrismaClient;
+  request: Request;
 }> => {
   const session = await opts.auth.api.getSession({
     headers: opts.headers,
@@ -69,6 +79,8 @@ export const createTRPCContext = async (opts: {
   const container = getContainer();
 
   return {
+    request: opts.request,
+    headers: opts.headers,
     session,
     services: {
       organization: container.organizationService,
@@ -80,6 +92,9 @@ export const createTRPCContext = async (opts: {
       credentialCache: container.credentialCacheService,
       credentialManager: container.credentialManagerService,
       bankConnection: container.bankConnectionService,
+      invoice: container.invoiceService,
+      customer: container.customerService,
+      previewService: container.previewService,
     },
     prisma: container.prisma,
   };
@@ -138,6 +153,16 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
 
   return result;
+});
+
+export const deviceMiddleware = t.middleware(async ({ next, ctx }) => {
+  const deviceDetails = parseDeviceDetails(ctx.headers);
+  return next({
+    ctx: {
+      ...ctx,
+      deviceDetails,
+    },
+  });
 });
 
 /**

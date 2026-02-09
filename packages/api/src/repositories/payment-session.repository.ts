@@ -1,6 +1,7 @@
 import type {
   PaymentSession,
   PaymentStatus,
+  Prisma,
   PrismaClient,
 } from "@getblitz/database";
 
@@ -53,14 +54,17 @@ export class PaymentSessionRepository
     });
   }
 
-  async findByMerchantReferenceId({
-    organizationId,
-    merchantReferenceId,
-  }: {
-    organizationId: string;
-    merchantReferenceId: string;
-  }): Promise<PaymentSession | null> {
-    return this.prisma.paymentSession.findUnique({
+  async findByMerchantReferenceId(
+    {
+      organizationId,
+      merchantReferenceId,
+    }: {
+      organizationId: string;
+      merchantReferenceId: string;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<PaymentSession | null> {
+    return (tx ?? this.prisma).paymentSession.findUnique({
       where: {
         organizationId_merchantReferenceId: {
           organizationId,
@@ -70,12 +74,15 @@ export class PaymentSessionRepository
     });
   }
 
-  async create({
-    data,
-  }: {
-    data: CreatePaymentSessionInput;
-  }): Promise<PaymentSession> {
-    return this.prisma.paymentSession.create({
+  async create(
+    {
+      data,
+    }: {
+      data: CreatePaymentSessionInput;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<PaymentSession> {
+    return (tx ?? this.prisma).paymentSession.create({
       data: {
         bankAccount: { connect: { id: data.bankAccountId } },
         organization: { connect: { id: data.organizationId } },

@@ -13,11 +13,20 @@ export interface RateLimitResult {
   reset: number;
 }
 
+export interface RateLimitConfig {
+  keyPrefix: string;
+  points: number;
+  duration: number;
+  blockDuration: number;
+}
+
 /**
  * Get or create a rate limiter instance
  * Uses the existing Redis connection for rate limiting
  */
-export function getRateLimiter(): RateLimiterRedis | null {
+export function getRateLimiter(
+  config?: RateLimitConfig,
+): RateLimiterRedis | null {
   if (rateLimiter) return rateLimiter;
 
   let redis: Redis;
@@ -32,10 +41,10 @@ export function getRateLimiter(): RateLimiterRedis | null {
   // 100 requests per 60 seconds per key
   rateLimiter = new RateLimiterRedis({
     storeClient: redis,
-    keyPrefix: "getblitz:ratelimit",
-    points: 100, // Number of requests
-    duration: 60, // Per 60 seconds
-    blockDuration: 0, // Don't block, just reject
+    keyPrefix: config?.keyPrefix ?? "getblitz:ratelimit",
+    points: config?.points ?? 100, // Number of requests
+    duration: config?.duration ?? 60, // Per 60 seconds
+    blockDuration: config?.blockDuration ?? 0, // Don't block, just reject
   });
 
   return rateLimiter;

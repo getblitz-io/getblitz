@@ -2,14 +2,14 @@
 
 import { useTranslations } from "next-intl";
 
-import { CopyButton } from "./copy-button";
+import { CopyButton } from "~/app/_components/copy-button";
 
 interface PaymentDetailsProps {
   session: {
     referenceId: string;
     amountCents: number;
     status: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
-    expiresAt: string;
+    expiresAt: string | null;
     bankAccount: {
       accountName: string;
       iban?: string;
@@ -97,7 +97,7 @@ export function PaymentDetails({
           </>
         )}
 
-        {showExpires && (
+        {showExpires && session.expiresAt && (
           <>
             <span className="text-muted-foreground">{t("expires")}</span>
             <span className="text-right sm:text-left">

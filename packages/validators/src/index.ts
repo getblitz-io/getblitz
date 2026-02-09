@@ -1,8 +1,25 @@
-import { z } from "zod/v4";
+// Customer validators
+export {
+  CustomerFormSchema,
+  CreateCustomerInputSchema,
+  UpdateCustomerInputSchema,
+} from "./customer";
+export type {
+  CustomerFormValues,
+  CreateCustomerInput,
+  UpdateCustomerInput,
+} from "./customer";
 
-export const unused = z.string().describe(
-  `This lib is currently not used as we use drizzle-zod for simple schemas
-   But as your application grows and you need other validators to share
-   with back and frontend, you can put them in here
-  `,
-);
+// Invoice validators
+export {
+  LineItemSchema,
+  InvoiceFormSchema,
+  CreateInvoiceInputSchema,
+  UpdateInvoiceInputSchema,
+} from "./invoice";
+export type {
+  LineItem,
+  InvoiceFormValues,
+  CreateInvoiceInput,
+  UpdateInvoiceInput,
+} from "./invoice";

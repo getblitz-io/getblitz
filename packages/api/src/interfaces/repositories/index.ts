@@ -9,3 +9,5 @@ export type { IOrganizationRepository } from "./IOrganizationRepository.interfac
 export type { IOrganizationWebhookRepository } from "./IOrganizationWebhookRepository.interface";
 export type { IPaymentSessionRepository } from "./IPaymentSessionRepository.interface";
 export type { ITransactionRepository } from "./ITransactionRepository.interface";
+export type { IInvoiceRepository } from "./IInvoiceRepository.interface";
+export type { ICustomerRepository } from "./ICustomerRepository.interface";

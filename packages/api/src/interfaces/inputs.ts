@@ -2,7 +2,7 @@
  * Input types for creating/updating entities
  */
 
-import type { Currency } from "@getblitz/database";
+import type { Currency, Invoice, Prisma } from "@getblitz/database";
 
 export interface CreatePaymentSessionInput {
   organizationId: string;
@@ -11,7 +11,7 @@ export interface CreatePaymentSessionInput {
   merchantReferenceId?: string;
   amountCents: number;
   currency: Currency;
-  expiresAt: Date;
+  expiresAt: Date | null; // Nullable for non-expiring payments
 }
 
 export interface CreateBankAccountInput {
@@ -105,4 +105,63 @@ export interface CreateOrganizationBankConnectionInput {
   webhookUrl?: string | null;
   webhookSecret?: string | null;
   name?: string | null; // Optional connection name
+}
+
+// Invoice-related input types
+
+export interface InvoiceLineItem {
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+
+// Invoice-related data types for database operations
+
+export type InvoiceCreateData = Omit<
+  Pick<
+    Invoice,
+    | "organizationId"
+    | "referenceId"
+    | "customerEmail"
+    | "subtotalCents"
+    | "taxRateBps"
+    | "taxAmountCents"
+    | "discountCents"
+    | "totalCents"
+    | "currency"
+    | "bankAccountId"
+  >,
+  "lineItems"
+> & { lineItems: Prisma.InputJsonValue } & Partial<
+    Omit<
+      Pick<
+        Invoice,
+        | "paymentSessionId"
+        | "customerId"
+        | "customerName"
+        | "customerTaxId"
+        | "customerAddress"
+        | "description"
+        | "notes"
+        | "dueDate"
+        | "invoiceNumber"
+        | "passwordHash"
+        | "expiresAt"
+        | "status"
+      >,
+      "metadata"
+    >
+  > & { metadata?: Prisma.InputJsonValue };
+
+export type InvoiceUpdateData = Partial<
+  Omit<InvoiceCreateData, "organizationId" | "referenceId"> &
+    Pick<Invoice, "paymentSessionId">
+>;
+
+export interface DeviceDetails {
+  ipAddress: string;
+  userAgent: string;
+  deviceType: string;
+  deviceOs: string;
+  deviceBrowser: string;
 }

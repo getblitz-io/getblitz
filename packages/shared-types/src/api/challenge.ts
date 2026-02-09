@@ -25,6 +25,15 @@ export const CreateChallengeRequestSchema = z.object({
     .record(z.string(), z.string())
     .optional()
     .describe("Optional merchant metadata"),
+  expiresInMinutes: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .nullable()
+    .describe(
+      "Expiration time in minutes. Null means no expiration. Defaults to 15.",
+    ),
 });
 export type CreateChallengeRequest = z.infer<
   typeof CreateChallengeRequestSchema
@@ -36,7 +45,7 @@ export const CreateChallengeResponseSchema = z.object({
   referenceId: z.string().max(35),
   merchantReferenceId: z.string().max(64).optional(),
   paymentUrl: z.url(),
-  expiresAt: z.date(),
+  expiresAt: z.date().nullable(),
 });
 export type CreateChallengeResponse = z.infer<
   typeof CreateChallengeResponseSchema
@@ -49,7 +58,7 @@ export const PaymentSessionDetailsSchema = z.object({
   amountCents: z.number().int(),
   currency: z.enum(["EUR"]),
   status: z.enum(["PENDING", "PAID", "FAILED", "EXPIRED"]),
-  expiresAt: z.date(),
+  expiresAt: z.date().nullable(),
   organization: z.object({
     name: z.string(),
   }),

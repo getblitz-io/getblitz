@@ -1,4 +1,4 @@
-import type { PaymentSession, PaymentStatus } from "@getblitz/database";
+import type { PaymentSession, PaymentStatus, Prisma } from "@getblitz/database";
 
 import type {
   CreatePaymentSessionInput,
@@ -14,18 +14,24 @@ export interface IPaymentSessionRepository {
   }: {
     referenceId: string;
   }): Promise<PaymentSession | null>;
-  findByMerchantReferenceId({
-    organizationId,
-    merchantReferenceId,
-  }: {
-    organizationId: string;
-    merchantReferenceId: string;
-  }): Promise<PaymentSession | null>;
-  create({
-    data,
-  }: {
-    data: CreatePaymentSessionInput;
-  }): Promise<PaymentSession>;
+  findByMerchantReferenceId(
+    {
+      organizationId,
+      merchantReferenceId,
+    }: {
+      organizationId: string;
+      merchantReferenceId: string;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<PaymentSession | null>;
+  create(
+    {
+      data,
+    }: {
+      data: CreatePaymentSessionInput;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<PaymentSession>;
   updateStatus({
     id,
     status,

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@getblitz/database";
+import type { Redis } from "@getblitz/redis";
 // Bank Providers
 import {
   ProviderRegistry,
@@ -7,9 +8,12 @@ import {
   TestBankProvider,
 } from "@getblitz/bank-providers";
 import { prisma } from "@getblitz/database";
+import { getRedisClient } from "@getblitz/redis";
 
 import { ApiKeyRepository } from "../repositories/api-key.repository";
 import { BankAccountRepository } from "../repositories/bank-account.repository";
+import { CustomerRepository } from "../repositories/customer.repository";
+import { InvoiceRepository } from "../repositories/invoice.repository";
 import { OrganizationBankConnectionRepository } from "../repositories/organization-bank.repository";
 import { OrganizationWebhookRepository } from "../repositories/organization-webhook.repository";
 import { OrganizationRepository } from "../repositories/organization.repository";
@@ -21,10 +25,13 @@ import { BankConnectionService } from "../services/bank-connection.service";
 import { BankWebhookService } from "../services/bank-webhook.service";
 import { CredentialCacheService } from "../services/credential-cache.service";
 import { CredentialManagerService } from "../services/credential-manager.service";
+import { CustomerService } from "../services/customer.service";
+import { InvoiceService } from "../services/invoice.service";
 import { OrganizationService } from "../services/organization.service";
 // Services
 import { PaymentSessionService } from "../services/payment-session.service";
 import { PaymentSettlementService } from "../services/payment-settlement.service";
+import { PreviewService } from "../services/preview.service";
 import { SecurityService } from "../services/security.service";
 import { WebhookService } from "../services/webhook.service";
 import { TYPES } from "./types";
@@ -36,6 +43,7 @@ import { TYPES } from "./types";
 export interface ServiceContainer {
   // Core
   prisma: PrismaClient;
+  redis: Redis;
 
   // Repositories
   paymentSessionRepository: PaymentSessionRepository;
@@ -45,6 +53,8 @@ export interface ServiceContainer {
   bankAccountRepository: BankAccountRepository;
   organizationWebhookRepository: OrganizationWebhookRepository;
   organizationBankConnectionRepository: OrganizationBankConnectionRepository;
+  invoiceRepository: InvoiceRepository;
+  customerRepository: CustomerRepository;
 
   // Services
   paymentSessionService: PaymentSessionService;
@@ -57,6 +67,9 @@ export interface ServiceContainer {
   bankWebhookService: BankWebhookService;
   credentialManagerService: CredentialManagerService;
   bankConnectionService: BankConnectionService;
+  invoiceService: InvoiceService;
+  customerService: CustomerService;
+  previewService: PreviewService;
 }
 
 let container: ServiceContainer | null = null;
@@ -76,6 +89,8 @@ function initProviders() {
 function createContainer(): ServiceContainer {
   initProviders();
 
+  const redis = getRedisClient();
+
   // Create repositories (depend on Prisma)
   const paymentSessionRepository = new PaymentSessionRepository(prisma);
   const organizationRepository = new OrganizationRepository(prisma);
@@ -87,6 +102,8 @@ function createContainer(): ServiceContainer {
   );
   const organizationBankConnectionRepository =
     new OrganizationBankConnectionRepository(prisma);
+  const invoiceRepository = new InvoiceRepository(prisma);
+  const customerRepository = new CustomerRepository(prisma);
 
   // Create services (depend on repositories)
   const securityService = new SecurityService();
@@ -121,9 +138,18 @@ function createContainer(): ServiceContainer {
     organizationBankConnectionRepository,
     credentialManagerService,
   );
+  const customerService = new CustomerService(customerRepository);
+  const invoiceService = new InvoiceService(
+    invoiceRepository,
+    paymentSessionService,
+    customerService,
+    prisma,
+  );
+  const previewService = new PreviewService(redis);
 
   return {
     prisma,
+    redis,
     paymentSessionRepository,
     organizationRepository,
     apiKeyRepository,
@@ -131,6 +157,8 @@ function createContainer(): ServiceContainer {
     bankAccountRepository,
     organizationWebhookRepository,
     organizationBankConnectionRepository,
+    invoiceRepository,
+    customerRepository,
     paymentSessionService,
     paymentSettlementService,
     organizationService,
@@ -141,6 +169,9 @@ function createContainer(): ServiceContainer {
     bankWebhookService,
     credentialManagerService,
     bankConnectionService,
+    invoiceService,
+    customerService,
+    previewService,
   };
 }
 

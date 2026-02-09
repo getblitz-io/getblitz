@@ -1,19 +1,27 @@
+import type { Prisma } from "@getblitz/database";
+
 import type {
   CreateChallengeInput,
   CreateChallengeResult,
   PaymentSessionWithOrg,
+  QrCodeResult,
   SessionDetailsResult,
   SimulatePaymentResult,
 } from "..";
 
 export interface IPaymentSessionService {
-  createChallenge({
-    input,
-    baseUrl,
-  }: {
-    input: CreateChallengeInput;
-    baseUrl: string;
-  }): Promise<CreateChallengeResult>;
+  createChallenge(
+    {
+      input,
+      baseUrl,
+      expiresInMinutes,
+    }: {
+      input: CreateChallengeInput;
+      baseUrl: string;
+      expiresInMinutes?: number | null;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<CreateChallengeResult>;
   getSessionDetails({
     sessionId,
   }: {
@@ -37,4 +45,9 @@ export interface IPaymentSessionService {
     orgIds: string[];
     options?: { take?: number };
   }): Promise<PaymentSessionWithOrg[]>;
+  getQrCodeBase64({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<QrCodeResult | null>;
 }

@@ -7,6 +7,8 @@ export { OrganizationService } from "./organization.service";
 export { PaymentSessionService } from "./payment-session.service";
 export { PaymentSettlementService } from "./payment-settlement.service";
 export { WebhookService } from "./webhook.service";
+export { InvoiceService } from "./invoice.service";
+export { CustomerService } from "./customer.service";
 
 // Re-export interfaces and errors from centralized location
 export {

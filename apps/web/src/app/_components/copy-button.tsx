@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@getblitz/ui/button";
 import { toast } from "@getblitz/ui/toast";
@@ -11,12 +12,13 @@ interface CopyButtonProps {
 }
 
 export function CopyButton({ value, className }: CopyButtonProps) {
+  const t = useTranslations("Common.buttons");
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value);
-      toast.success("Copied to clipboard");
+      toast.success(t("copy"));
     } catch {
-      toast.error("Failed to copy");
+      toast.error(t("failedToCopy"));
     }
   };
 
