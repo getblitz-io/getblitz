@@ -1,9 +1,17 @@
-import type { BankProvider, ProviderConfig, ProviderMetadata } from "./types";
+import type { BaseBankProvider } from "./base-provider";
+import type {
+  AuthenticatedProvider,
+  BankCredentials,
+  BankProvider,
+  ConfiguredProvider,
+  ProviderConfig,
+  ProviderMetadata,
+} from "./types";
 
 /**
- * Provider constructor type for creating instances with config
+ * Provider constructor type — creates a template (unconfigured) instance
  */
-export type ProviderConstructor = new (config?: ProviderConfig) => BankProvider;
+export type ProviderConstructor = new () => BaseBankProvider;
 
 export class ProviderRegistry {
   // Template instances for metadata/schema access
@@ -35,14 +43,41 @@ export class ProviderRegistry {
   }
 
   /**
-   * Create a new provider instance with the given configuration
+   * Create a ConfiguredProvider — has provider config, can do auth flows.
+   * Use for: getAuthUrl, exchangeCode, refreshToken, verifyAndParseWebhook
    */
-  static createProvider(id: string, config: ProviderConfig): BankProvider {
-    const Constructor = ProviderRegistry.constructors.get(id);
-    if (!Constructor) {
+  static createConfiguredProvider({
+    id,
+    config,
+  }: {
+    id: string;
+    config: ProviderConfig;
+  }): ConfiguredProvider {
+    const template = ProviderRegistry.providers.get(id);
+    if (!template) {
       throw new Error(`Provider not found: ${id}`);
     }
-    return new Constructor(config);
+    return template.withProviderConfig(config);
+  }
+
+  /**
+   * Create an AuthenticatedProvider — has both config and credentials.
+   * Use for: listAccounts, createWebhook, simulateSandboxPayment
+   */
+  static createAuthenticatedProvider({
+    id,
+    config,
+    credentials,
+  }: {
+    id: string;
+    config: ProviderConfig;
+    credentials: BankCredentials;
+  }): AuthenticatedProvider {
+    const template = ProviderRegistry.providers.get(id);
+    if (!template) {
+      throw new Error(`Provider not found: ${id}`);
+    }
+    return template.withCredentials(config, credentials);
   }
 
   /**

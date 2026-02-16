@@ -1,7 +1,10 @@
 import type { Mocked } from "vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BankProvider } from "@getblitz/bank-providers";
+import type {
+  AuthenticatedProvider,
+  BankProvider,
+} from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
 import { Currency } from "@getblitz/database";
 
@@ -18,6 +21,8 @@ vi.mock("@getblitz/bank-providers", () => ({
   ProviderRegistry: {
     getProvider: vi.fn(),
     createProvider: vi.fn(),
+    createConfiguredProvider: vi.fn(),
+    createAuthenticatedProvider: vi.fn(),
   },
 }));
 
@@ -56,6 +61,8 @@ describe("PaymentSessionService", () => {
     encryptCredentials: vi.fn(),
     encryptProviderConfig: vi.fn(),
     isTokenExpiringSoon: vi.fn(),
+    createConfiguredProvider: vi.fn(),
+    createAuthenticatedProvider: vi.fn(),
   };
 
   beforeAll(() => {
@@ -230,8 +237,8 @@ describe("PaymentSessionService", () => {
       supportsSandboxSimulation: vi.fn().mockReturnValue(true),
       simulateSandboxPayment: vi.fn().mockResolvedValue({ success: true }),
     };
-    mockedRegistry.createProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+    mockCredentialManager.createAuthenticatedProvider.mockResolvedValue(
+      mockProvider as unknown as AuthenticatedProvider,
     );
 
     const result = await service.simulatePayment({ sessionId: "session-1" });
@@ -239,7 +246,6 @@ describe("PaymentSessionService", () => {
     expect(result.success).toBe(true);
     expect(result.message).toContain("via provider sandbox API");
     expect(mockProvider.simulateSandboxPayment).toHaveBeenCalledWith({
-      credentials: { accessToken: "token" },
       accountId: "ext-acc-1",
       amount: 10,
       currency: "EUR",

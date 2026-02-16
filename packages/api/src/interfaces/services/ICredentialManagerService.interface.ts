@@ -1,4 +1,9 @@
-import type { BankCredentials, ProviderConfig } from "@getblitz/bank-providers";
+import type {
+  AuthenticatedProvider,
+  BankCredentials,
+  ConfiguredProvider,
+  ProviderConfig,
+} from "@getblitz/bank-providers";
 
 export interface CredentialManagerResult {
   credentials: BankCredentials;
@@ -6,11 +11,6 @@ export interface CredentialManagerResult {
 }
 
 export interface ICredentialManagerService {
-  getValidCredentials({
-    connectionId,
-  }: {
-    connectionId: string;
-  }): Promise<CredentialManagerResult>;
   isTokenExpiringSoon(
     credentials: BankCredentials,
     bufferMinutes?: number,
@@ -19,4 +19,25 @@ export interface ICredentialManagerService {
   decryptProviderConfig(encrypted: string): ProviderConfig;
   encryptCredentials(credentials: BankCredentials): string;
   decryptCredentials(encrypted: string): BankCredentials;
+
+  /**
+   * Create a ConfiguredProvider — has provider config, can do auth flows.
+   * Use for: getAuthUrl, exchangeCode, refreshToken
+   */
+  createConfiguredProvider({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<ConfiguredProvider>;
+
+  /**
+   * Create an AuthenticatedProvider — has both config AND credentials.
+   * Handles automatic token refresh when credentials are expiring.
+   * Use for: listAccounts, createWebhook, simulateSandboxPayment
+   */
+  createAuthenticatedProvider({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<AuthenticatedProvider>;
 }

@@ -8,7 +8,7 @@
     "build:standalone": "pnpm with-env next build && tsup",
     "clean": "git clean -xdf .cache .next .turbo node_modules dist",
     "dev:next": "pnpm with-env next dev",
-    "dev": "pnpm with-env tsx watch server.ts",
+    "dev": "NODE_OPTIONS='--inspect --enable-source-maps' pnpm with-env tsx watch server.ts",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "lint": "eslint --flag unstable_native_nodejs_ts_config",
     "start": "pnpm with-env next start",

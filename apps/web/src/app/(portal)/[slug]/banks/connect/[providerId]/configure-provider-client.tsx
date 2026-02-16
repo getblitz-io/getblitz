@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 
 import type {
   OAuthFlowType,
+  ProviderConfig,
   ProviderConfigSchema,
 } from "@getblitz/bank-providers";
 import {
@@ -30,31 +31,31 @@ import { useTRPC } from "~/trpc/react";
 
 export interface ConfigureProviderClientProps {
   slug: string;
+  operation: "create" | "update";
   providerDisplayName: string;
   // For new connections (created by server component)
-  pendingConnectionId: string | null;
-  callbackUrl: string | null;
-  oauthFlowType: OAuthFlowType | null;
+  connectionId: string;
+  callbackUrl: string;
+  oauthFlowType: OAuthFlowType;
   setupGuideUrl: string | null;
   // Schema and default config
   configSchema: ProviderConfigSchema;
-  defaultConfig: Record<string, unknown>;
+  defaultConfig: ProviderConfig;
   // For reconfiguring existing connections
-  existingConnectionId: string | null;
-  existingConnectionName: string | null;
+  connectionName: string | null;
 }
 
 export function ConfigureProviderClient({
   slug,
+  operation,
+  connectionId,
   providerDisplayName,
-  pendingConnectionId,
   callbackUrl,
   oauthFlowType,
   setupGuideUrl,
   configSchema,
   defaultConfig,
-  existingConnectionId,
-  existingConnectionName,
+  connectionName,
 }: ConfigureProviderClientProps) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -64,8 +65,6 @@ export function ConfigureProviderClient({
   const [step, setStep] = useState<1 | 2>(1);
   const [copied, setCopied] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-
-  const isReconfiguring = !!existingConnectionId;
 
   // Save bank config mutation (Step 2)
   const saveBankConfig = useMutation(
@@ -117,7 +116,7 @@ export function ConfigureProviderClient({
   // Build default values from schema fields
   const buildDefaultValues = useMemo(() => {
     const defaults: Record<string, unknown> = {
-      connectionName: existingConnectionName ?? "",
+      connectionName: connectionName ?? "",
     };
 
     configSchema.fields.forEach((field) => {
@@ -134,7 +133,7 @@ export function ConfigureProviderClient({
 
     Object.assign(defaults, defaultConfig);
     return defaults;
-  }, [configSchema.fields, defaultConfig, existingConnectionName]);
+  }, [configSchema.fields, defaultConfig, connectionName]);
 
   // Create form
   const form = useForm({
@@ -142,32 +141,33 @@ export function ConfigureProviderClient({
     onSubmit: async ({ value }) => {
       const { connectionName: name, ...providerConfig } = value;
 
-      if (isReconfiguring && existingConnectionId) {
+      if (operation === "update") {
         // Update existing connection config
-        updateConnectionConfig.mutate({
+        await updateConnectionConfig.mutateAsync({
           slug,
-          connectionId: existingConnectionId,
+          connectionId,
           providerConfig: providerConfig as Record<string, unknown>,
           name: typeof name === "string" ? name.trim() || undefined : undefined,
         });
-      } else if (pendingConnectionId) {
+      } else {
         // Save config to database
         await saveBankConfig.mutateAsync({
           slug,
-          connectionId: pendingConnectionId,
+          connectionId,
           providerConfig: providerConfig as Record<string, unknown>,
           connectionName:
             typeof name === "string" ? name.trim() || undefined : undefined,
         });
+      }
 
-        // Redirect based on flow type
-        if (oauthFlowType === "redirect") {
-          getAuthUrl.mutate({ slug, connectionId: pendingConnectionId });
-        } else {
-          // Manual consent flow - show instructions
-          toast.success(t("configSaved"));
-          setStep(2);
-        }
+      if (oauthFlowType === "redirect") {
+        await getAuthUrl.mutateAsync({ slug, connectionId });
+      } else if (oauthFlowType === "manual-consent") {
+        // Manual consent flow - show instructions
+        toast.success(t("configSaved"));
+        setStep(2);
+      } else {
+        router.push(`/${slug}/banks/accounts/${connectionId}`);
       }
     },
   });
@@ -209,21 +209,16 @@ export function ConfigureProviderClient({
     }
   };
 
-  const handleCancel = () => {
-    if (isReconfiguring) {
-      // For reconfiguring, just navigate back without deleting
-      router.push(`/${slug}/banks/connect`);
-    } else if (pendingConnectionId) {
+  const handleCancel = async () => {
+    if (operation === "create") {
       // For new connections, delete the pending connection first
       setIsCancelling(true);
-      deletePendingConnection.mutate({
+      await deletePendingConnection.mutateAsync({
         slug,
-        connectionId: pendingConnectionId,
+        connectionId,
       });
-    } else {
-      // Fallback: just navigate back
-      router.push(`/${slug}/banks/connect`);
     }
+    router.push(`/${slug}/banks/connect`);
   };
 
   // For manual consent flow after config is saved - show waiting instructions
@@ -293,17 +288,19 @@ export function ConfigureProviderClient({
           {t("backToProviders")}
         </Link>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {isReconfiguring
+          {operation === "update"
             ? t("reconfigureTitle", { providerName: providerDisplayName })
             : t("title", { providerName: providerDisplayName })}
         </h1>
         <p className="text-muted-foreground">
-          {isReconfiguring ? t("reconfigureDescription") : t("description")}
+          {operation === "update"
+            ? t("reconfigureDescription")
+            : t("description")}
         </p>
       </div>
 
       {/* Step 1: Callback URL (for new connections only) */}
-      {!isReconfiguring && callbackUrl && (
+      {callbackUrl && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -356,7 +353,7 @@ export function ConfigureProviderClient({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {!isReconfiguring && (
+            {operation === "create" && (
               <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-sm">
                 2
               </span>
@@ -415,7 +412,7 @@ export function ConfigureProviderClient({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {!isReconfiguring && (
+            {operation === "create" && (
               <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-sm">
                 3
               </span>
@@ -625,10 +622,10 @@ export function ConfigureProviderClient({
                     {isSubmitting ||
                     saveBankConfig.isPending ||
                     getAuthUrl.isPending
-                      ? isReconfiguring
+                      ? operation === "update"
                         ? t("updating")
                         : t("connecting")
-                      : isReconfiguring
+                      : operation === "update"
                         ? t("update")
                         : t("connect")}
                   </Button>

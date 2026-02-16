@@ -1,8 +1,6 @@
-import type { Mocked } from "vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BankProvider } from "@getblitz/bank-providers";
-import { ProviderRegistry } from "@getblitz/bank-providers";
+import type { AuthenticatedProvider } from "@getblitz/bank-providers";
 
 import type {
   ICredentialManagerService,
@@ -16,14 +14,7 @@ vi.mock("../env", () => ({
   },
 }));
 
-vi.mock("@getblitz/bank-providers", () => ({
-  ProviderRegistry: {
-    createProvider: vi.fn(),
-  },
-}));
-
 describe("BankConnectionService", () => {
-  const mockedRegistry = ProviderRegistry as Mocked<typeof ProviderRegistry>;
   let service: BankConnectionService;
   const mockRepo = {
     create: vi.fn(),
@@ -39,6 +30,8 @@ describe("BankConnectionService", () => {
     getValidCredentials: vi.fn(),
     refreshCredentials: vi.fn(),
     isTokenExpiringSoon: vi.fn(),
+    createConfiguredProvider: vi.fn(),
+    createAuthenticatedProvider: vi.fn(),
   };
 
   beforeAll(() => {
@@ -74,25 +67,20 @@ describe("BankConnectionService", () => {
     };
     mockRepo.findById.mockResolvedValue(connection);
     mockCredManager.decryptProviderConfig.mockReturnValue({ some: "cfg" });
-    mockCredManager.getValidCredentials.mockResolvedValue({
-      credentials: { accessToken: "token" },
-    });
 
     const mockProvider = {
       createWebhook: vi.fn().mockResolvedValue({ secret: "webhook-secret" }),
     };
-    mockedRegistry.createProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+    mockCredManager.createAuthenticatedProvider.mockResolvedValue(
+      mockProvider as unknown as AuthenticatedProvider,
     );
 
     const result = await service.setupWebhook({
       connectionId: "conn-123",
-      providerId: "test-bank",
     });
 
     expect(result.success).toBe(true);
     expect(mockProvider.createWebhook).toHaveBeenCalledWith({
-      credentials: { accessToken: "token" },
       webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
     });
     expect(mockRepo.update).toHaveBeenCalledWith({
@@ -111,13 +99,12 @@ describe("BankConnectionService", () => {
       providerConfig: "enc:cfg",
     };
     mockRepo.findById.mockResolvedValue(connection);
-    mockedRegistry.createProvider.mockReturnValue(
-      {} as unknown as BankProvider,
+    mockCredManager.createAuthenticatedProvider.mockResolvedValue(
+      {} as unknown as AuthenticatedProvider,
     );
 
     const result = await service.setupWebhook({
       connectionId: "conn-123",
-      providerId: "test-bank",
     });
 
     expect(result.success).toBe(false);

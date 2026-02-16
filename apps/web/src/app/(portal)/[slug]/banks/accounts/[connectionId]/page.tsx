@@ -200,6 +200,9 @@ export default function SelectAccountPage() {
                       <code className="text-muted-foreground text-xs break-all sm:text-sm">
                         {account.iban}
                       </code>
+                      <div className="text-muted-foreground text-xs break-all sm:text-sm">
+                        {account.bankIdentifierName}
+                      </div>
                     </div>
                     <div className="shrink-0 text-sm font-medium">
                       {account.currency}

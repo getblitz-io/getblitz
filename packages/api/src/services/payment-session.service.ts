@@ -248,35 +248,20 @@ export class PaymentSessionService implements IPaymentSessionService {
 
     // Check if provider supports sandbox simulation
     const connection = session.bankAccount.organizationBankConnection;
-    const providerId = connection.providerId;
 
     // Try sandbox simulation for providers that support it
     if (connection.providerConfig && connection.credentials) {
-      const providerConfig =
-        this.credentialManagerService.decryptProviderConfig(
-          connection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        providerId,
-        providerConfig,
-      );
+      const provider =
+        await this.credentialManagerService.createAuthenticatedProvider({
+          connectionId: connection.id,
+        });
 
-      if (
-        provider.supportsSandboxSimulation() &&
-        provider.simulateSandboxPayment
-      ) {
-        // Get valid credentials (may refresh if needed)
-        const { credentials } =
-          await this.credentialManagerService.getValidCredentials({
-            connectionId: connection.id,
-          });
-
+      if (provider.supportsSandboxSimulation()) {
         // Use the external account ID from the bank account
         const accountId = session.bankAccount.externalAccountId;
         const amount = session.amountCents / 100; // Convert cents to major units
 
         const sandboxResult = await provider.simulateSandboxPayment({
-          credentials,
           accountId,
           amount,
           currency: session.currency,

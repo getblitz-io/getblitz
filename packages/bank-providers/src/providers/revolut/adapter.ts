@@ -3,85 +3,28 @@ import { z } from "zod";
 
 import type {
   AccountConfig,
-  BankCredentials,
-  ProviderConfig,
+  BankProviderBankAccount,
   ProviderConfigSchema,
   WebhookVerificationResult,
 } from "../../types";
+import type {
+  RevolutBankCredentials,
+  RevolutProviderConfig,
+  RevolutTransaction,
+  RevolutWebhookPayload,
+} from "./types";
 import { BaseBankProvider } from "../../base-provider";
-
-/**
- * Revolut transaction leg schema (used in full transaction responses)
- */
-const RevolutTransactionLegSchema = z.object({
-  leg_id: z.string().optional(),
-  amount: z.number(),
-  currency: z.string(),
-  description: z.string().optional(),
-  account_id: z.string().optional(),
-});
-
-/**
- * Full Revolut transaction schema (from API response)
- * @see https://developer.revolut.com/docs/business/get-transaction
- */
-const RevolutTransactionSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  state: z.string(),
-  request_id: z.string().optional(),
-  created_at: z.string().optional(),
-  completed_at: z.string().optional(),
-  reference: z.string().optional(),
-  legs: z.array(RevolutTransactionLegSchema).optional(),
-});
-
-type RevolutTransaction = z.infer<typeof RevolutTransactionSchema>;
-
-/**
- * TransactionCreated webhook payload - contains full transaction data
- */
-const TransactionCreatedPayloadSchema = z.object({
-  event: z.literal("TransactionCreated"),
-  timestamp: z.string(),
-  data: RevolutTransactionSchema,
-});
-
-/**
- * TransactionStateChanged webhook payload - contains minimal data
- * Requires API call to fetch full transaction details
- */
-const TransactionStateChangedPayloadSchema = z.object({
-  event: z.literal("TransactionStateChanged"),
-  timestamp: z.string(),
-  data: z.object({
-    id: z.string(),
-    request_id: z.string().optional(),
-    old_state: z.string(),
-    new_state: z.string(),
-  }),
-});
-
-/**
- * Combined Revolut webhook payload schema
- * Handles both TransactionCreated (full) and TransactionStateChanged (minimal) events
- */
-export const RevolutWebhookPayloadSchema = z.discriminatedUnion("event", [
-  TransactionCreatedPayloadSchema,
-  TransactionStateChangedPayloadSchema,
-]);
-
-type RevolutWebhookPayload = z.infer<typeof RevolutWebhookPayloadSchema>;
-
-/**
- * Revolut provider configuration
- * Note: redirectUri is not stored in config - it's generated per connection attempt
- */
-export interface RevolutProviderConfig extends ProviderConfig {
-  clientId: string;
-  privateKeyPem: string;
-  sandboxMode: boolean;
-}
+import { WebhookVerificationStatus } from "../../types";
+import {
+  RevolutAccountsResponseSchema,
+  RevolutBankDetailsResponseSchema,
+  RevolutCreateWebhookResponseSchema,
+  RevolutProviderConfigSchema,
+  RevolutRefreshTokenResponseSchema,
+  RevolutTokenResponseSchema,
+  RevolutTransactionSchema,
+  RevolutWebhookPayloadSchema,
+} from "./types";
 
 export class RevolutProvider extends BaseBankProvider {
   readonly id = "revolut";
@@ -90,17 +33,69 @@ export class RevolutProvider extends BaseBankProvider {
   readonly authType = "certificate" as const;
   readonly oauthFlowType = "manual-consent" as const;
 
-  private clientId: string;
-  private privateKeyPem: string;
-  private sandboxMode: boolean;
+  // Provider config fields (set by applyProviderConfig)
+  private _clientId?: string;
+  private _privateKeyPem?: string;
+  private _sandboxMode?: boolean;
 
-  constructor(config?: ProviderConfig) {
-    super();
-    const cfg = config as RevolutProviderConfig | undefined;
+  // Credential fields (set by applyCredentials)
+  private _accessToken?: string;
 
-    this.clientId = cfg?.clientId ?? "";
-    this.privateKeyPem = cfg?.privateKeyPem ?? "";
-    this.sandboxMode = cfg?.sandboxMode ?? false;
+  protected createInstance(): RevolutProvider {
+    return new RevolutProvider();
+  }
+
+  protected applyProviderConfig(config: RevolutProviderConfig): void {
+    const cfg = RevolutProviderConfigSchema.safeParse(config);
+    if (!cfg.success) {
+      throw new Error(
+        "Invalid Revolut provider configuration" + JSON.stringify(cfg.error),
+      );
+    }
+    this._clientId = cfg.data.clientId;
+    this._privateKeyPem = cfg.data.privateKeyPem;
+    this._sandboxMode = cfg.data.sandboxMode;
+  }
+
+  protected applyCredentials(credentials: RevolutBankCredentials): void {
+    if (!credentials.accessToken) {
+      throw new Error("Revolut credentials must include accessToken");
+    }
+    this._accessToken = credentials.accessToken;
+  }
+
+  // -------------------------------------------------------------------
+  // Config/credential accessors with guards
+  // -------------------------------------------------------------------
+
+  private get clientId(): string {
+    if (!this._clientId) {
+      throw new Error("RevolutProvider is not properly configured");
+    }
+    return this._clientId;
+  }
+
+  private get privateKeyPem(): string {
+    if (!this._privateKeyPem) {
+      throw new Error("RevolutProvider is not properly configured");
+    }
+    return this._privateKeyPem;
+  }
+
+  private get sandboxMode(): boolean {
+    if (this._sandboxMode === undefined) {
+      throw new Error("RevolutProvider is not properly configured");
+    }
+    return this._sandboxMode;
+  }
+
+  private get accessToken(): string {
+    if (!this._accessToken) {
+      throw new Error(
+        "RevolutProvider is not authenticated — credentials required",
+      );
+    }
+    return this._accessToken;
   }
 
   private get baseUrl(): string {
@@ -152,14 +147,6 @@ export class RevolutProvider extends BaseBankProvider {
       privateKeyPem: "",
       sandboxMode,
     };
-  }
-
-  private ensureConfigured(): void {
-    if (!this.clientId || !this.privateKeyPem) {
-      throw new Error(
-        "RevolutProvider is not configured. Create a configured instance using ProviderRegistry.createProvider()",
-      );
-    }
   }
 
   getCredentialSchema() {
@@ -228,7 +215,6 @@ export class RevolutProvider extends BaseBankProvider {
    * Returns null if the request fails (account may not have bank details).
    */
   private async fetchBankDetails(
-    accessToken: string,
     accountId: string,
   ): Promise<
     | { accountId: string; iban: string; bic: string; beneficiary: string }[]
@@ -239,7 +225,7 @@ export class RevolutProvider extends BaseBankProvider {
         `${this.baseUrl}/api/1.0/accounts/${accountId}/bank-details`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${this.accessToken}`,
           },
         },
       );
@@ -248,18 +234,22 @@ export class RevolutProvider extends BaseBankProvider {
         return null;
       }
 
-      const data = (await response.json()) as {
-        iban?: string;
-        bic?: string;
-        beneficiary?: string;
-      }[];
+      const data = await response.json();
+      const parsed = RevolutBankDetailsResponseSchema.safeParse(data);
+
+      if (!parsed.success) {
+        console.error(
+          `Failed to parse Revolut bank details: ${parsed.error.message}`,
+        );
+        return null;
+      }
 
       // filter out data wihout iban, bic, beneficiary and group by iban, bic, beneficiary
       const grouped = new Map<
         string,
         { iban: string; bic: string; beneficiary: string }
       >();
-      for (const item of data) {
+      for (const item of parsed.data) {
         if (item.iban && item.bic && item.beneficiary) {
           const key = `${item.iban}-${item.bic}-${item.beneficiary}`;
           grouped.set(key, {
@@ -285,11 +275,9 @@ export class RevolutProvider extends BaseBankProvider {
    * @see https://developer.revolut.com/docs/business/get-transaction
    */
   private async getTransaction({
-    credentials,
     transactionId,
     idType = "transaction",
   }: {
-    credentials: BankCredentials;
     transactionId: string;
     idType: "transaction" | "request";
   }): Promise<RevolutTransaction | null> {
@@ -300,7 +288,7 @@ export class RevolutProvider extends BaseBankProvider {
     try {
       const response = await fetch(`${this.baseUrl}${url}`, {
         headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
         },
         method: "GET",
       });
@@ -333,11 +321,9 @@ export class RevolutProvider extends BaseBankProvider {
   async verifyAndParseWebhook({
     request,
     secret,
-    credentials,
   }: {
     request: Request;
     secret?: string;
-    credentials?: BankCredentials;
   }): Promise<WebhookVerificationResult> {
     const rawBody = await request.text();
 
@@ -347,11 +333,14 @@ export class RevolutProvider extends BaseBankProvider {
       const timestampHeader = request.headers.get("Revolut-Request-Timestamp");
 
       if (!signatureHeader) {
-        return { valid: false, error: "Missing Revolut-Signature header" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Missing Revolut-Signature header",
+        };
       }
       if (!timestampHeader) {
         return {
-          valid: false,
+          status: WebhookVerificationStatus.Error,
           error: "Missing Revolut-Request-Timestamp header",
         };
       }
@@ -361,7 +350,10 @@ export class RevolutProvider extends BaseBankProvider {
       const webhookTime = parseInt(timestampHeader, 10);
       const now = Date.now();
       if (isNaN(webhookTime) || Math.abs(now - webhookTime) > 5 * 60 * 1000) {
-        return { valid: false, error: "Webhook timestamp too old or invalid" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Webhook timestamp too old or invalid",
+        };
       }
 
       // Parse signatures (format: v1=sig1,v1=sig2)
@@ -382,7 +374,10 @@ export class RevolutProvider extends BaseBankProvider {
 
       // Check if any signature matches
       if (!signatures.includes(expectedSignature)) {
-        return { valid: false, error: "Invalid webhook signature" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Invalid webhook signature",
+        };
       }
     }
 
@@ -392,38 +387,68 @@ export class RevolutProvider extends BaseBankProvider {
 
       if (!parsed.success) {
         return {
-          valid: false,
+          status: WebhookVerificationStatus.Error,
           error: `Invalid Revolut webhook payload: ${parsed.error.message}`,
         };
       }
 
+      if (this.sandboxMode) {
+        return this.handleWebhookResponseForSandbox({
+          payload,
+          parsed: parsed.data,
+        });
+      }
+
+      console.log(
+        "Revolut production mode - handling webhook response for production",
+      );
+
       // 1. Resolve full transaction
       const { transaction, error: resolveError } =
-        await this.resolveWebhookTransaction(parsed.data, credentials);
+        await this.resolveWebhookTransaction(parsed.data);
 
       if (resolveError || !transaction) {
         return {
-          valid: false,
+          status: WebhookVerificationStatus.Error,
           error: resolveError ?? "Failed to resolve transaction",
         };
       }
 
       // 2. Validate transaction structure
       const firstLeg = transaction.legs?.[0];
-      const validation = this.validateWebhookTransaction(transaction);
-      if (!validation.valid || !firstLeg) {
+      if (!firstLeg) {
         return {
-          valid: false,
-          error: validation.error ?? "Invalid transaction",
+          status: WebhookVerificationStatus.Ignore,
+          reason: "Invalid Revolut transaction: no legs found",
         };
+      }
+      const validation = this.validateWebhookTransaction(transaction);
+      switch (validation.valid) {
+        case WebhookVerificationStatus.Error:
+          return {
+            status: WebhookVerificationStatus.Error,
+            error: validation.error ?? "Invalid transaction",
+          };
+        case WebhookVerificationStatus.Ignore:
+          return {
+            status: WebhookVerificationStatus.Ignore,
+            reason: validation.error ?? "Invalid transaction",
+          };
+        case WebhookVerificationStatus.Success:
+          break;
+        default:
+          return {
+            status: WebhookVerificationStatus.Error,
+            error: "Invalid transaction",
+          };
       }
 
       // 3. Extract reference from description field
       const referenceId = this.extractReferenceId(firstLeg.description);
       if (!referenceId) {
         return {
-          valid: false,
-          error: "No valid reference ID in Revolut transaction",
+          status: WebhookVerificationStatus.Ignore,
+          reason: "No valid reference ID in Revolut transaction",
         };
       }
 
@@ -431,7 +456,7 @@ export class RevolutProvider extends BaseBankProvider {
       const currency = firstLeg.currency;
 
       return {
-        valid: true,
+        status: WebhookVerificationStatus.Success,
         referenceId,
         txHash: transaction.id,
         amountCents,
@@ -440,10 +465,76 @@ export class RevolutProvider extends BaseBankProvider {
       };
     } catch {
       return {
-        valid: false,
+        status: WebhookVerificationStatus.Error,
         error: "Failed to parse Revolut webhook payload",
       };
     }
+  }
+
+  private handleWebhookResponseForSandbox({
+    payload,
+    parsed,
+  }: {
+    payload: unknown;
+    parsed: RevolutWebhookPayload;
+  }): WebhookVerificationResult {
+    if (
+      parsed.event !== "TransactionCreated" ||
+      parsed.data.state !== "pending"
+    ) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: "Invalid Revolut webhook payload",
+      };
+    }
+
+    const validation = this.validateWebhookTransaction(parsed.data);
+    switch (validation.valid) {
+      case WebhookVerificationStatus.Error:
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: validation.error ?? "Invalid transaction",
+        };
+      case WebhookVerificationStatus.Ignore:
+        return {
+          status: WebhookVerificationStatus.Ignore,
+          reason: validation.error ?? "Invalid transaction",
+        };
+      case WebhookVerificationStatus.Success:
+        break;
+      default:
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Invalid transaction",
+        };
+    }
+    const transactionLeg = parsed.data.legs?.[0];
+    if (!transactionLeg) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Invalid transaction",
+      };
+    }
+
+    const referenceId = this.extractReferenceId(transactionLeg.description);
+    if (!referenceId) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: "No valid reference ID in Revolut transaction",
+      };
+    }
+
+    const amountCents = Math.round(transactionLeg.amount * 100);
+    const currency = transactionLeg.currency;
+
+    return {
+      status: WebhookVerificationStatus.Success,
+      referenceId,
+      txHash: parsed.data.id,
+      amountCents,
+      currency,
+      rawPayload: payload,
+    };
   }
 
   /**
@@ -453,7 +544,6 @@ export class RevolutProvider extends BaseBankProvider {
    */
   private async resolveWebhookTransaction(
     webhookData: RevolutWebhookPayload,
-    credentials?: BankCredentials,
   ): Promise<{ transaction?: RevolutTransaction; error?: string }> {
     if (webhookData.event === "TransactionCreated") {
       if (webhookData.data.state !== "completed") {
@@ -472,7 +562,7 @@ export class RevolutProvider extends BaseBankProvider {
     }
 
     // Need credentials to fetch full transaction
-    if (!credentials?.accessToken) {
+    if (!this._accessToken) {
       return {
         error:
           "No access token available to fetch transaction details for TransactionStateChanged event",
@@ -480,7 +570,6 @@ export class RevolutProvider extends BaseBankProvider {
     }
 
     const fetchedTransaction = await this.getTransaction({
-      credentials,
       transactionId: webhookData.data.id,
       idType: "transaction",
     });
@@ -498,31 +587,30 @@ export class RevolutProvider extends BaseBankProvider {
    * Validates that the transaction is a topup and has the expected structure.
    */
   private validateWebhookTransaction(transaction: RevolutTransaction): {
-    valid: boolean;
+    valid: WebhookVerificationStatus;
     error?: string;
   } {
     if (transaction.type !== "topup") {
       return {
-        valid: false,
+        valid: WebhookVerificationStatus.Ignore,
         error: `Invalid Revolut transaction type: ${transaction.type}. Expected topup.`,
       };
     }
 
     if (transaction.legs?.length !== 1) {
       return {
-        valid: false,
+        valid: WebhookVerificationStatus.Error,
         error: `Invalid Revolut transaction legs length: ${transaction.legs?.length ?? 0}. Expected 1.`,
       };
     }
 
-    return { valid: true };
+    return { valid: WebhookVerificationStatus.Success };
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async validateAccount({
     account,
   }: {
-    credentials: BankCredentials;
     account: AccountConfig;
   }): Promise<boolean> {
     return !!account.accountId;
@@ -535,8 +623,6 @@ export class RevolutProvider extends BaseBankProvider {
     redirectUri: string;
     state: string;
   }): string {
-    this.ensureConfigured();
-
     // Note: Revolut uses the redirect URI configured in the API settings,
     // but we pass it here for consistency with our OAuth flow
     const params = new URLSearchParams({
@@ -555,9 +641,7 @@ export class RevolutProvider extends BaseBankProvider {
   }: {
     code: string;
     redirectUri?: string;
-  }): Promise<BankCredentials> {
-    this.ensureConfigured();
-
+  }): Promise<RevolutBankCredentials> {
     if (!redirectUri) {
       throw new Error("redirectUri is required for Revolut authentication");
     }
@@ -584,32 +668,26 @@ export class RevolutProvider extends BaseBankProvider {
       throw new Error(`Failed to exchange Revolut code: ${error}`);
     }
 
-    const data = (await response.json()) as {
-      access_token: string;
-      refresh_token: string;
-      expires_in: number;
-      token_type: string;
-    };
+    const data = await response.json();
+    const parsed = RevolutTokenResponseSchema.safeParse(data);
+
+    if (!parsed.success) {
+      throw new Error(
+        `Failed to parse Revolut token response: ${parsed.error.message}`,
+      );
+    }
 
     return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      accessToken: parsed.data.access_token,
+      refreshToken: parsed.data.refresh_token,
+      expiresAt: new Date(Date.now() + parsed.data.expires_in * 1000),
     };
   }
 
-  async listAccounts({
-    credentials,
-  }: {
-    credentials: BankCredentials;
-  }): Promise<
-    { id: string; name: string; iban: string; currency: string; bic: string }[]
-  > {
-    this.ensureConfigured();
-
+  async listAccounts(): Promise<BankProviderBankAccount[]> {
     const response = await fetch(`${this.baseUrl}/api/1.0/accounts`, {
       headers: {
-        Authorization: `Bearer ${credentials.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
       },
     });
 
@@ -618,16 +696,16 @@ export class RevolutProvider extends BaseBankProvider {
       throw new Error(`Failed to list Revolut accounts: ${error}`);
     }
 
-    const accounts = (await response.json()) as {
-      id: string;
-      name: string;
-      currency: string;
-      balance: number;
-      state: string;
-      public: boolean;
-      created_at: string;
-      updated_at: string;
-    }[];
+    const data = await response.json();
+    const parsedAccounts = RevolutAccountsResponseSchema.safeParse(data);
+
+    if (!parsedAccounts.success) {
+      throw new Error(
+        `Failed to parse Revolut accounts response: ${parsedAccounts.error.message}`,
+      );
+    }
+
+    const accounts = parsedAccounts.data;
 
     // Filter accounts that qualify for IBAN fetching:
     // EUR currency, active state, and public (has bank details)
@@ -641,11 +719,10 @@ export class RevolutProvider extends BaseBankProvider {
       { iban: string; bic: string; beneficiary: string }
     >();
 
-    const accessToken = credentials.accessToken;
-    if (eligibleAccounts.length > 0 && accessToken) {
+    if (eligibleAccounts.length > 0) {
       const bankDetailsResults = await Promise.all(
         eligibleAccounts.map(async (acc) => {
-          const details = await this.fetchBankDetails(accessToken, acc.id);
+          const details = await this.fetchBankDetails(acc.id);
           return { accountId: acc.id, details };
         }),
       );
@@ -665,22 +742,19 @@ export class RevolutProvider extends BaseBankProvider {
       iban: details.iban,
       currency: "EUR",
       bic: details.bic,
+      bankIdentifierName: details.beneficiary,
     }));
   }
 
   async createWebhook({
-    credentials,
     webhookUrl,
   }: {
-    credentials: BankCredentials;
     webhookUrl: string;
   }): Promise<{ id: string; secret: string }> {
-    this.ensureConfigured();
-
     const response = await fetch(`${this.baseUrl}/api/2.0/webhooks`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${credentials.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -694,12 +768,16 @@ export class RevolutProvider extends BaseBankProvider {
       throw new Error(`Failed to create Revolut webhook: ${error}`);
     }
 
-    const data = (await response.json()) as {
-      id: string;
-      signing_secret: string;
-    };
+    const data = await response.json();
+    const parsed = RevolutCreateWebhookResponseSchema.safeParse(data);
 
-    return { id: data.id, secret: data.signing_secret };
+    if (!parsed.success) {
+      throw new Error(
+        `Failed to parse Revolut webhook response: ${parsed.error.message}`,
+      );
+    }
+
+    return { id: parsed.data.id, secret: parsed.data.signing_secret };
   }
 
   async refreshToken({
@@ -708,9 +786,7 @@ export class RevolutProvider extends BaseBankProvider {
   }: {
     refreshToken: string;
     callbackUrl?: string;
-  }): Promise<BankCredentials> {
-    this.ensureConfigured();
-
+  }): Promise<RevolutBankCredentials> {
     if (!callbackUrl) {
       throw new Error("callbackUrl is required for Revolut token refresh");
     }
@@ -736,17 +812,20 @@ export class RevolutProvider extends BaseBankProvider {
       throw new Error(`Failed to refresh Revolut token: ${error}`);
     }
 
-    const data = (await response.json()) as {
-      access_token: string;
-      expires_in: number;
-      token_type: string;
-    };
+    const data = await response.json();
+    const parsed = RevolutRefreshTokenResponseSchema.safeParse(data);
+
+    if (!parsed.success) {
+      throw new Error(
+        `Failed to parse Revolut refresh token response: ${parsed.error.message}`,
+      );
+    }
 
     // Revolut refresh doesn't return a new refresh token
     return {
-      accessToken: data.access_token,
+      accessToken: parsed.data.access_token,
       refreshToken, // Keep the existing refresh token
-      expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      expiresAt: new Date(Date.now() + parsed.data.expires_in * 1000),
     };
   }
 
@@ -766,13 +845,11 @@ export class RevolutProvider extends BaseBankProvider {
    * @see https://developer.revolut.com/docs/guides/manage-accounts/api-usage-and-testing/test-flows-with-simulations
    */
   async simulateSandboxPayment({
-    credentials,
     accountId,
     amount,
     currency,
     reference,
   }: {
-    credentials: BankCredentials;
     accountId: string;
     amount: number; // in major units (e.g., 10.50)
     currency: string;
@@ -789,7 +866,7 @@ export class RevolutProvider extends BaseBankProvider {
       const response = await fetch(`${this.baseUrl}/api/1.0/sandbox/topup`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -797,7 +874,7 @@ export class RevolutProvider extends BaseBankProvider {
           amount,
           currency,
           reference,
-          state: "completed",
+          state: "pending",
         }),
       });
 

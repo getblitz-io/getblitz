@@ -3,39 +3,20 @@ import { z } from "zod";
 
 import type {
   AccountConfig,
-  BankCredentials,
+  BankProviderBankAccount,
   ProviderConfig,
   ProviderConfigSchema,
   WebhookVerificationResult,
 } from "../../types";
+import type { QontoBankCredentials, QontoProviderConfig } from "./types";
 import { BaseBankProvider } from "../../base-provider";
-
-export const QontoWebhookPayloadSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  data: z.object({
-    id: z.string(),
-    amount: z.number(),
-    currency: z.string(),
-    status: z.string(),
-    reference: z.string().optional(),
-    note: z.string().optional(),
-    transaction_id: z.string().optional(),
-    bank_account_id: z.string().optional(),
-    side: z.enum(["debit", "credit"]),
-    operation_type: z.string().optional(),
-  }),
-});
-
-/**
- * Qonto provider configuration
- */
-export interface QontoProviderConfig extends ProviderConfig {
-  clientId: string;
-  clientSecret: string;
-  sandboxMode: boolean;
-  sandboxToken?: string;
-}
+import { WebhookVerificationStatus } from "../../types";
+import {
+  QontoBankAccountSchema,
+  QontoOrganizationSchema,
+  QontoProviderConfigSchema,
+  QontoWebhookPayloadSchema,
+} from "./types";
 
 export class QontoProvider extends BaseBankProvider {
   readonly id = "qonto";
@@ -44,21 +25,79 @@ export class QontoProvider extends BaseBankProvider {
   readonly authType = "oauth2" as const;
   readonly oauthFlowType = "redirect" as const;
 
-  private clientId: string;
-  private clientSecret: string;
-  private sandboxMode: boolean;
-  private sandboxToken?: string;
+  // Provider config fields (set by applyProviderConfig)
+  private _clientId: string | undefined;
+  private _clientSecret: string | undefined;
+  private _sandboxMode: boolean | undefined;
+  private _sandboxToken: string | undefined;
 
-  constructor(config?: ProviderConfig) {
-    super();
-    const cfg = config as QontoProviderConfig | undefined;
+  // Credential fields (set by applyCredentials)
+  private _accessToken: string | undefined;
 
-    // When no config provided (template instance), use empty values
-    // Actual API calls require a configured instance
-    this.clientId = cfg?.clientId ?? "";
-    this.clientSecret = cfg?.clientSecret ?? "";
-    this.sandboxMode = cfg?.sandboxMode ?? false;
-    this.sandboxToken = cfg?.sandboxToken;
+  // -------------------------------------------------------------------
+  // Phase transition implementation
+  // -------------------------------------------------------------------
+
+  protected createInstance(): QontoProvider {
+    return new QontoProvider();
+  }
+
+  protected applyProviderConfig(config: ProviderConfig): void {
+    const cfg = QontoProviderConfigSchema.safeParse(config);
+    if (!cfg.success) {
+      throw new Error("Invalid Qonto provider config");
+    }
+    this._clientId = cfg.data.clientId;
+    this._clientSecret = cfg.data.clientSecret;
+    this._sandboxMode = cfg.data.sandboxMode;
+    this._sandboxToken = cfg.data.sandboxToken;
+  }
+
+  protected applyCredentials(credentials: QontoBankCredentials): void {
+    if (!credentials.accessToken) {
+      throw new Error("Qonto credentials must include accessToken");
+    }
+    this._accessToken = credentials.accessToken;
+  }
+
+  // -------------------------------------------------------------------
+  // Config/credential accessors with guards
+  // -------------------------------------------------------------------
+
+  private get accessToken(): string {
+    if (!this._accessToken) {
+      throw new Error(
+        "QontoProvider is not authenticated — credentials required",
+      );
+    }
+    return this._accessToken;
+  }
+
+  private get clientId(): string {
+    if (!this._clientId) {
+      throw new Error("QontoProvider is not properly configured");
+    }
+    return this._clientId;
+  }
+
+  private get clientSecret(): string {
+    if (!this._clientSecret) {
+      throw new Error("QontoProvider is not properly configured");
+    }
+    return this._clientSecret;
+  }
+
+  private get sandboxMode(): boolean {
+    return this._sandboxMode ?? false;
+  }
+
+  private get sandboxToken(): string {
+    if (!this._sandboxToken) {
+      throw new Error(
+        "QontoProvider is not configured — sandboxToken required",
+      );
+    }
+    return this._sandboxToken;
   }
 
   private get oauthBaseUrl(): string {
@@ -126,14 +165,6 @@ export class QontoProvider extends BaseBankProvider {
     };
   }
 
-  private ensureConfigured(): void {
-    if (!this.clientId || !this.clientSecret) {
-      throw new Error(
-        "QontoProvider is not configured. Create a configured instance using ProviderRegistry.createProvider()",
-      );
-    }
-  }
-
   getCredentialSchema() {
     return z.object({
       accessToken: z.string(),
@@ -163,7 +194,10 @@ export class QontoProvider extends BaseBankProvider {
     if (secret) {
       const signatureHeader = request.headers.get("x-qonto-signature");
       if (!signatureHeader) {
-        return { valid: false, error: "Missing x-qonto-signature header" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Missing x-qonto-signature header",
+        };
       }
 
       // Parse t={timestamp},v1={signature} format
@@ -178,14 +212,20 @@ export class QontoProvider extends BaseBankProvider {
       const signature = parts.v1;
 
       if (!timestamp || !signature) {
-        return { valid: false, error: "Invalid signature header format" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Invalid signature header format",
+        };
       }
 
       // Verify timestamp is within 5 minutes
       const timestampAge =
         Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
       if (timestampAge > 300) {
-        return { valid: false, error: "Webhook timestamp too old" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Webhook timestamp too old",
+        };
       }
 
       // Recreate signed payload: {timestamp}.{raw_request_body}
@@ -195,7 +235,10 @@ export class QontoProvider extends BaseBankProvider {
         .digest("hex");
 
       if (signature !== expectedSignature) {
-        return { valid: false, error: "Invalid webhook signature" };
+        return {
+          status: WebhookVerificationStatus.Error,
+          error: "Invalid webhook signature",
+        };
       }
     }
 
@@ -205,7 +248,7 @@ export class QontoProvider extends BaseBankProvider {
 
     if (!parsed.success) {
       return {
-        valid: false,
+        status: WebhookVerificationStatus.Error,
         error: `Invalid Qonto webhook payload: ${parsed.error.message}`,
       };
     }
@@ -219,13 +262,13 @@ export class QontoProvider extends BaseBankProvider {
 
     if (!referenceId) {
       return {
-        valid: false,
-        error: "No valid reference ID in Qonto transaction",
+        status: WebhookVerificationStatus.Ignore,
+        reason: "No valid reference ID in Qonto transaction",
       };
     }
 
     return {
-      valid: true,
+      status: WebhookVerificationStatus.Success,
       referenceId,
       txHash: data.transaction_id ?? data.id,
       amountCents: Math.round(data.amount * 100),
@@ -238,7 +281,6 @@ export class QontoProvider extends BaseBankProvider {
   async validateAccount({
     account,
   }: {
-    credentials: BankCredentials;
     account: AccountConfig;
   }): Promise<boolean> {
     // We would verify the account exists in Qonto
@@ -252,8 +294,6 @@ export class QontoProvider extends BaseBankProvider {
     redirectUri: string;
     state: string;
   }): string {
-    this.ensureConfigured();
-
     const scopes = ["organization.read", "webhook"].join(" ");
     return `${this.oauthBaseUrl}/oauth2/auth?response_type=code&client_id=${this.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}`;
   }
@@ -264,8 +304,7 @@ export class QontoProvider extends BaseBankProvider {
   }: {
     code: string;
     redirectUri?: string;
-  }): Promise<BankCredentials> {
-    this.ensureConfigured();
+  }): Promise<QontoBankCredentials> {
     if (!redirectUri) {
       throw new Error("redirectUri is required for Qonto authentication");
     }
@@ -303,57 +342,34 @@ export class QontoProvider extends BaseBankProvider {
     };
   }
 
-  async listAccounts({
-    credentials,
-  }: {
-    credentials: BankCredentials;
-  }): Promise<
-    { id: string; name: string; iban: string; currency: string; bic: string }[]
-  > {
-    this.ensureConfigured();
-    const response = await fetch(`${this.thirdPartyBaseUrl}/v2/bank_accounts`, {
-      headers: {
-        Authorization: `Bearer ${credentials.accessToken}`,
-        ...this.getTestingHeader(),
-        ...this.getSignatureHeader(),
-      },
-    });
+  async listAccounts(): Promise<BankProviderBankAccount[]> {
+    try {
+      const [bankAccounts, organizationDetails] = await Promise.all([
+        this.getBankAccounts(),
+        this.getOrganizationDetails(),
+      ]);
 
-    if (!response.ok) {
-      const error = await response.text();
-      // Try fallback to just /v2/bank_accounts if org specific fails?
-      // But let's assume this path for now or maybe just "https://thirdparty.qonto.com/v2/bank_accounts"
-      // The docs for "List bank accounts" usually is "GET /v2/bank_accounts"
-      throw new Error(`Failed to list Qonto accounts: ${error}`);
+      return bankAccounts.bank_accounts
+        .filter((acc) => acc.is_external_account)
+        .map((acc) => ({
+          id: acc.id,
+          name: organizationDetails.organization.legal_name,
+          iban: acc.iban,
+          currency: acc.currency,
+          bic: acc.bic,
+          bankIdentifierName: acc.name,
+        }));
+    } catch (error) {
+      console.error("Error listing Qonto accounts:", error);
+      throw error;
     }
-
-    const data = (await response.json()) as {
-      bank_accounts: {
-        id: string;
-        name: string;
-        iban: string;
-        currency: string;
-        bic: string;
-      }[];
-    };
-
-    return data.bank_accounts.map((acc) => ({
-      id: acc.id,
-      name: acc.name,
-      iban: acc.iban,
-      currency: acc.currency,
-      bic: acc.bic,
-    }));
   }
 
   async createWebhook({
-    credentials,
     webhookUrl,
   }: {
-    credentials: BankCredentials;
     webhookUrl: string;
   }): Promise<{ id: string; secret: string }> {
-    this.ensureConfigured();
     const secret = randomBytes(32).toString("hex");
     const body = JSON.stringify({
       callback_url: webhookUrl,
@@ -366,7 +382,7 @@ export class QontoProvider extends BaseBankProvider {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           "Content-Type": "application/json",
           ...this.getTestingHeader(),
           ...this.getSignatureHeader(body),
@@ -389,8 +405,7 @@ export class QontoProvider extends BaseBankProvider {
   }: {
     refreshToken: string;
     callbackUrl?: string;
-  }): Promise<BankCredentials> {
-    this.ensureConfigured();
+  }): Promise<QontoBankCredentials> {
     const response = await fetch(`${this.oauthBaseUrl}/oauth2/token`, {
       method: "POST",
       headers: {
@@ -445,5 +460,59 @@ export class QontoProvider extends BaseBankProvider {
     return {
       "X-Qonto-Signature": `t=${timestamp},v1=${signature}`,
     };
+  }
+
+  private async getOrganizationDetails() {
+    const response = await fetch(`${this.thirdPartyBaseUrl}/v2/organization`, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        ...this.getTestingHeader(),
+        ...this.getSignatureHeader(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to get Qonto organization details: ${error}`);
+    }
+
+    const data = await response.json();
+
+    const parsedData = QontoOrganizationSchema.safeParse(data);
+
+    if (!parsedData.success) {
+      throw new Error(
+        `Failed to parse Qonto organization details: ${parsedData.error}`,
+      );
+    }
+
+    return parsedData.data;
+  }
+
+  private async getBankAccounts() {
+    const response = await fetch(`${this.thirdPartyBaseUrl}/v2/bank_accounts`, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        ...this.getTestingHeader(),
+        ...this.getSignatureHeader(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to get Qonto bank accounts: ${error}`);
+    }
+
+    const data = await response.json();
+
+    const parsedData = QontoBankAccountSchema.safeParse(data);
+
+    if (!parsedData.success) {
+      throw new Error(
+        `Failed to parse Qonto bank accounts: ${parsedData.error}`,
+      );
+    }
+
+    return parsedData.data;
   }
 }

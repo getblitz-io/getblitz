@@ -19,8 +19,6 @@ export default async function ConfigureProviderPage({
   const { slug, providerId } = await params;
   const { connectionId } = await searchParams;
 
-  const isReconfiguring = !!connectionId;
-
   // Validate provider exists
   const providerMetadata = ProviderRegistry.getProvider(providerId);
   if (!providerMetadata) {
@@ -30,34 +28,45 @@ export default async function ConfigureProviderPage({
   const caller = await api();
 
   // For new connections: create pending connection server-side (runs once per request)
-  let pendingConnectionData: {
+  let connectionData: {
+    name: string | null;
     connectionId: string;
     callbackUrl: string;
     oauthFlowType: OAuthFlowType;
     setupGuideUrl: string | null;
-  } | null = null;
+  };
 
-  if (!isReconfiguring) {
-    pendingConnectionData = await caller.organization.initBankConnection({
-      slug,
-      providerId,
-    });
+  try {
+    if (!connectionId) {
+      connectionData = await caller.organization.initBankConnection({
+        slug,
+        providerId,
+      });
+    } else {
+      const connection = await caller.organization.getBankConnectionById({
+        connectionId,
+        slug,
+      });
+      connectionData = {
+        name: connection.name,
+        connectionId: connection.id,
+        callbackUrl: connection.callbackUrl,
+        oauthFlowType: connection.providerOAuthFlowType,
+        setupGuideUrl: connection.providerSetupGuideUrl,
+      };
+    }
+  } catch (error) {
+    //todo: handle error
+    console.error(error);
+    notFound();
   }
 
   // Fetch config schema (with existing config if reconfiguring)
   const configData = await caller.organization.getProviderConfigSchema({
     providerId,
-    connectionId: connectionId ?? pendingConnectionData?.connectionId,
+    connectionId: connectionId,
     slug,
   });
-
-  // For reconfiguring: fetch existing connection name
-  let existingConnectionName: string | null = null;
-  if (isReconfiguring) {
-    const connections = await caller.organization.getBankConnections({ slug });
-    const existingConnection = connections.find((c) => c.id === connectionId);
-    existingConnectionName = existingConnection?.name ?? null;
-  }
 
   return (
     <Suspense
@@ -69,19 +78,15 @@ export default async function ConfigureProviderPage({
     >
       <ConfigureProviderClient
         slug={slug}
+        operation={connectionId ? "update" : "create"}
         providerDisplayName={providerMetadata.displayName}
-        pendingConnectionId={pendingConnectionData?.connectionId ?? null}
-        callbackUrl={pendingConnectionData?.callbackUrl ?? null}
-        oauthFlowType={pendingConnectionData?.oauthFlowType ?? null}
-        setupGuideUrl={
-          pendingConnectionData?.setupGuideUrl ??
-          configData.setupGuideUrl ??
-          null
-        }
+        connectionId={connectionData.connectionId}
+        callbackUrl={connectionData.callbackUrl}
+        oauthFlowType={connectionData.oauthFlowType}
+        setupGuideUrl={configData.setupGuideUrl}
         configSchema={configData.schema}
         defaultConfig={configData.defaultConfig}
-        existingConnectionId={connectionId ?? null}
-        existingConnectionName={existingConnectionName}
+        connectionName={connectionData.name}
       />
     </Suspense>
   );

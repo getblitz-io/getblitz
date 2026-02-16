@@ -83,7 +83,8 @@ export interface BankWebhookResult {
     | "NOT_FOUND"
     | "INVALID_SIGNATURE"
     | "SETTLEMENT_FAILED"
-    | "INTERNAL_ERROR";
+    | "INTERNAL_ERROR"
+    | "IGNORE";
   alreadyProcessed?: boolean;
   referenceId?: string;
 }

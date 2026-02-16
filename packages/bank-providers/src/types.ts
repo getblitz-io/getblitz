@@ -1,9 +1,20 @@
 import type { z } from "zod";
 
+import type { QontoBankCredentials } from "./providers/qonto/types";
+import type { RevolutBankCredentials } from "./providers/revolut/types";
+import type { TestBankCredentials } from "./providers/test-bank/adapter";
+
+export enum WebhookVerificationStatus {
+  Error = "error",
+  Ignore = "ignore",
+  Success = "success",
+}
+
 export type WebhookVerificationResult =
-  | { valid: false; error: string }
+  | { status: WebhookVerificationStatus.Error; error: string }
+  | { status: WebhookVerificationStatus.Ignore; reason: string }
   | {
-      valid: true;
+      status: WebhookVerificationStatus.Success;
       referenceId: string;
       txHash: string;
       amountCents: number;
@@ -11,13 +22,13 @@ export type WebhookVerificationResult =
       rawPayload: unknown;
     };
 
-export interface BankCredentials {
-  accessToken?: string;
-  refreshToken?: string;
-  expiresAt?: Date;
-  apiKey?: string;
-  [key: string]: unknown;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BaseBankCredentials {}
+
+export type BankCredentials =
+  | TestBankCredentials
+  | RevolutBankCredentials
+  | QontoBankCredentials;
 
 export interface AccountConfig {
   iban?: string;
@@ -25,19 +36,23 @@ export interface AccountConfig {
   [key: string]: unknown;
 }
 
+export type OAuthAuthType = "oauth2" | "api_key" | "certificate" | "none";
+
 export interface BankProviderBankAccount {
   id: string;
   name: string;
   iban: string;
   currency: string;
   bic: string;
+  bankIdentifierName: string;
 }
 
 /**
  * Provider configuration stored per-organization.
- * Contains credentials and settings needed to initialize a provider.
+ * Contains settings needed to initialize a provider (clientId, keys, sandboxMode, etc.).
  */
-export type ProviderConfig = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ProviderConfig {}
 
 /**
  * Metadata about a provider for UI display
@@ -46,7 +61,7 @@ export interface ProviderMetadata {
   id: string;
   displayName: string;
   domain: string;
-  authType: "oauth2" | "api_key" | "certificate" | "none";
+  authType: OAuthAuthType;
   oauthFlowType: OAuthFlowType;
   setupGuideUrl: string | null;
   isTestProvider: boolean;
@@ -72,12 +87,18 @@ export interface ProviderConfigSchema {
 
 export type OAuthFlowType = "redirect" | "manual-consent" | "none";
 
+/**
+ * Phase 1: Template / Metadata provider (no config, no credentials).
+ *
+ * Returned by `ProviderRegistry.getProvider()`. Can access metadata,
+ * config schema, and transition to configured/authenticated phases.
+ */
 export interface BankProvider {
-  // Static metadata (replaces Bank table fields)
+  // Static metadata
   readonly id: string;
   readonly displayName: string;
   readonly domain: string;
-  readonly authType: "oauth2" | "api_key" | "certificate" | "none";
+  readonly authType: OAuthAuthType;
   readonly oauthFlowType: OAuthFlowType;
   readonly isTestProvider: boolean;
 
@@ -88,82 +109,63 @@ export interface BankProvider {
   getProviderConfigSchema(): ProviderConfigSchema;
   getDefaultConfig(sandboxMode?: boolean): ProviderConfig;
 
-  // Credential schema (for OAuth tokens stored after connection)
+  // Credential / account schemas
   getCredentialSchema(): z.ZodObject<z.ZodRawShape>;
   getAccountSchema(): z.ZodObject<z.ZodRawShape>;
 
-  // Webhook handling
-  verifyAndParseWebhook({
-    request,
-    secret,
-    credentials,
-  }: {
-    request: Request;
-    secret?: string;
-    credentials?: BankCredentials;
-  }): Promise<WebhookVerificationResult>;
+  // Capability checks
+  supportsTokenRefresh(): boolean;
+  supportsSandboxSimulation(): boolean;
+
+  // Phase transitions — produce progressively more capable instances
+  withProviderConfig(config: ProviderConfig): ConfiguredProvider;
+  withCredentials(
+    config: ProviderConfig,
+    credentials: BankCredentials,
+  ): AuthenticatedProvider;
+}
+
+/**
+ * Phase 2: Configured provider (has provider config, no credentials yet).
+ *
+ * Can perform auth flows (getAuthUrl, exchangeCode, refreshToken) and
+ * webhook verification (signing secrets are passed as params).
+ */
+export interface ConfiguredProvider {
+  readonly id: string;
 
   // Auth flows (for merchant setup)
-  getAuthUrl?({
-    redirectUri,
-    state,
-  }: {
-    redirectUri: string;
-    state: string;
-  }): string;
-  exchangeCode?({
-    code,
-    redirectUri,
-  }: {
+  getAuthUrl(params: { redirectUri: string; state: string }): string;
+  exchangeCode(params: {
     code: string;
     redirectUri?: string;
   }): Promise<BankCredentials>;
-
-  // Account operations
-  validateAccount({
-    credentials,
-    account,
-  }: {
-    credentials: BankCredentials;
-    account: AccountConfig;
-  }): Promise<boolean>;
-  listAccounts?({
-    credentials,
-  }: {
-    credentials: BankCredentials;
-  }): Promise<BankProviderBankAccount[]>;
-  createWebhook?({
-    credentials,
-    webhookUrl,
-  }: {
-    credentials: BankCredentials;
-    webhookUrl: string;
-  }): Promise<{ id: string; secret: string }>;
-
-  // Token refresh (for OAuth2 providers)
-  refreshToken?({
-    refreshToken,
-    callbackUrl,
-  }: {
+  refreshToken(params: {
     refreshToken: string;
-    callbackUrl?: string; // Optional: needed by some providers (e.g., Revolut) for JWT generation
+    callbackUrl?: string;
   }): Promise<BankCredentials>;
 
-  // Helper to check if provider supports token refresh
-  supportsTokenRefresh(): boolean;
+  // Webhook handling & account validation
+  verifyAndParseWebhook(params: {
+    request: Request;
+    secret?: string;
+  }): Promise<WebhookVerificationResult>;
+  validateAccount(params: { account: AccountConfig }): Promise<boolean>;
+}
 
-  // Helper to check if provider supports sandbox simulation
+/**
+ * Phase 3: Authenticated provider (has both config AND credentials).
+ *
+ * Can make API calls that require an access token: list accounts,
+ * create webhooks, simulate sandbox payments, etc.
+ */
+export interface AuthenticatedProvider extends ConfiguredProvider {
   supportsSandboxSimulation(): boolean;
-
-  // Sandbox simulation (for providers that support it)
-  simulateSandboxPayment?({
-    credentials,
-    accountId,
-    amount,
-    currency,
-    reference,
-  }: {
-    credentials: BankCredentials;
+  listAccounts(): Promise<BankProviderBankAccount[]>;
+  createWebhook(params: {
+    webhookUrl: string;
+  }): Promise<{ id: string; secret: string }>;
+  simulateSandboxPayment(params: {
     accountId: string;
     amount: number;
     currency: string;

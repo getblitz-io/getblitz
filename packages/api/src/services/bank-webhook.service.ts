@@ -1,4 +1,4 @@
-import { ProviderRegistry } from "@getblitz/bank-providers";
+import { WebhookVerificationStatus } from "@getblitz/bank-providers";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
@@ -61,56 +61,75 @@ export class BankWebhookService implements IBankWebhookService {
         };
       }
 
-      // 3. Get provider from registry
-      const provider = ProviderRegistry.getProvider(providerId);
-      if (!provider) {
-        webhookLogger.error(`Unknown webhook provider: ${providerId}`);
-        return {
-          success: false,
-          error: "Unknown provider",
-          errorCode: "NOT_FOUND",
-        };
-      }
-
-      // 4. Get valid credentials (refreshing if needed) for providers that need to fetch transaction details
-      const secret = connection.webhookSecret ?? undefined;
-      let credentials;
-      if (connection.credentials) {
-        try {
-          const result =
-            await this.credentialManagerService.getValidCredentials({
-              connectionId,
-            });
-          credentials = result.credentials;
-        } catch (error) {
-          webhookLogger.error(`Failed to get valid credentials`, {
-            connectionId,
-            error: String(error),
-          });
-          // Continue without credentials - some webhooks may work without them
-        }
-      }
-
-      // 5. Verify webhook signature and parse payload
-      const webhookResult = await provider.verifyAndParseWebhook({
-        request,
-        secret,
-        credentials,
-      });
-
-      if (!webhookResult.valid) {
+      if (!connection.webhookSecret) {
         webhookLogger.error(
-          `Webhook verification failed for provider: ${providerId}`,
+          `Organization bank connection has no webhook secret`,
           {
             connectionId,
-            error: webhookResult.error,
+            providerId,
           },
         );
         return {
           success: false,
-          error: webhookResult.error,
-          errorCode: "INVALID_SIGNATURE",
+          error: "Organization bank connection has no webhook secret",
+          errorCode: "NOT_FOUND",
         };
+      }
+
+      const provider =
+        await this.credentialManagerService.createAuthenticatedProvider({
+          connectionId,
+        });
+
+      // 5. Verify webhook signature and parse payload
+      const webhookResult = await provider.verifyAndParseWebhook({
+        request,
+        secret: connection.webhookSecret,
+      });
+
+      switch (webhookResult.status) {
+        case WebhookVerificationStatus.Error:
+          webhookLogger.error(
+            `Webhook verification failed for provider: ${providerId}`,
+            {
+              connectionId,
+              error: webhookResult.error,
+            },
+          );
+          return {
+            success: false,
+            error: webhookResult.error,
+            errorCode: "INVALID_SIGNATURE",
+          };
+
+        case WebhookVerificationStatus.Ignore:
+          webhookLogger.info(`Webhook ignored for provider: ${providerId}`, {
+            connectionId,
+            reason: webhookResult.reason,
+          });
+          return {
+            success: true,
+            alreadyProcessed: false,
+            errorCode: "IGNORE",
+            error: webhookResult.reason,
+          };
+
+        case WebhookVerificationStatus.Success:
+          webhookLogger.info(`Webhook processed for provider: ${providerId}`, {
+            connectionId,
+            referenceId: webhookResult.referenceId,
+          });
+          break;
+
+        default:
+          webhookLogger.error(`Unknown webhook result status`, {
+            connectionId,
+          });
+          return {
+            success: false,
+            error: "Unknown webhook result status",
+            errorCode: "INTERNAL_ERROR",
+          };
       }
 
       // 6. Call paymentSettlementService.settle() with parsed notification data

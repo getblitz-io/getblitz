@@ -217,7 +217,6 @@ export const organizationRouter = createTRPCRouter({
 
       const result = await ctx.services.bankConnection.setupWebhook({
         connectionId: input.connectionId,
-        providerId: connection.providerId,
       });
 
       if (!result.success) {
@@ -258,30 +257,14 @@ export const organizationRouter = createTRPCRouter({
         });
       }
 
-      // Create a configured provider instance
-      const providerConfig =
-        ctx.services.credentialManager.decryptProviderConfig(
-          connection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        connection.providerId,
-        providerConfig,
-      );
-
-      if (!provider.listAccounts) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provider does not support listing accounts",
-        });
-      }
-
       try {
-        // Use credential manager to get valid credentials (refreshes if needed)
-        const { credentials } =
-          await ctx.services.credentialManager.getValidCredentials({
+        // Create an authenticated provider instance (needs credentials for API calls)
+        const provider =
+          await ctx.services.credentialManager.createAuthenticatedProvider({
             connectionId: connection.id,
           });
-        return await provider.listAccounts({ credentials });
+
+        return await provider.listAccounts();
       } catch (error: unknown) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -341,23 +324,14 @@ export const organizationRouter = createTRPCRouter({
       return connections.map((connection): BankConnectionWithProvider => {
         const provider = ProviderRegistry.getProvider(connection.providerId);
         if (!provider) {
-          // If provider not found, return minimal data
-          return {
-            id: connection.id,
-            name: connection.name,
-            connectionId: connection.id,
-            providerId: connection.providerId,
-            hasCredentials: !!connection.credentials,
-            status: connection.status,
-            webhookUrl: connection.webhookUrl,
-            webhookSecret: connection.webhookSecret,
-            createdAt: connection.createdAt,
-            updatedAt: connection.updatedAt,
-            providerName: connection.providerId,
-            providerDomain: null,
-            providerAuthType: "none" as const,
-          };
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Provider not found",
+          });
         }
+        const callbackUrl =
+          connection.callbackUrl ??
+          `${env.NEXT_PUBLIC_APP_URL}/api/webhooks/bank-connection/${connection.id}`;
 
         return {
           id: connection.id,
@@ -373,10 +347,58 @@ export const organizationRouter = createTRPCRouter({
           providerName: provider.displayName,
           providerDomain: provider.domain,
           providerAuthType: provider.authType,
+          providerOAuthFlowType: provider.oauthFlowType,
+          callbackUrl,
+          providerSetupGuideUrl: provider.getSetupGuide(),
         };
       });
     },
   ),
+
+  getBankConnectionById: organizationProcedure
+    .input(z.object({ connectionId: z.string() }))
+    .query(async ({ ctx, input }): Promise<BankConnectionWithProvider> => {
+      // Get all connections for this organization
+      const connection = await ctx.prisma.organizationBankConnection.findFirst({
+        where: { id: input.connectionId, organizationId: ctx.organization.id },
+      });
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Connection not found",
+        });
+      }
+
+      const provider = ProviderRegistry.getProvider(connection.providerId);
+      if (!provider) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Provider not found",
+        });
+      }
+
+      return {
+        id: connection.id,
+        name: connection.name,
+        connectionId: connection.id,
+        providerId: connection.providerId,
+        hasCredentials: !!connection.credentials,
+        status: connection.status,
+        webhookUrl: connection.webhookUrl,
+        webhookSecret: connection.webhookSecret,
+        createdAt: connection.createdAt,
+        updatedAt: connection.updatedAt,
+        providerName: provider.displayName,
+        providerDomain: provider.domain,
+        providerAuthType: provider.authType,
+        callbackUrl:
+          connection.callbackUrl ??
+          `${env.NEXT_PUBLIC_APP_URL}/api/webhooks/bank-connection/${connection.id}`,
+        providerOAuthFlowType: provider.oauthFlowType,
+        providerSetupGuideUrl: provider.getSetupGuide(),
+      };
+    }),
 
   // Disconnect a bank from organization
   disconnectBank: organizationProcedure
@@ -625,6 +647,7 @@ export const organizationRouter = createTRPCRouter({
       });
 
       return {
+        name: connection.name,
         connectionId: connection.id,
         callbackUrl,
         oauthFlowType: provider.oauthFlowType,
@@ -733,21 +756,10 @@ export const organizationRouter = createTRPCRouter({
       }
 
       // Decrypt provider config and create provider instance
-      const providerConfig =
-        ctx.services.credentialManager.decryptProviderConfig(
-          connection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        connection.providerId,
-        providerConfig,
-      );
-
-      if (!provider.getAuthUrl) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provider does not support OAuth redirect flow",
+      const provider =
+        await ctx.services.credentialManager.createConfiguredProvider({
+          connectionId: connection.id,
         });
-      }
 
       // Use connectionId as state for verification in callback
       const authUrl = provider.getAuthUrl({
@@ -805,21 +817,10 @@ export const organizationRouter = createTRPCRouter({
       }
 
       // Decrypt provider config and create provider instance
-      const providerConfig =
-        ctx.services.credentialManager.decryptProviderConfig(
-          connection.providerConfig,
-        );
-      const provider = ProviderRegistry.createProvider(
-        connection.providerId,
-        providerConfig,
-      );
-
-      if (!provider.exchangeCode) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provider does not support OAuth",
+      const provider =
+        await ctx.services.credentialManager.createConfiguredProvider({
+          connectionId: connection.id,
         });
-      }
 
       try {
         // Exchange code for credentials
@@ -844,8 +845,6 @@ export const organizationRouter = createTRPCRouter({
         // Attempt webhook creation - non-fatal if it fails
         const webhookResult = await ctx.services.bankConnection.setupWebhook({
           connectionId: connection.id,
-          providerId: connection.providerId,
-          credentials,
         });
 
         return {

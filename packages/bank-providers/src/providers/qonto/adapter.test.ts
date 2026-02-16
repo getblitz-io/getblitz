@@ -1,34 +1,49 @@
 import { createHmac } from "crypto";
 import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AuthenticatedProvider, ConfiguredProvider } from "../../types";
+import type { QontoBankCredentials } from "./types";
+import { WebhookVerificationStatus } from "../../types";
 import { QontoProvider } from "./adapter";
 
 // Mock fetch globally
 global.fetch = vi.fn();
 
 describe("QontoProvider", () => {
-  const config = {
+  const providerConfig = {
     clientId: "test-client-id",
     clientSecret: "test-client-secret",
     sandboxMode: false,
   };
 
-  const sandboxConfig = {
-    ...config,
+  const sandboxProviderConfig = {
+    ...providerConfig,
     sandboxMode: true,
     sandboxToken: "test-sandbox-token",
   };
 
-  let provider: QontoProvider;
+  const credentials = {
+    accessToken: "token-123",
+    refreshToken: "refresh-123",
+    expiresAt: new Date(Date.now() + 3600 * 1000),
+  };
+
+  const template = new QontoProvider();
+  let configuredProvider: ConfiguredProvider;
+  let authenticatedProvider: AuthenticatedProvider;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new QontoProvider(config);
+    configuredProvider = template.withProviderConfig(providerConfig);
+    authenticatedProvider = template.withCredentials(
+      providerConfig,
+      credentials,
+    );
   });
 
   describe("initialization", () => {
     it("should use production URLs by default", () => {
-      const p = new QontoProvider(config);
+      const p = template.withProviderConfig(providerConfig);
       // Access via getAuthUrl to verify URL is computed correctly
       const authUrl = p.getAuthUrl({
         redirectUri: "https://example.com/callback",
@@ -38,7 +53,7 @@ describe("QontoProvider", () => {
     });
 
     it("should use sandbox URLs when sandboxMode is true", () => {
-      const p = new QontoProvider(sandboxConfig);
+      const p = template.withProviderConfig(sandboxProviderConfig);
       // Access via getAuthUrl to verify URL is computed correctly
       const authUrl = p.getAuthUrl({
         redirectUri: "https://example.com/callback",
@@ -50,7 +65,7 @@ describe("QontoProvider", () => {
 
   describe("getProviderConfigSchema", () => {
     it("should return the correct configuration schema", () => {
-      const schema = provider.getProviderConfigSchema();
+      const schema = template.getProviderConfigSchema();
       expect(schema.fields).toBeDefined();
       expect(schema.fields.some((f) => f.name === "clientId")).toBe(true);
       expect(schema.fields.some((f) => f.name === "clientSecret")).toBe(true);
@@ -61,7 +76,7 @@ describe("QontoProvider", () => {
     it("should construct the correct OAuth URL", () => {
       const redirectUri = "https://example.com/callback";
       const state = "test-state";
-      const url = provider.getAuthUrl({ redirectUri, state });
+      const url = configuredProvider.getAuthUrl({ redirectUri, state });
 
       expect(url).toContain("https://oauth.qonto.com/oauth2/auth");
       expect(url).toContain("client_id=test-client-id");
@@ -70,10 +85,9 @@ describe("QontoProvider", () => {
     });
 
     it("should throw if not configured", () => {
-      const unconfiguredProvider = new QontoProvider();
       expect(() =>
-        unconfiguredProvider.getAuthUrl({ redirectUri: "x", state: "y" }),
-      ).toThrow("QontoProvider is not configured");
+        template.getAuthUrl({ redirectUri: "x", state: "y" }),
+      ).toThrow("QontoProvider is not properly configured");
     });
   });
 
@@ -91,14 +105,14 @@ describe("QontoProvider", () => {
         json: async () => mockResponse,
       } as unknown as Response);
 
-      const credentials = await provider.exchangeCode({
+      const creds = (await configuredProvider.exchangeCode({
         code: "test-code",
         redirectUri: "https://example.com/callback",
-      });
+      })) as QontoBankCredentials;
 
-      expect(credentials.accessToken).toBe("access-123");
-      expect(credentials.refreshToken).toBe("refresh-123");
-      expect(credentials.expiresAt).toBeInstanceOf(Date);
+      expect(creds.accessToken).toBe("access-123");
+      expect(creds.refreshToken).toBe("refresh-123");
+      expect(creds.expiresAt).toBeInstanceOf(Date);
       expect(global.fetch).toHaveBeenCalledWith(
         "https://oauth.qonto.com/oauth2/token",
         expect.objectContaining({
@@ -117,7 +131,7 @@ describe("QontoProvider", () => {
       } as unknown as Response);
 
       await expect(
-        provider.exchangeCode({
+        configuredProvider.exchangeCode({
           code: "bad-code",
           redirectUri: "x",
         }),
@@ -135,19 +149,50 @@ describe("QontoProvider", () => {
             iban: "IBAN1",
             currency: "EUR",
             bic: "BIC1",
+            main: true,
+            authorized_balance_cents: 1000,
+            current_balance_cents: 2000,
+            is_external_account: true,
+            status: "active",
           },
         ],
       };
 
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: true,
-        // eslint-disable-next-line @typescript-eslint/require-await
-        json: async () => mockAccounts,
-      } as unknown as Response);
+      const mockOrganization = {
+        organization: {
+          id: "org-1",
+          name: "Org 1",
+          legal_name: "Org 1 Legal",
+          slug: "org-1-slug",
+          status: "active",
+          created_at: "2022-01-01T00:00:00Z",
+          updated_at: "2022-01-01T00:00:00Z",
+          bank_accounts: [],
+        },
+      };
 
-      const accounts = await provider.listAccounts({
-        credentials: { accessToken: "token-123" },
+      vi.mocked(global.fetch).mockImplementation(async (req) => {
+        if (req === "https://thirdparty.qonto.com/v2/organization") {
+          return {
+            ok: true,
+            // eslint-disable-next-line @typescript-eslint/require-await
+            json: async () => mockOrganization,
+          } as unknown as Promise<Response>;
+        } else if (req === "https://thirdparty.qonto.com/v2/bank_accounts") {
+          return {
+            ok: true,
+            // eslint-disable-next-line @typescript-eslint/require-await
+            json: async () => mockAccounts,
+          } as unknown as Promise<Response>;
+        }
+        return {
+          ok: false,
+          // eslint-disable-next-line @typescript-eslint/require-await
+          text: async () => "Not found",
+        } as unknown as Response;
       });
+
+      const accounts = await authenticatedProvider.listAccounts();
 
       expect(accounts).toHaveLength(1);
 
@@ -197,10 +242,13 @@ describe("QontoProvider", () => {
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({ request, secret });
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret,
+      });
 
-      expect(result.valid).toBe(true);
-      if (result.valid) {
+      expect(result.status).toBe(WebhookVerificationStatus.Success);
+      if (result.status === WebhookVerificationStatus.Success) {
         expect(result.referenceId).toBe("GB-ABC12345");
         expect(result.amountCents).toBe(1050);
         expect(result.txHash).toBe("tx-hash-123");
@@ -218,9 +266,12 @@ describe("QontoProvider", () => {
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({ request, secret });
-      expect(result.valid).toBe(false);
-      if (!result.valid) {
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret,
+      });
+      expect(result.status).toBe(WebhookVerificationStatus.Error);
+      if (result.status === WebhookVerificationStatus.Error) {
         expect(result.error).toContain("Invalid webhook signature");
       }
     });
@@ -237,26 +288,52 @@ describe("QontoProvider", () => {
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({ request, secret });
-      expect(result.valid).toBe(false);
-      if (!result.valid) {
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret,
+      });
+      expect(result.status).toBe(WebhookVerificationStatus.Error);
+      if (result.status === WebhookVerificationStatus.Error) {
         expect(result.error).toContain("Webhook timestamp too old");
       }
     });
-  });
 
-  describe("extractReferenceId", () => {
-    it("should extract valid reference IDs", () => {
-      // @ts-expect-error - testing private method
-      expect(provider.extractReferenceId("Payment for GB-ABC12345")).toBe(
-        "GB-ABC12345",
-      );
-      // @ts-expect-error - testing private method
-      expect(provider.extractReferenceId("gb-abc12345 lowercase")).toBe(
-        "GB-ABC12345",
-      );
-      // @ts-expect-error - testing private method
-      expect(provider.extractReferenceId("No reference here")).toBeNull();
+    it("should ignore invalid transaction reference", async () => {
+      const invalidReferences = [
+        "not a valid reference",
+        "",
+        "GB-123456",
+        "GB1234567",
+      ];
+
+      for (const reference of invalidReferences) {
+        const mewData = { ...payload, data: { ...payload.data, reference } };
+        const body = JSON.stringify(mewData);
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const signedPayload = `${timestamp}.${body}`;
+        const signature = createHmac("sha256", secret)
+          .update(signedPayload)
+          .digest("hex");
+
+        const request = new Request("https://webhook.url", {
+          method: "POST",
+          headers: {
+            "x-qonto-signature": `t=${timestamp},v1=${signature}`,
+          },
+          body,
+        });
+
+        const result = await configuredProvider.verifyAndParseWebhook({
+          request,
+          secret,
+        });
+        expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+        if (result.status === WebhookVerificationStatus.Ignore) {
+          expect(result.reason).toContain(
+            "No valid reference ID in Qonto transaction",
+          );
+        }
+      }
     });
   });
 });
