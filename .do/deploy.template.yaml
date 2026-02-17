@@ -92,18 +92,18 @@ services:
       success_threshold: 1
       failure_threshold: 3
 
-databases:
-  - name: getblitz_db
-    engine: PG
-    version: "18"
-    production: false
-    db_name: getblitz_db
-    db_user: getblitz_db
+# databases:
+#   - name: getblitz_db
+#     engine: PG
+#     version: "18"
+#     production: false
+#     db_name: getblitz_db
+#     db_user: getblitz_db
   
-  - name: getblitz_redis
-    engine: REDIS
-    version: "7"
-    production: false
+#   - name: getblitz_redis
+#     engine: REDIS
+#     version: "7"
+#     production: false
 
 ingress:
   rules:
