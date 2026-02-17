@@ -1,114 +1,115 @@
-name: getblitz
+spec:
+  name: getblitz
 
-services:
-  - name: web
-    github:
-      repo: ${GITHUB_REPO}
-      branch: main
-      deploy_on_push: true
-    source_dir: /
-    environment_slug: node-js
-    instance_size_slug: basic-xs
-    instance_count: 1
-    build_command: pnpm install && pnpm db:generate && pnpm build:standalone
-    run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
-    http_port: 3000
-    envs:
-      # Feature Flags
-      - key: ENABLE_WEBSOCKET
-        value: "true"
-        scope: RUN_TIME
-        type: GENERAL
+  databases:
+    - name: getblitz_db
+      engine: PG
+      version: "18"
+      production: false
+      db_name: getblitz_db
+      db_user: getblitz_db
 
-      # Database Connection (using DigitalOcean managed PostgreSQL)
-      - key: DATABASE_HOST
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_db.HOSTNAME}
-        type: SECRET
-      - key: DATABASE_PORT
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_db.PORT}
-        type: SECRET
-      - key: DATABASE_USER
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_db.USERNAME}
-        type: SECRET
-      - key: DATABASE_PASSWORD
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_db.PASSWORD}
-        type: SECRET
-      - key: DATABASE_NAME
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_db.DATABASE}
-        type: SECRET
+    - name: getblitz_redis
+      engine: REDIS
+      version: "7"
+      production: false
 
-      # Redis
-      - key: REDIS_URL
-        scope: RUN_AND_BUILD_TIME
-        value: ${getblitz_redis.DATABASE_URL}
-        type: SECRET
+  services:
+    - name: web
+      github:
+        repo: ${GITHUB_REPO}
+        branch: main
+        deploy_on_push: true
+      source_dir: /
+      environment_slug: node-js
+      instance_size_slug: basic-xs
+      instance_count: 1
+      build_command: pnpm install && pnpm db:generate && pnpm build:standalone
+      run_command: pnpm db:push && pnpm --filter @getblitz/web start:standalone
+      http_port: 3000
+      envs:
+        # Feature Flags
+        - key: ENABLE_WEBSOCKET
+          value: "true"
+          scope: RUN_TIME
+          type: GENERAL
 
-      # App URLs (populated at runtime by DigitalOcean)
-      - key: NEXT_PUBLIC_APP_URL
-        scope: RUN_TIME
-        value: ${APP_URL}
-        type: GENERAL
-      - key: NEXT_PUBLIC_WSS_URL
-        scope: RUN_TIME
-        value: wss://${APP_DOMAIN}
-        type: GENERAL
+        # Database Connection (using DigitalOcean managed PostgreSQL)
+        - key: DATABASE_HOST
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_db.HOSTNAME}
+          type: SECRET
+        - key: DATABASE_PORT
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_db.PORT}
+          type: SECRET
+        - key: DATABASE_USER
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_db.USERNAME}
+          type: SECRET
+        - key: DATABASE_PASSWORD
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_db.PASSWORD}
+          type: SECRET
+        - key: DATABASE_NAME
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_db.DATABASE}
+          type: SECRET
 
-      # Secrets (User Input Required)
-      - key: AUTH_SECRET
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-      - key: ENCRYPTION_KEY
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
+        # Redis
+        - key: REDIS_URL
+          scope: RUN_AND_BUILD_TIME
+          value: ${getblitz_redis.DATABASE_URL}
+          type: SECRET
 
-      # OAuth (User Input Required)
-      - key: AUTH_GOOGLE_ID
-        scope: RUN_TIME
-        type: GENERAL
-      - key: AUTH_GOOGLE_SECRET
-        scope: RUN_TIME
-        type: SECRET
+        # App URLs (populated at runtime by DigitalOcean)
+        - key: NEXT_PUBLIC_APP_URL
+          scope: RUN_TIME
+          value: ${APP_URL}
+          type: GENERAL
+        - key: NEXT_PUBLIC_WSS_URL
+          scope: RUN_TIME
+          value: wss://${APP_DOMAIN}
+          type: GENERAL
 
-      # Envionment
-      - key: APPLICATION_ENV
-        scope: RUN_TIME
-        value: production
-        type: GENERAL
+        # Secrets (User Input Required)
+        - key: AUTH_SECRET
+          scope: RUN_AND_BUILD_TIME
+          type: SECRET
+        - key: ENCRYPTION_KEY
+          scope: RUN_AND_BUILD_TIME
+          type: SECRET
 
-      - key: ENCRYPTION_KEY
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
+        # OAuth (User Input Required)
+        - key: AUTH_GOOGLE_ID
+          scope: RUN_TIME
+          type: GENERAL
+        - key: AUTH_GOOGLE_SECRET
+          scope: RUN_TIME
+          type: SECRET
 
-    health_check:
-      http_path: /api/version
-      initial_delay_seconds: 30
-      period_seconds: 10
-      timeout_seconds: 5
-      success_threshold: 1
-      failure_threshold: 3
+        # Envionment
+        - key: APPLICATION_ENV
+          scope: RUN_TIME
+          value: production
+          type: GENERAL
 
-# databases:
-#   - name: getblitz_db
-#     engine: PG
-#     version: "18"
-#     production: false
-#     db_name: getblitz_db
-#     db_user: getblitz_db
-  
-#   - name: getblitz_redis
-#     engine: REDIS
-#     version: "7"
-#     production: false
+        - key: ENCRYPTION_KEY
+          scope: RUN_AND_BUILD_TIME
+          type: SECRET
 
-ingress:
-  rules:
-    - component:
-        name: web
-      match:
-        path:
-          prefix: /
+      health_check:
+        http_path: /api/version
+        initial_delay_seconds: 30
+        period_seconds: 10
+        timeout_seconds: 5
+        success_threshold: 1
+        failure_threshold: 3
+
+  ingress:
+    rules:
+      - component:
+          name: web
+        match:
+          path:
+            prefix: /
