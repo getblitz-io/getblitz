@@ -13,6 +13,7 @@ spec:
       engine: VALKEY
       version: "8"
       production: true
+      cluster_name: getblitz-valkey-cluster
 
   services:
     - name: web
