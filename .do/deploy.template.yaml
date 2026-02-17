@@ -30,30 +30,30 @@ services:
       # Database Connection (using DigitalOcean managed PostgreSQL)
       - key: DATABASE_HOST
         scope: RUN_AND_BUILD_TIME
-        value: ${db.HOSTNAME}
-        type: GENERAL
+        value: ${getblitz_db.HOSTNAME}
+        type: SECRET
       - key: DATABASE_PORT
         scope: RUN_AND_BUILD_TIME
-        value: ${db.PORT}
-        type: GENERAL
+        value: ${getblitz_db.PORT}
+        type: SECRET
       - key: DATABASE_USER
         scope: RUN_AND_BUILD_TIME
-        value: ${db.USERNAME}
-        type: GENERAL
+        value: ${getblitz_db.USERNAME}
+        type: SECRET
       - key: DATABASE_PASSWORD
         scope: RUN_AND_BUILD_TIME
-        value: ${db.PASSWORD}
-        type: GENERAL
+        value: ${getblitz_db.PASSWORD}
+        type: SECRET
       - key: DATABASE_NAME
         scope: RUN_AND_BUILD_TIME
-        value: ${db.DATABASE}
-        type: GENERAL
+        value: ${getblitz_db.DATABASE}
+        type: SECRET
 
       # Redis
       - key: REDIS_URL
         scope: RUN_AND_BUILD_TIME
-        value: ${redis.DATABASE_URL}
-        type: GENERAL
+        value: ${getblitz_redis.DATABASE_URL}
+        type: SECRET
 
       # App URLs (populated at runtime by DigitalOcean)
       - key: NEXT_PUBLIC_APP_URL
@@ -62,13 +62,7 @@ services:
         type: GENERAL
       - key: NEXT_PUBLIC_WSS_URL
         scope: RUN_TIME
-        value: ${APP_URL}
-        type: GENERAL
-
-      # CORS (Self + Others)
-      - key: CORS_ORIGINS
-        scope: RUN_TIME
-        value: ${APP_URL}
+        value: wss://${APP_DOMAIN}
         type: GENERAL
 
       # Secrets (User Input Required)
@@ -93,6 +87,10 @@ services:
         value: production
         type: GENERAL
 
+      - key: ENCRYPTION_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
     health_check:
       http_path: /api/version
       initial_delay_seconds: 30
@@ -104,12 +102,12 @@ services:
 # Managed Dev Databases
 # Note: For production, consider using DigitalOcean Managed Databases instead
 databases:
-  - name: db
+  - name: getblitz_db
     engine: PG
-    version: "16"
+    version: "18"
     production: false
 
-  - name: redis
+  - name: getblitz_redis
     engine: REDIS
     version: "7"
     production: false
