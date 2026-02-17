@@ -1,10 +1,3 @@
-# DigitalOcean App Platform Deployment Template
-# Documentation: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
-#
-# NOTE: DigitalOcean App Platform only supports PostgreSQL (PG) and Redis as managed dev databases.
-# This template uses PostgreSQL. You'll need to adapt your Prisma schema if migrating from MySQL.
-# Alternatively, use an external MySQL database (see commented section below).
-
 name: getblitz
 
 services:
@@ -99,20 +92,19 @@ services:
       success_threshold: 1
       failure_threshold: 3
 
-# Managed Dev Databases
-# Note: For production, consider using DigitalOcean Managed Databases instead
 databases:
   - name: getblitz_db
     engine: PG
     version: "18"
     production: false
-
+    db_name: getblitz_db
+    db_user: getblitz_db
+  
   - name: getblitz_redis
     engine: REDIS
     version: "7"
     production: false
 
-# Ingress configuration (routes are deprecated)
 ingress:
   rules:
     - component:
