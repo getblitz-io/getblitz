@@ -55,6 +55,7 @@ Response:
 ```json
 {
   "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+  "clientToken": "ey...",
   "referenceId": "GB-A9F3B2C1",
   "merchantReferenceId": "order-456",
   "paymentUrl": "https://pay.yourdomain.com/pay/550e8400-e29b-41d4-a716-446655440000",
@@ -73,6 +74,7 @@ import { GetBlitz } from "@getblitz/client";
 
 const payment = new GetBlitz({
   sessionId: "550e8400-e29b-41d4-a716-446655440000",
+  clientToken: "ey...", // From Create Challenge response
   apiUrl: "https://pay.yourdomain.com",
   wssUrl: "wss://wss.yourdomain.com",
   theme: "dark",
@@ -112,6 +114,7 @@ payment
     <script>
       const payment = new GetBlitz({
         sessionId: "550e8400-e29b-41d4-a716-446655440000",
+        clientToken: "ey...",
         apiUrl: "https://pay.yourdomain.com",
         wssUrl: "wss://wss.yourdomain.com",
       });
@@ -140,14 +143,15 @@ new GetBlitz(config: GetBlitzClientConfig)
 
 #### Configuration Options
 
-| Option      | Type                          | Required | Description                                |
-| ----------- | ----------------------------- | -------- | ------------------------------------------ |
-| `sessionId` | `string`                      | ✅       | Payment session UUID                       |
-| `apiUrl`    | `string`                      | ❌       | API base URL (defaults to current origin)  |
-| `wssUrl`    | `string`                      | ❌       | WebSocket URL (defaults to current origin) |
-| `apiKey`    | `string`                      | ❌       | Public API key (pk*live*...)               |
-| `theme`     | `"light" \| "dark" \| "auto"` | ❌       | Widget theme (default: system preference)  |
-| `locale`    | `string`                      | ❌       | Locale for i18n (e.g., "de-DE")            |
+| Option        | Type                          | Required | Description                                |
+| ------------- | ----------------------------- | -------- | ------------------------------------------ |
+| `sessionId`   | `string`                      | ✅       | Payment session UUID                       |
+| `clientToken` | `string`                      | ✅       | Auth token from Challenge response         |
+| `apiUrl`      | `string`                      | ❌       | API base URL (defaults to current origin)  |
+| `wssUrl`      | `string`                      | ❌       | WebSocket URL (defaults to current origin) |
+| `apiKey`      | `string`                      | ❌       | Public API key (pk*live*...)               |
+| `theme`       | `"light" \| "dark" \| "auto"` | ❌       | Widget theme (default: system preference)  |
+| `locale`      | `string`                      | ❌       | Locale for i18n (e.g., "de-DE")            |
 
 ### Methods
 
@@ -240,6 +244,7 @@ When self-hosting GetBlitz, configure the SDK to point to your infrastructure:
 ```typescript
 const payment = new GetBlitz({
   sessionId: "...",
+  clientToken: "ey...",
   apiUrl: "https://pay.yourdomain.com", // Your Next.js app
   wssUrl: "wss://wss.yourdomain.com", // Your WebSocket server
 });
@@ -250,6 +255,7 @@ For single-origin deployments where the API and WebSocket server run on the same
 ```typescript
 const payment = new GetBlitz({
   sessionId: "...",
+  clientToken: "ey...",
   // Defaults to window.location.origin
 });
 ```

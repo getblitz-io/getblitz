@@ -90,6 +90,7 @@ import {
 // SDK configuration
 const config: GetBlitzClientConfig = {
   sessionId: "550e8400-e29b-41d4-a716-446655440000",
+  clientToken: "ey...", // From Create Challenge response
   apiUrl: "https://pay.example.com",
   wssUrl: "wss://wss.example.com",
   theme: "dark",
@@ -218,6 +219,7 @@ interface MerchantWebhookPayload {
 interface GetBlitzClientConfig {
   apiKey?: string; // Public API key (pk_live_...)
   sessionId: string; // Payment session ID (required)
+  clientToken: string; // Auth token from Challenge response (required)
   wssUrl?: string; // WebSocket server URL
   apiUrl?: string; // API base URL
   theme?: "light" | "dark" | "auto"; // Widget theme

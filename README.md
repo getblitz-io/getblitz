@@ -4,7 +4,9 @@ A self-hosted payment gateway for **SEPA Instant Transfers** with real-time WebS
 
 ## Features
 
-- 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, custom providers)
+- 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, Revolut, custom providers)
+- 🧾 **Invoicing** - Generate and manage invoices with integrated payment links
+- 👥 **Customer Management** - Maintain customer profiles and payment history
 - 🔐 **Self-Hosted** - Full data sovereignty with your own database and infrastructure
 - ⚡ **Real-time** - WebSocket notifications for instant payment confirmations
 - 🏢 **Multi-tenant** - Organization-based access with API key management
@@ -28,16 +30,23 @@ pnpm install
 
 ### 2. Configure Environment
 
-Create `.env` files for each app based on your configuration. Key variables include:
+Each application has its own environment configuration. Create `.env` files based on the examples:
 
-- `DATABASE_USER` - PostgreSQL user
-- `DATABASE_PASSWORD` - PostgreSQL password
-- `DATABASE_HOST` - PostgreSQL host
-- `DATABASE_PORT` - PostgreSQL port
-- `DATABASE_NAME` - PostgreSQL database
-- `REDIS_URL` - Redis URL for pub/sub
+**Core Services:**
+
+- `apps/web/.env` - Dashboard, API, Workers (`cp apps/web/.env.example apps/web/.env`)
+- `apps/wss/.env` - WebSocket Server (`cp apps/wss/.env.example apps/wss/.env`)
+
+**Development Apps:**
+
+- `apps/demo/.env` - Demo Merchant (`cp apps/demo/.env.example apps/demo/.env`)
+
+Key variables across apps:
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis URL for pub/sub and queues
 - `AUTH_SECRET` - Better Auth secret key
-- `NEXT_PUBLIC_APP_URL` - Public app URL
+- `ENCRYPTION_KEY` - 32-byte hex string for credential encryption
 
 ### 3. Start Infrastructure
 
@@ -63,10 +72,10 @@ pnpm db:push
 pnpm dev
 
 # Or start individually:
-pnpm dev:next       # Next.js dashboard + API (port 3000)
+pnpm dev:next       # Next.js dashboard + API + Workers
 pnpm dev:wss        # WebSocket server
-pnpm dev:demo       # Demo merchant site (port 3002)
-pnpm dev:test-bank  # Mock bank simulator (port 3003)
+pnpm dev:demo       # Demo merchant site
+pnpm dev:test-bank  # Mock bank simulator
 ```
 
 The dashboard will be available at http://localhost:3000
@@ -74,28 +83,21 @@ The dashboard will be available at http://localhost:3000
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Infrastructure                           │
-├─────────────┬─────────────────────────────────────────┬─────────┤
-│ PostgreSQL  │              Redis                       │         │
-│  (Database) │           (Pub/Sub)                      │         │
-└─────────────┴──────────────┬──────────────────────────┴─────────┘
-                             │
-        ┌────────────────────┼────────────────────┐
-        │                    │                    │
-        ▼                    ▼                    ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│   Next.js     │    │  WebSocket    │    │   Client      │
-│  Dashboard    │◄───│   Server      │◄───│    SDK        │
-│   + API       │    │   (Socket.io) │    │   (GetBlitz)  │
-└───────────────┘    └───────────────┘    └───────────────┘
-        │                    ▲                    │
-        │                    │                    │
-        ▼                    │                    ▼
-┌───────────────┐            │            ┌───────────────┐
-│  Bank Provider│────────────┘            │   Merchant    │
-│   Webhook     │                         │   Website     │
-└───────────────┘                         └───────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                   Monorepo (Turborepo)                      │
+├───────────────┬───────────────────────────────┬─────────────┤
+│  apps/web     │        packages/api           │  apps/wss   │
+│ (Next.js 16)  │    (tRPC, Services, DAL)      │ (Socket.io) │
+│   Dashboard,  │           ▲    ▲              │   Real-time │
+│   API, Worker │           │    │              │   Events    │
+│               │           │    │              │      ▲      │
+└───────┬───────┴───────────┼────┼──────────────┴──────┼──────┘
+        │                   │    │                     │
+        ▼                   ▼    ▼                     ▼
+┌───────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│  PostgreSQL   │   │  Bank Providers  │   │      Redis       │
+│   (Prisma)    │◄──┤ (Qonto, Revolut) │   │     (Pub/Sub)    │
+└───────────────┘   └──────────────────┘   └──────────────────┘
 ```
 
 ## Project Structure
@@ -103,22 +105,22 @@ The dashboard will be available at http://localhost:3000
 ```
 getblitz/
 ├── apps/
-│   ├── web/                 # Dashboard + API routes (Next.js 16)
+│   ├── web/                 # Dashboard, API, Workers (Next.js 16)
 │   ├── wss/                 # WebSocket server (Socket.io)
 │   ├── demo/                # Demo merchant site
-│   └── test-bank/           # Mock bank simulator for development
+│   └── mock-bank/           # Mock bank simulator
 ├── packages/
-│   ├── api/                 # tRPC routers, services, repositories (DI pattern)
-│   ├── auth/                # Better Auth configuration
-│   ├── bank-providers/      # Bank provider integrations (Qonto, test-bank)
+│   ├── api/                 # Core logic: tRPC, Services, Repositories
+│   ├── auth/                # Authentication (Better Auth)
+│   ├── bank-providers/      # Bank integration adapters & registry
 │   ├── database/            # Prisma schema and client
+│   ├── getblitz-client/     # Embeddable JS SDK (@getblitz/client)
 │   ├── redis/               # Redis client and pub/sub
-│   ├── shared-types/        # TypeScript interfaces
-│   ├── ui/                  # Shared UI components (shadcn/ui)
-│   ├── validators/          # Zod schemas
-│   ├── websocket/           # WebSocket utilities
-│   └── getblitz-client/     # Embeddable payment SDK
-└── tooling/                 # ESLint, Prettier, TypeScript, Vitest configs
+│   ├── shared-types/        # Shared DTOs and Zod schemas
+│   ├── ui/                  # UI Component library (shadcn/ui)
+│   ├── validators/          # Shared validation logic
+│   └── websocket/           # WebSocket shared utilities
+└── tooling/                 # Configs (ESLint, Prettier, TS, Vitest)
 ```
 
 ## API Reference
@@ -142,7 +144,7 @@ Content-Type: application/json
 ```json
 {
   "sessionId": "uuid",
-  "clientToken": "ey...",
+  "clientToken": "ey...",  # Token for SDK authentication
   "referenceId": "GB-A9F3B2C1",
   "paymentUrl": "https://pay.example.com/pay/uuid",
   "expiresAt": "2024-01-01T12:15:00.000Z"
@@ -159,22 +161,6 @@ Authorization: Bearer <clientToken>
 Origin: https://your-merchant-site.com
 ```
 
-**Response:**
-
-```json
-{
-  "sessionId": "uuid",
-  "status": "PENDING",
-  "amountCents": 500,
-  "currency": "EUR",
-  "bankAccount": {
-    "iban": "DE12...",
-    "accountName": "My Business"
-  },
-  "sepaQrString": "BCD..."
-}
-```
-
 ### Webhook Events
 
 The gateway sends webhooks to merchants for payment events:
@@ -186,36 +172,36 @@ The gateway sends webhooks to merchants for payment events:
 | `payment.failed`  | Payment failed                                |
 | `payment.expired` | Payment session expired                       |
 
-All webhooks include `amountPaidCents` showing current progress toward the total `amountCents`.
-
 📚 **See [docs/webhooks.md](./docs/webhooks.md) for payload schema and signature verification.**
 
 ### SDK Integration
 
-```html
-<script src="https://cdn.yourdomain.com/getblitz.js"></script>
-<script>
-  const payment = new GetBlitz({
-    sessionId: "sess_123",
-    clientToken: "ey...", // Obtained from Create Payment Challenge response
-    apiUrl: "https://pay.yourdomain.com",
-    wssUrl: "wss://wss.yourdomain.com",
-  });
+We provide a specialized library [`@getblitz/client`](./packages/getblitz-client/README.md) for easy integration.
 
-  payment.mount("#payment-container");
+1. Install the SDK:
 
-  payment
-    .on("onSuccess", (token) => {
-      console.log("Payment successful:", token);
-    })
-    .on("onError", (error) => {
-      console.error("Payment failed:", error);
-    })
-    .on("onExpired", () => {
-      console.log("Payment session expired");
-    });
-</script>
-```
+   ```bash
+   pnpm add @getblitz/client
+   ```
+
+2. Initialize and mount:
+
+   ```typescript
+   import { GetBlitz } from "@getblitz/client";
+
+   const payment = new GetBlitz({
+     sessionId: "sess_123",
+     clientToken: "ey...", // From Create Challenge response
+     apiUrl: "https://pay.yourdomain.com",
+     wssUrl: "wss://wss.yourdomain.com",
+   });
+
+   await payment.mount("#payment-container");
+
+   payment.on("onSuccess", (token) => {
+     console.log("Payment successful:", token);
+   });
+   ```
 
 ## Bank Provider Integration
 
@@ -238,129 +224,14 @@ GetBlitz supports multiple bank providers through a pluggable adapter system.
 Bank providers implement a standard interface in `packages/bank-providers`:
 
 ```typescript
-interface BankProvider {
-  id: string;
-  displayName: string;
-  authType: "oauth2" | "api_key" | "certificate" | "none";
-  isTestProvider: boolean;
+import { MyNewProvider } from "./providers/my-new-provider";
 
-  getSetupGuide(): string | null;
-  getAuthUrl(params: AuthParams): string;
-  exchangeCode(params: CodeParams): Promise<BankCredentials>;
-  listAccounts(params: AccountParams): Promise<Account[]>;
-  verifyAndParseWebhook(params: WebhookParams): Promise<WebhookResult>;
-  createWebhook(params: WebhookCreateParams): Promise<WebhookConfig>;
-}
+ProviderRegistry.register(MyNewProvider);
 ```
 
-## Configuration
+4. Define Zod schemas for configuration and credentials.
 
-### Environment Variables
-
-| Variable              | Description            | Required      |
-| --------------------- | ---------------------- | ------------- |
-| `DATABASE_USER`       | PostgreSQL user        | ✅            |
-| `DATABASE_PASSWORD`   | PostgreSQL password    | ✅            |
-| `DATABASE_HOST`       | PostgreSQL host        | ✅            |
-| `DATABASE_PORT`       | PostgreSQL port        | ✅            |
-| `DATABASE_NAME`       | PostgreSQL database    | ✅            |
-| `REDIS_URL`           | Redis URL for pub/sub  | ✅            |
-| `AUTH_SECRET`         | Better Auth secret key | ✅            |
-| `NEXT_PUBLIC_APP_URL` | Public app URL         | ✅            |
-| `WSS_URL`             | WebSocket server URL   | ✅            |
-| `CRON_SECRET`         | Cron job auth secret   | ⚠️ Production |
-
-Provider-specific variables (e.g., Qonto OAuth credentials) should be configured per your bank integration.
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests for a specific package
-pnpm -F @getblitz/api test
-```
-
-### Database Commands
-
-```bash
-pnpm db:push      # Push schema to database
-pnpm db:migrate   # Run migrations
-pnpm db:studio    # Open Prisma Studio
-pnpm db:generate  # Generate Prisma client
-```
-
-### Linting & Formatting
-
-```bash
-pnpm lint         # Run ESLint
-pnpm lint:fix     # Fix lint issues
-pnpm format       # Check formatting
-pnpm format:fix   # Fix formatting
-pnpm typecheck    # Run TypeScript checks
-```
-
-## Deployment
-
-### One-Click Deploy
-
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/getblitz-io/getblitz/tree/main&refcode=0eb3774edd76)
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/getblitz-io/getblitz)
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions and environment configuration.
-
-### Docker (Manual)
-
-```bash
-# Build and run with Docker Compose
-docker compose -f compose.yml up -d
-```
-
-### Vercel (Next.js)
-
-1. Connect your repository to Vercel
-2. Set the root directory to `apps/web`
-3. Add environment variables
-4. Deploy
-
-### Session Expiration Cron
-
-Set up a cron job to expire pending sessions:
-
-```bash
-# Every minute
-* * * * * curl -H "Authorization: Bearer $CRON_SECRET" https://pay.yourdomain.com/api/cron/expire-sessions
-```
-
-Or use Vercel Cron by adding to `apps/web/vercel.json`:
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/expire-sessions",
-      "schedule": "* * * * *"
-    }
-  ]
-}
-```
-
-## Payment Flow
-
-1. **Merchant** creates a payment challenge via API
-2. **Customer** is redirected to payment page
-3. **Customer** scans EPC-QR code with their bank app
-4. **Customer** completes SEPA Instant Transfer
-5. **Bank Webhook** sends payment confirmation
-6. **API** matches payment by reference ID
-7. **API** updates payment status to PAID
-8. **Redis** publishes event for real-time notification
-9. **WSS** forwards event to connected clients
-10. **SDK** triggers onSuccess callback
+📚 **See [docs/banks/](./docs/banks/) for detailed setup guides.**
 
 ## Security
 
@@ -374,6 +245,22 @@ Getting security right is critical for a payment gateway.
 - **Rate Limiting**: Configurable limits via Redis
 - **CORS**: Strict origin validation on REST & WebSocket connections
 - **Database**: ACID transactions for payment state updates
+
+## Deployment
+
+### Workers & Cron Jobs
+
+Background tasks, such as **session expiration**, are handled by a worker process integrated into the Next.js application using `apps/web/src/instrumentation.ts`.
+
+When deploying to environments like Vercel or self-hosted Docker, ensure the application is started correctly to initialize these workers.
+
+### One-Click Deploy
+
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/getblitz-io/getblitz/tree/main&refcode=0eb3774edd76)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/getblitz-io/getblitz)
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 ## License
 
