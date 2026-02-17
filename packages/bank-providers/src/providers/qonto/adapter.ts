@@ -349,16 +349,14 @@ export class QontoProvider extends BaseBankProvider {
         this.getOrganizationDetails(),
       ]);
 
-      return bankAccounts.bank_accounts
-        .filter((acc) => acc.is_external_account)
-        .map((acc) => ({
-          id: acc.id,
-          name: organizationDetails.organization.legal_name,
-          iban: acc.iban,
-          currency: acc.currency,
-          bic: acc.bic,
-          bankIdentifierName: acc.name,
-        }));
+      return bankAccounts.bank_accounts.map((acc) => ({
+        id: acc.id,
+        name: organizationDetails.organization.legal_name,
+        iban: acc.iban,
+        currency: acc.currency,
+        bic: acc.bic,
+        bankIdentifierName: acc.name,
+      }));
     } catch (error) {
       console.error("Error listing Qonto accounts:", error);
       throw error;
