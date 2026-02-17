@@ -9,10 +9,10 @@ spec:
       db_name: getblitzdb
       db_user: getblitzdb
 
-    - name: getblitzredis
+    - name: getblitzvalkey
       engine: VALKEY
       version: "8"
-      production: false
+      production: true
 
   services:
     - name: web
@@ -59,7 +59,7 @@ spec:
         # Redis
         - key: REDIS_URL
           scope: RUN_AND_BUILD_TIME
-          value: ${getblitzredis.DATABASE_URL}
+          value: ${getblitzvalkey.DATABASE_URL}
           type: SECRET
 
         # App URLs (populated at runtime by DigitalOcean)
