@@ -72,8 +72,3 @@ databases:
     region: frankfurt
     user: getblitz
     plan: basic-1gb
-
-  - type: redis
-    name: getblitz-redis
-    plan: basic-1gb
-    ipAllowList: []
