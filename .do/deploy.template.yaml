@@ -5,14 +5,16 @@ spec:
     - name: getblitzdb
       engine: PG
       version: "16"
-      production: false
+      production: true
       db_name: getblitzdb
       db_user: getblitzdb
+      cluster_name: getblitz-db-cluster
 
     - name: getblitzredis
       engine: REDIS
       version: "7"
-      production: false
+      production: true
+      cluster_name: getblitz-redis-cluster
 
   services:
     - name: web
