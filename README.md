@@ -142,9 +142,36 @@ Content-Type: application/json
 ```json
 {
   "sessionId": "uuid",
+  "clientToken": "ey...",
   "referenceId": "GB-A9F3B2C1",
   "paymentUrl": "https://pay.example.com/pay/uuid",
   "expiresAt": "2024-01-01T12:15:00.000Z"
+}
+```
+
+### Get Session Details
+
+Retrieve payment session status and details.
+
+```bash
+GET /api/v1/sessions/:sessionId
+Authorization: Bearer <clientToken>
+Origin: https://your-merchant-site.com
+```
+
+**Response:**
+
+```json
+{
+  "sessionId": "uuid",
+  "status": "PENDING",
+  "amountCents": 500,
+  "currency": "EUR",
+  "bankAccount": {
+    "iban": "DE12...",
+    "accountName": "My Business"
+  },
+  "sepaQrString": "BCD..."
 }
 ```
 
@@ -170,6 +197,7 @@ All webhooks include `amountPaidCents` showing current progress toward the total
 <script>
   const payment = new GetBlitz({
     sessionId: "sess_123",
+    clientToken: "ey...", // Obtained from Create Payment Challenge response
     apiUrl: "https://pay.yourdomain.com",
     wssUrl: "wss://wss.yourdomain.com",
   });
@@ -197,11 +225,11 @@ GetBlitz supports multiple bank providers through a pluggable adapter system.
 
 ### Supported Providers
 
-| Provider    | Auth Type   | Description                   | Setup Guide                     |
-|-------------|-------------|-------------------------------|---------------------------------|
-| **Qonto**   | OAuth2      | Business banking for SMEs     | [View](./docs/banks/qonto.md)   |
-| **Revolut** | Certificate | Business banking for SMEs     | [View](./docs/banks/revolut.md) |
-| **Test Bank** | None        | Mock provider for development | [View](./docs/banks/test-bank.md)|
+| Provider      | Auth Type   | Description                   | Setup Guide                       |
+| ------------- | ----------- | ----------------------------- | --------------------------------- |
+| **Qonto**     | OAuth2      | Business banking for SMEs     | [View](./docs/banks/qonto.md)     |
+| **Revolut**   | Certificate | Business banking for SMEs     | [View](./docs/banks/revolut.md)   |
+| **Test Bank** | None        | Mock provider for development | [View](./docs/banks/test-bank.md) |
 
 > **Note**: Test Bank is automatically hidden in production environments.
 
@@ -336,10 +364,15 @@ Or use Vercel Cron by adding to `apps/web/vercel.json`:
 
 ## Security
 
+Getting security right is critical for a payment gateway.
+
+📚 **See [SECURITY.md](./SECURITY.md) for full details on our security practices.**
+
 - **API Keys**: Secure, rotatable keys per organization
+- **Client Tokens**: Short-lived sessions with strict Origin validation
 - **Webhook Verification**: HMAC-SHA256 signature validation
 - **Rate Limiting**: Configurable limits via Redis
-- **CORS**: Strict origin validation on WebSocket connections
+- **CORS**: Strict origin validation on REST & WebSocket connections
 - **Database**: ACID transactions for payment state updates
 
 ## License
