@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "pnpm with-env tsx watch src/index.ts",
     "build": "tsc",
     "start": "tsx src/index.ts",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config"
+    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "with-env": "dotenv -e ./.env --"
   },
   "dependencies": {
     "@getblitz/websocket": "workspace:*",

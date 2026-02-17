@@ -104,6 +104,7 @@ model Organization {
   logo                        String?                      @db.Text
   createdAt                   DateTime
   metadata                    String?                      @db.Text
+  allowedOrigins              String[]                     @default([])
   members                     Member[]
   invitations                 Invitation[]
   paymentSessions             PaymentSession[]
@@ -150,6 +151,7 @@ enum BankConnectionStatus {
   CONNECTED // OAuth complete, credentials stored
   DISCONNECTED // Manually disconnected
   EXPIRED // Auto-expired (never completed)
+  NEEDS_REAUTH // Token expired, user must re-authorize
 }
 
 model OrganizationBankConnection {

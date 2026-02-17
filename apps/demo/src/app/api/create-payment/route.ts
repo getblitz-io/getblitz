@@ -8,6 +8,7 @@ interface ChallengeResponse {
   referenceId: string;
   paymentUrl: string;
   expiresAt: string;
+  clientToken: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       referenceId: data.referenceId,
       paymentUrl: data.paymentUrl,
       expiresAt: data.expiresAt,
+      clientToken: data.clientToken,
     });
   } catch (error) {
     console.error("Create payment error:", error);

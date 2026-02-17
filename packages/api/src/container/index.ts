@@ -118,6 +118,7 @@ function createContainer(): ServiceContainer {
     bankAccountRepository,
     paymentSettlementService,
     credentialManagerService,
+    organizationRepository,
   );
   const organizationService = new OrganizationService(
     organizationRepository,

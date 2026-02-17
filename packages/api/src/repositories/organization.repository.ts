@@ -89,6 +89,20 @@ export class OrganizationRepository
     });
   }
 
+  async update({
+    id,
+    data,
+  }: {
+    id: string;
+    data: Prisma.OrganizationUpdateInput;
+  }): Promise<OrganizationWithDetails> {
+    return this.prisma.organization.update({
+      where: { id },
+      data,
+      include: organizationWithDetailsInclude,
+    });
+  }
+
   async findByUserId({ userId }: { userId: string }): Promise<Organization[]> {
     return this.prisma.organization.findMany({
       where: {

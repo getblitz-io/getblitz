@@ -402,6 +402,16 @@ const messages = {
     deleteOrganizationDescription:
       "Permanently delete this organization and all its data",
     delete: "Delete",
+    allowedOrigins: "Allowed Origins",
+    allowedOriginsDescription:
+      "Domains allowed to embed the payment widget and connect via WebSocket",
+    noOriginsConfigured:
+      "No origins configured (all origins blocked by default)",
+    add: "Add",
+    remove: "Remove",
+    originAlreadyExists: "Origin already exists",
+    originsUpdated: "Allowed origins updated",
+    invalidUrl: "Invalid URL (must include protocol, e.g. https://example.com)",
   },
   ProfilePage: {
     backToSettings: "← Back to Settings",
@@ -722,6 +732,24 @@ const messages = {
     previewModeDescription:
       "This invoice is currently in draft status and not visible to the public.",
     discount: "Discount",
+  },
+  TokenRevalidation: {
+    title: "Reauthorization Required",
+    description: "Your {providerName} connection token has expired.",
+    reauthorize: "Reauthorize",
+    reauthorizing: "Redirecting...",
+    manualConsent: {
+      title: "Complete Reauthorization",
+      description: "Please re-enable API access in your bank app",
+      steps: "Follow the steps below to reauthorize your connection.",
+      openBankApp: "Open the {providerName} app or website",
+      navigateToApiSettings: "Navigate to API settings",
+      clickEnableAccess: 'Click "Enable access" or "Authorize"',
+      youWillBeRedirected:
+        "You will be automatically redirected back here after authorization",
+      yourCallbackUrl: "Your registered callback URL:",
+      viewSetupGuide: "View Setup Guide",
+    },
   },
 };
 

@@ -1,7 +1,9 @@
 import { createHmac } from "crypto";
 import { assert, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BankCredentials } from "../../types";
+import type { AuthenticatedProvider, ConfiguredProvider } from "../../types";
+import type { RevolutBankCredentials } from "./types";
+import { WebhookVerificationStatus } from "../../types";
 import { RevolutProvider } from "./adapter";
 
 // Mock fetch globally
@@ -21,33 +23,47 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
 8fMmOzUuBg==
 -----END PRIVATE KEY-----`;
 
-  const config = {
+  const providerConfig = {
     clientId: "test-client-id",
     privateKeyPem: realDummyPrivateKey,
     sandboxMode: false,
   };
 
-  const sandboxConfig = {
-    ...config,
+  const sandboxProviderConfig = {
+    ...providerConfig,
     sandboxMode: true,
   };
 
-  let provider: RevolutProvider;
+  const credentials = {
+    accessToken: "token-123",
+    refreshToken: "refresh-123",
+    expiresAt: new Date(Date.now() + 3600 * 1000),
+  };
+
+  const template = new RevolutProvider();
+  let configuredProvider: ConfiguredProvider;
+  let authenticatedProvider: AuthenticatedProvider;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new RevolutProvider(config);
+    configuredProvider = template.withProviderConfig(providerConfig);
+    authenticatedProvider = template.withCredentials(
+      providerConfig,
+      credentials,
+    );
   });
 
   describe("initialization", () => {
     it("should use production URLs by default", () => {
-      const p = new RevolutProvider(config);
+      const p = template.withProviderConfig(providerConfig) as RevolutProvider;
       // @ts-expect-error - testing private fields
       expect(p.baseUrl).toBe("https://b2b.revolut.com");
     });
 
     it("should use sandbox URLs when sandboxMode is true", () => {
-      const p = new RevolutProvider(sandboxConfig);
+      const p = template.withProviderConfig(
+        sandboxProviderConfig,
+      ) as RevolutProvider;
       // @ts-expect-error - testing private fields
       expect(p.baseUrl).toBe("https://sandbox-b2b.revolut.com");
     });
@@ -55,7 +71,7 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
 
   describe("getProviderConfigSchema", () => {
     it("should return the correct configuration schema", () => {
-      const schema = provider.getProviderConfigSchema();
+      const schema = template.getProviderConfigSchema();
       expect(schema.fields).toBeDefined();
       expect(schema.fields.some((f) => f.name === "clientId")).toBe(true);
       expect(schema.fields.some((f) => f.name === "privateKeyPem")).toBe(true);
@@ -66,7 +82,8 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
     it("should construct the correct OAuth URL", () => {
       const redirectUri = "https://example.com/callback";
       const state = "test-state";
-      const url = provider.getAuthUrl({ redirectUri, state });
+
+      const url = configuredProvider.getAuthUrl({ redirectUri, state });
 
       expect(url).toContain("https://b2b.revolut.com/app-confirm");
       expect(url).toContain("client_id=test-client-id");
@@ -75,10 +92,9 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
     });
 
     it("should throw if not configured", () => {
-      const unconfiguredProvider = new RevolutProvider();
       expect(() =>
-        unconfiguredProvider.getAuthUrl({ redirectUri: "x", state: "y" }),
-      ).toThrow("RevolutProvider is not configured");
+        template.getAuthUrl({ redirectUri: "x", state: "y" }),
+      ).toThrow("RevolutProvider is not properly configured");
     });
   });
 
@@ -97,14 +113,14 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         json: async () => mockResponse,
       } as unknown as Response);
 
-      const credentials = await provider.exchangeCode({
+      const creds = (await configuredProvider.exchangeCode({
         code: "test-code",
         redirectUri: "https://example.com/callback",
-      });
+      })) as RevolutBankCredentials;
 
-      expect(credentials.accessToken).toBe("access-123");
-      expect(credentials.refreshToken).toBe("refresh-123");
-      expect(credentials.expiresAt).toBeInstanceOf(Date);
+      expect(creds.accessToken).toBe("access-123");
+      expect(creds.refreshToken).toBe("refresh-123");
+      expect(creds.expiresAt).toBeInstanceOf(Date);
       expect(global.fetch).toHaveBeenCalledWith(
         "https://b2b.revolut.com/api/1.0/auth/token",
         expect.objectContaining({
@@ -122,8 +138,12 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         {
           id: "acc-1",
           name: "Main",
+          balance: 1000.0,
           currency: "EUR",
           state: "active",
+          public: true,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
         },
       ];
 
@@ -147,9 +167,7 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
           json: async () => mockBankDetails,
         } as unknown as Response);
 
-      const accounts = await provider.listAccounts({
-        credentials: { accessToken: "token-123" } as unknown as BankCredentials,
-      });
+      const accounts = await authenticatedProvider.listAccounts();
 
       expect(accounts).toHaveLength(1);
       assert(accounts[0]);
@@ -200,10 +218,13 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({ request, secret });
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret,
+      });
 
-      expect(result.valid).toBe(true);
-      if (result.valid) {
+      expect(result.status).toBe(WebhookVerificationStatus.Success);
+      if (result.status === WebhookVerificationStatus.Success) {
         expect(result.referenceId).toBe(reference);
         expect(result.amountCents).toBe(1050);
         expect(result.txHash).toBe(transactionId);
@@ -211,6 +232,7 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
     });
 
     it("should handle TransactionStateChanged by fetching full transaction", async () => {
+      // TransactionStateChanged needs authenticated provider (makes API call to fetch full tx)
       const payload = {
         event: "TransactionStateChanged",
         timestamp: new Date().toISOString(),
@@ -243,14 +265,13 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({
+      const result = await authenticatedProvider.verifyAndParseWebhook({
         request,
         secret,
-        credentials: { accessToken: "token-123" } as unknown as BankCredentials,
       });
 
-      expect(result.valid).toBe(true);
-      if (result.valid) {
+      expect(result.status).toBe(WebhookVerificationStatus.Success);
+      if (result.status === WebhookVerificationStatus.Success) {
         expect(result.referenceId).toBe(reference);
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining(`/api/1.0/transaction/${transactionId}`),
@@ -273,9 +294,12 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         body,
       });
 
-      const result = await provider.verifyAndParseWebhook({ request, secret });
-      expect(result.valid).toBe(false);
-      if (!result.valid) {
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret,
+      });
+      expect(result.status).toBe(WebhookVerificationStatus.Error);
+      if (result.status === WebhookVerificationStatus.Error) {
         expect(result.error).toContain("Invalid webhook signature");
       }
     });
@@ -295,13 +319,13 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
         json: async () => mockResponse,
       } as unknown as Response);
 
-      const credentials = await provider.refreshToken({
+      const newCreds = (await configuredProvider.refreshToken({
         refreshToken: "old-refresh-123",
         callbackUrl: "https://example.com/callback",
-      });
+      })) as RevolutBankCredentials;
 
-      expect(credentials.accessToken).toBe("new-access-123");
-      expect(credentials.refreshToken).toBe("old-refresh-123"); // Revolut keeps the same refresh token
+      expect(newCreds.accessToken).toBe("new-access-123");
+      expect(newCreds.refreshToken).toBe("old-refresh-123"); // Revolut keeps the same refresh token
       expect(global.fetch).toHaveBeenCalledWith(
         "https://b2b.revolut.com/api/1.0/auth/token",
         expect.objectContaining({
@@ -313,9 +337,67 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
     });
   });
 
+  describe("Zod validation on API responses", () => {
+    it("should throw on invalid exchangeCode response", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        json: async () => ({ unexpected: "data" }),
+      } as unknown as Response);
+
+      await expect(
+        configuredProvider.exchangeCode({
+          code: "test-code",
+          redirectUri: "https://example.com/callback",
+        }),
+      ).rejects.toThrow("Failed to parse Revolut token response");
+    });
+
+    it("should throw on invalid listAccounts response", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        json: async () => ({ unexpected: "data" }),
+      } as unknown as Response);
+
+      await expect(authenticatedProvider.listAccounts()).rejects.toThrow(
+        "Failed to parse Revolut accounts response",
+      );
+    });
+
+    it("should throw on invalid createWebhook response", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        json: async () => ({ unexpected: "data" }),
+      } as unknown as Response);
+
+      await expect(
+        authenticatedProvider.createWebhook({
+          webhookUrl: "https://example.com/webhook",
+        }),
+      ).rejects.toThrow("Failed to parse Revolut webhook response");
+    });
+
+    it("should throw on invalid refreshToken response", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        json: async () => ({ unexpected: "data" }),
+      } as unknown as Response);
+
+      await expect(
+        configuredProvider.refreshToken({
+          refreshToken: "old-refresh-123",
+          callbackUrl: "https://example.com/callback",
+        }),
+      ).rejects.toThrow("Failed to parse Revolut refresh token response");
+    });
+  });
+
   describe("simulateSandboxPayment", () => {
     it("should call topup API in sandbox mode", async () => {
-      const p = new RevolutProvider(sandboxConfig);
+      const p = template.withCredentials(sandboxProviderConfig, credentials);
 
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
@@ -324,7 +406,6 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
       } as unknown as Response);
 
       const result = await p.simulateSandboxPayment({
-        credentials: { accessToken: "token-123" } as unknown as BankCredentials,
         accountId: "acc-123",
         amount: 50.0,
         currency: "EUR",
@@ -341,15 +422,14 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
             amount: 50.0,
             currency: "EUR",
             reference: "GB-REF123",
-            state: "completed",
+            state: "pending",
           }),
         }),
       );
     });
 
     it("should fail if not in sandbox mode", async () => {
-      const result = await provider.simulateSandboxPayment({
-        credentials: { accessToken: "token-123" } as unknown as BankCredentials,
+      const result = await authenticatedProvider.simulateSandboxPayment({
         accountId: "acc-123",
         amount: 50.0,
         currency: "EUR",
@@ -365,41 +445,45 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
 
   describe("metadata and support", () => {
     it("should return the correct setup guide URL", () => {
-      expect(provider.getSetupGuide()).toContain("revolut.md");
+      expect(template.getSetupGuide()).toContain("revolut.md");
     });
 
     it("should return the correct default config", () => {
-      const config = provider.getDefaultConfig(true);
-      expect(config.sandboxMode).toBe(true);
-      expect(config.clientId).toBe("");
+      const defaultConfig = template.getDefaultConfig(true);
+      expect(defaultConfig.sandboxMode).toBe(true);
+      expect(defaultConfig.clientId).toBe("");
     });
 
     it("should return schemas", () => {
-      expect(provider.getCredentialSchema()).toBeDefined();
-      expect(provider.getAccountSchema()).toBeDefined();
+      expect(template.getCredentialSchema()).toBeDefined();
+      expect(template.getAccountSchema()).toBeDefined();
     });
 
     it("should validate account", async () => {
-      const valid = await provider.validateAccount({
-        credentials: {} as unknown as BankCredentials,
+      const valid = await authenticatedProvider.validateAccount({
         account: { accountId: "acc-123" },
       });
       expect(valid).toBe(true);
 
-      const invalid = await provider.validateAccount({
-        credentials: {} as unknown as BankCredentials,
+      const invalid = await authenticatedProvider.validateAccount({
         account: {},
       });
       expect(invalid).toBe(false);
     });
 
     it("should report support features", () => {
-      expect(provider.supportsTokenRefresh()).toBe(true);
+      expect(template.supportsTokenRefresh()).toBe(true);
 
-      const prodProvider = new RevolutProvider(config);
+      const prodProvider = template.withCredentials(
+        providerConfig,
+        credentials,
+      );
       expect(prodProvider.supportsSandboxSimulation()).toBe(false);
 
-      const sbProvider = new RevolutProvider(sandboxConfig);
+      const sbProvider = template.withCredentials(
+        sandboxProviderConfig,
+        credentials,
+      );
       expect(sbProvider.supportsSandboxSimulation()).toBe(true);
     });
   });

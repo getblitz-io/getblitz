@@ -10,6 +10,11 @@ import { attachSocketIO } from "@getblitz/websocket";
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME ?? "localhost";
 const port = parseInt(process.env.PORT ?? "3000", 10);
+const encryptionKey = process.env.ENCRYPTION_KEY;
+
+if (!encryptionKey) {
+  throw new Error("ENCRYPTION_KEY is not defined");
+}
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
@@ -28,19 +33,14 @@ app
     // Conditionally attach Socket.io if ENABLE_WEBSOCKET is set
     if (process.env.ENABLE_WEBSOCKET === "true") {
       const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6380";
-      const corsOrigins = (
-        process.env.CORS_ORIGINS ?? `http://${hostname}:${port}`
-      )
-        .split(",")
-        .map((s) => s.trim());
 
       console.log("Attaching WebSocket server...");
       console.log(`Redis URL: ${redisUrl}`);
-      console.log(`CORS Origins: ${corsOrigins.join(", ")}`);
+      console.log(`Encryption Key: ${encryptionKey}`);
 
       attachSocketIO(httpServer, {
         redisUrl,
-        corsOrigins,
+        encryptionKey,
       });
     }
 

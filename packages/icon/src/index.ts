@@ -5,3 +5,5 @@ export { CreditCardIcon } from "./credit-card-icon";
 export { GoogleIcon } from "./google-icon";
 export { CustomerIcon } from "./customer-icon";
 export { InvoiceIcon } from "./invoice-icon";
+export { PlusIcon } from "./plus-icon";
+export { XIcon } from "./x-icon";

@@ -89,6 +89,35 @@ export class OrganizationService implements IOrganizationService {
   }
 
   /**
+   * Update organization details
+   */
+  async update({
+    organizationId,
+    userId,
+    data,
+  }: {
+    organizationId: string;
+    userId: string;
+    data: {
+      allowedOrigins?: string[];
+    };
+  }): Promise<OrganizationWithDetails> {
+    const member = await this.organizationRepository.findMemberByUserAndOrg({
+      userId,
+      organizationId,
+    });
+
+    if (!member) {
+      throw new ForbiddenError("You don't have access to this organization");
+    }
+
+    return this.organizationRepository.update({
+      id: organizationId,
+      data,
+    });
+  }
+
+  /**
    * Generate a new API key for an organization
    */
   async generateApiKey({

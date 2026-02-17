@@ -33,6 +33,21 @@ export class OrganizationBankConnectionRepository
     });
   }
 
+  async findOne({
+    where,
+    include,
+  }: {
+    where: Prisma.OrganizationBankConnectionWhereInput;
+    include?: Prisma.OrganizationBankConnectionInclude;
+  }): Promise<Prisma.OrganizationBankConnectionGetPayload<{
+    include?: Prisma.OrganizationBankConnectionInclude;
+  }> | null> {
+    return this.prisma.organizationBankConnection.findFirst({
+      where,
+      include,
+    });
+  }
+
   async findByOrganizationIdAndProviderId({
     organizationId,
     providerId,

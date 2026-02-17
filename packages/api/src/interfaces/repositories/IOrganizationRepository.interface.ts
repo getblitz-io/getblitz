@@ -1,4 +1,4 @@
-import type { Organization } from "@getblitz/database";
+import type { Organization, Prisma } from "@getblitz/database";
 
 import type { OrganizationCounts, OrganizationWithDetails } from "..";
 
@@ -22,4 +22,11 @@ export interface IOrganizationRepository {
     userId: string;
     organizationId: string;
   }): Promise<{ userId: string } | null>;
+  update({
+    id,
+    data,
+  }: {
+    id: string;
+    data: Prisma.OrganizationUpdateInput;
+  }): Promise<OrganizationWithDetails>;
 }

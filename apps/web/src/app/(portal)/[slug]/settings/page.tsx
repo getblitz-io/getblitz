@@ -12,6 +12,7 @@ import {
 import { Button } from "@getblitz/ui/button";
 
 import { api } from "~/trpc/server";
+import { AllowedOriginsSettings } from "./_components/allowed-origins-settings";
 import { ApiKeysList } from "./_components/api-keys-list";
 import { WebhookSettings } from "./_components/webhook-settings";
 
@@ -103,6 +104,9 @@ export default async function SettingsPage({
             <ApiKeysList keys={organization.secretKeys} slug={slug} />
           </CardContent>
         </Card>
+
+        {/* Allowed Origins Settings */}
+        <AllowedOriginsSettings initialOrigins={organization.allowedOrigins} />
 
         {/* Webhook Settings */}
         <WebhookSettings webhooks={organization.webhooks} slug={slug} />

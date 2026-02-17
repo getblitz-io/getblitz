@@ -21,6 +21,7 @@
   "dependencies": {
     "@getblitz/redis": "workspace:*",
     "@getblitz/shared-types": "workspace:*",
+    "jose": "^6.1.3",
     "socket.io": "catalog:",
     "zod": "catalog:"
   },

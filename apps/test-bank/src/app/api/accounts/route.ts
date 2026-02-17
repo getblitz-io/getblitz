@@ -4,27 +4,30 @@ import { NextResponse } from "next/server";
 const FAKE_ACCOUNTS = [
   {
     id: "test-acc-001",
-    name: "Test Business Account",
+    name: "Test Bank Account",
     iban: "TEST1234567890123456",
     currency: "EUR",
     bic: "TESTBICXXX",
     balance: 10000.0,
+    bankIdentifierName: "Test Business Account",
   },
   {
     id: "test-acc-002",
-    name: "Test Savings Account",
+    name: "Test Bank Account",
     iban: "TEST9876543210987654",
     currency: "EUR",
     bic: "TESTBICXXX",
     balance: 50000.0,
+    bankIdentifierName: "Test Savings Account",
   },
   {
     id: "test-acc-003",
-    name: "Test EUR Account",
+    name: "Test Bank Account",
     iban: "TEST5555666677778888",
     currency: "EUR",
     bic: "TESTBICXXX",
     balance: 25000.0,
+    bankIdentifierName: "Test EUR Account",
   },
 ];
 

@@ -16,7 +16,7 @@ function CheckoutContent() {
   const amount = parseInt(searchParams.get("amount") ?? "0", 10);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [referenceId, setReferenceId] = useState<string | null>(null);
+  const [clientToken, setClientToken] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "paid" | "error">(
     "loading",
   );
@@ -72,10 +72,10 @@ function CheckoutContent() {
 
         const data = (await res.json()) as {
           sessionId: string;
-          referenceId: string;
+          clientToken: string;
         };
         setSessionId(data.sessionId);
-        setReferenceId(data.referenceId);
+        setClientToken(data.clientToken);
         setStatus("ready");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -88,12 +88,13 @@ function CheckoutContent() {
 
   // Initialize GetBlitz SDK when session is ready
   useEffect(() => {
-    if (status !== "ready" || !sessionId) return;
+    if (status !== "ready" || !sessionId || !clientToken) return;
     // Prevent double mount in React StrictMode
     if (mountedRef.current) return;
     mountedRef.current = true;
 
     const currentSessionId = sessionId;
+    const currentClientToken = clientToken;
     let cancelled = false;
 
     async function initWidget() {
@@ -108,8 +109,8 @@ function CheckoutContent() {
       if (container) container.innerHTML = "";
 
       const payment = new GetBlitz({
-        apiKey: "demo", // Public key (not used for validation in demo)
         sessionId: currentSessionId,
+        clientToken: currentClientToken,
         wssUrl: env.NEXT_PUBLIC_GETBLITZ_WSS_URL,
         apiUrl: env.NEXT_PUBLIC_GETBLITZ_API_URL,
       });
@@ -143,7 +144,7 @@ function CheckoutContent() {
       }
       mountedRef.current = false;
     };
-  }, [status, sessionId, router]);
+  }, [status, sessionId, clientToken, router]);
 
   if (status === "error") {
     return (
@@ -190,12 +191,6 @@ function CheckoutContent() {
         <>
           {/* GetBlitz Widget Container */}
           <div id="getblitz-widget" className="min-h-[400px]" />
-
-          {referenceId && (
-            <p className="text-center text-xs text-slate-500">
-              Reference: {referenceId}
-            </p>
-          )}
 
           {/* Simulate Payment Button (for testing) */}
           <div className="mt-4 border-t border-slate-700 pt-4">

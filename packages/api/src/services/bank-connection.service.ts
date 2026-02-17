@@ -1,5 +1,4 @@
 import type { OrganizationBankConnection } from "@getblitz/database";
-import { ProviderRegistry } from "@getblitz/bank-providers";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
@@ -105,43 +104,17 @@ export class BankConnectionService implements IBankConnectionService {
 
   async setupWebhook({
     connectionId,
-    providerId,
-    credentials: providedCredentials,
   }: SetupWebhookParams): Promise<SetupWebhookResult> {
-    // Get the connection to access provider config
-    const connection = await this.organizationBankConnectionRepository.findById(
-      { id: connectionId },
-    );
-    if (!connection) {
-      return { success: false, error: "Connection not found" };
-    }
-    if (!connection.providerConfig) {
-      return { success: false, error: "Connection not fully configured" };
-    }
-
-    // Decrypt provider config and create configured provider instance
-    const providerConfig = this.credentialManager.decryptProviderConfig(
-      connection.providerConfig,
-    );
-    const provider = ProviderRegistry.createProvider(
-      providerId,
-      providerConfig,
-    );
-
-    if (!provider.createWebhook) {
-      return { success: false, error: "Provider does not support webhooks" };
-    }
-
     try {
-      // Use provided credentials or fetch valid ones via credential manager
-      const credentials =
-        providedCredentials ??
-        (await this.credentialManager.getValidCredentials({ connectionId }))
-          .credentials;
+      // Decrypt provider config and create authenticated provider instance
+      const provider = await this.credentialManager.createAuthenticatedProvider(
+        {
+          connectionId,
+        },
+      );
 
       const webhookUrl = this.buildWebhookUrl(connectionId);
       const webhookResult = await provider.createWebhook({
-        credentials,
         webhookUrl,
       });
 

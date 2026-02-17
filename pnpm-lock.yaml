@@ -508,6 +508,9 @@ importers:
       decimal.js:
         specifier: 'catalog:'
         version: 10.6.0
+      jose:
+        specifier: ^6.1.3
+        version: 6.1.3
       nanoid:
         specifier: 'catalog:'
         version: 5.1.6
@@ -922,6 +925,9 @@ importers:
       '@getblitz/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      jose:
+        specifier: ^6.1.3
+        version: 6.1.3
       socket.io:
         specifier: 'catalog:'
         version: 4.8.3

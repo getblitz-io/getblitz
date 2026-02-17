@@ -4,11 +4,14 @@ import { z } from "zod";
 import type {
   AccountConfig,
   BankCredentials,
+  BankProviderBankAccount,
+  BaseBankCredentials,
   ProviderConfig,
   ProviderConfigSchema,
   WebhookVerificationResult,
 } from "../../types";
 import { BaseBankProvider } from "../../base-provider";
+import { WebhookVerificationStatus } from "../../types";
 
 // Matches Qonto's webhook payload schema for compatibility
 export const TestBankWebhookPayloadSchema = z.object({
@@ -29,13 +32,14 @@ export const TestBankWebhookPayloadSchema = z.object({
 });
 
 // Fake test accounts
-const FAKE_ACCOUNTS = [
+const FAKE_ACCOUNTS: BankProviderBankAccount[] = [
   {
     id: "test-acc-001",
     name: "Test Business Account",
     iban: "TEST1234567890123456",
     currency: "EUR",
     bic: "TESTBICXXX",
+    bankIdentifierName: "Test Bank",
   },
   {
     id: "test-acc-002",
@@ -43,6 +47,7 @@ const FAKE_ACCOUNTS = [
     iban: "TEST9876543210987654",
     currency: "EUR",
     bic: "TESTBICXXX",
+    bankIdentifierName: "Test Bank",
   },
   {
     id: "test-acc-003",
@@ -50,14 +55,23 @@ const FAKE_ACCOUNTS = [
     iban: "TEST5555666677778888",
     currency: "EUR",
     bic: "TESTBICXXX",
+    bankIdentifierName: "Test Bank",
   },
 ];
+
+const TestBankProviderConfigSchema = z.object({
+  baseUrl: z.string().optional(),
+});
 
 /**
  * Test Bank provider configuration
  */
 export interface TestBankProviderConfig extends ProviderConfig {
   baseUrl: string;
+}
+
+export interface TestBankCredentials extends BaseBankCredentials {
+  accessToken: string;
 }
 
 export class TestBankProvider extends BaseBankProvider {
@@ -68,12 +82,53 @@ export class TestBankProvider extends BaseBankProvider {
   readonly oauthFlowType = "redirect" as const;
   override readonly isTestProvider = true;
 
-  private baseUrl: string;
+  // Provider config fields (set by applyProviderConfig)
+  private _baseUrl: string | undefined;
 
-  constructor(config?: ProviderConfig) {
-    super();
-    const cfg = config as TestBankProviderConfig | undefined;
-    this.baseUrl = cfg?.baseUrl ?? "http://localhost:3003";
+  // Credential fields (set by applyCredentials)
+  private _accessToken: string | undefined;
+
+  // -------------------------------------------------------------------
+  // Phase transition implementation
+  // -------------------------------------------------------------------
+
+  protected createInstance(): TestBankProvider {
+    return new TestBankProvider();
+  }
+
+  protected applyProviderConfig(config: TestBankProviderConfig): void {
+    const cfg = TestBankProviderConfigSchema.safeParse(config);
+    if (!cfg.success) {
+      throw new Error("Invalid Test Bank provider config");
+    }
+    this._baseUrl = cfg.data.baseUrl;
+  }
+
+  protected applyCredentials(credentials: TestBankCredentials): void {
+    if (!credentials.accessToken) {
+      throw new Error("Test Bank credentials must include accessToken");
+    }
+    this._accessToken = credentials.accessToken;
+  }
+
+  // -------------------------------------------------------------------
+  // Config/credential accessors with guards
+  // -------------------------------------------------------------------
+
+  get baseUrl(): string {
+    if (!this._baseUrl) {
+      throw new Error("Test Bank provider config is missing baseUrl");
+    }
+    return this._baseUrl;
+  }
+
+  get accessToken(): string {
+    if (!this._accessToken) {
+      throw new Error(
+        "TestBankProvider is not authenticated — credentials required",
+      );
+    }
+    return this._accessToken;
   }
 
   getSetupGuide(): string {
@@ -128,7 +183,7 @@ export class TestBankProvider extends BaseBankProvider {
 
     if (!parsed.success) {
       return {
-        valid: false,
+        status: WebhookVerificationStatus.Error,
         error: `Invalid Test Bank webhook payload: ${parsed.error.message}`,
       };
     }
@@ -142,13 +197,13 @@ export class TestBankProvider extends BaseBankProvider {
 
     if (!referenceId) {
       return {
-        valid: false,
-        error: "No valid reference ID in Test Bank transaction",
+        status: WebhookVerificationStatus.Ignore,
+        reason: "No valid reference ID in Test Bank transaction",
       };
     }
 
     return {
-      valid: true,
+      status: WebhookVerificationStatus.Success,
       referenceId,
       txHash: data.transaction_id ?? data.id,
       amountCents: Math.round(data.amount * 100),
@@ -161,7 +216,6 @@ export class TestBankProvider extends BaseBankProvider {
   async validateAccount({
     account,
   }: {
-    credentials: BankCredentials;
     account: AccountConfig;
   }): Promise<boolean> {
     // Test bank always validates accounts
@@ -224,17 +278,11 @@ export class TestBankProvider extends BaseBankProvider {
     };
   }
 
-  async listAccounts({
-    credentials,
-  }: {
-    credentials: BankCredentials;
-  }): Promise<
-    { id: string; name: string; iban: string; currency: string; bic: string }[]
-  > {
+  async listAccounts(): Promise<BankProviderBankAccount[]> {
     // Call the test bank's accounts endpoint
     const response = await fetch(`${this.baseUrl}/api/accounts`, {
       headers: {
-        Authorization: `Bearer ${credentials.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
       },
     });
 
@@ -250,6 +298,7 @@ export class TestBankProvider extends BaseBankProvider {
         iban: string;
         currency: string;
         bic: string;
+        bankIdentifierName: string;
       }[];
     };
 
@@ -257,17 +306,15 @@ export class TestBankProvider extends BaseBankProvider {
   }
 
   async createWebhook({
-    credentials,
     webhookUrl,
   }: {
-    credentials: BankCredentials;
     webhookUrl: string;
   }): Promise<{ id: string; secret: string }> {
     // Call the test bank's webhooks endpoint
     const response = await fetch(`${this.baseUrl}/api/webhooks`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${credentials.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

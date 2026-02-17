@@ -248,7 +248,9 @@ export class InvoiceService implements IInvoiceService {
       deviceDetails,
     });
 
-    const paymentSession = this.getPaymentSessionForInvoice({ invoice });
+    const paymentSession = await this.getPaymentSessionForInvoice({
+      invoice,
+    });
 
     return {
       invoiceId: invoice.id,
@@ -487,56 +489,31 @@ export class InvoiceService implements IInvoiceService {
         reference: invoice.referenceId,
         currency: "EUR",
       }),
+      clientToken: "temporary-token",
     };
   }
 
-  private getPaymentSessionForInvoice({
+  private async getPaymentSessionForInvoice({
     invoice,
   }: {
     invoice: InvoiceWithRelations;
-  }): InvoiceDetailsResult["paymentSession"] {
+  }): Promise<InvoiceDetailsResult["paymentSession"]> {
     if (invoice.status === InvoiceStatus.DRAFT) {
       return this.createDraftPaymentSession({ invoice });
     }
     if (!invoice.paymentSession) {
       throw new Error("Payment session not found for invoice");
     }
-    return {
+
+    const sessionDetails = await this.paymentSessionService.getSessionDetails({
       sessionId: invoice.paymentSession.id,
-      referenceId: invoice.paymentSession.referenceId,
-      amountCents: invoice.paymentSession.amountCents,
-      currency: invoice.paymentSession.currency,
-      status: invoice.paymentSession.status,
-      expiresAt: invoice.paymentSession.expiresAt
-        ? invoice.paymentSession.expiresAt.toISOString()
-        : null,
-      organization: {
-        name: invoice.organization.name,
-      },
-      bankAccount: {
-        organizationBankConnection:
-          invoice.bankAccount.organizationBankConnection,
-        accountName: invoice.bankAccount.accountName,
-        iban: invoice.bankAccount.accountIban,
-        bic: invoice.bankAccount.accountBic,
-        bankName:
-          invoice.bankAccount.organizationBankConnection.name ??
-          invoice.bankAccount.organizationBankConnection.providerId,
-        walletAddressEvm: undefined,
-      },
-      provider: {
-        id: invoice.bankAccount.organizationBankConnection.providerId,
-        displayName: "Bank Provider",
-        domain: "",
-      },
-      sepaQrString: generateSepaQrString({
-        name: invoice.bankAccount.accountName || invoice.organization.name,
-        iban: invoice.bankAccount.accountIban,
-        amount: centsToEuros(invoice.paymentSession.amountCents),
-        reference: invoice.paymentSession.referenceId,
-        currency: "EUR",
-      }),
-    };
+    });
+
+    if (!sessionDetails) {
+      throw new Error("Payment session details not found");
+    }
+
+    return sessionDetails;
   }
 
   private async verifyInvoicePassword({

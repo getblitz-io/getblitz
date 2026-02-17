@@ -83,7 +83,12 @@ export type {
 } from "./services";
 
 // Errors
-export { ConflictError, ForbiddenError, NotFoundError } from "./errors";
+export {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  TokenExpiredError,
+} from "./errors";
 
 // Stats types
 export type {

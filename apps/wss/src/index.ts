@@ -6,13 +6,13 @@ import { env } from "./env";
 
 const PORT = parseInt(env.WSS_PORT, 10);
 const REDIS_URL = env.REDIS_URL;
-const CORS_ORIGINS = env.CORS_ORIGINS.split(",").map((s) => s.trim());
+const ENCRYPTION_KEY = env.ENCRYPTION_KEY;
 
 function main() {
   console.log("Starting GetBlitz WebSocket Server...");
   console.log(`Port: ${String(PORT)}`);
   console.log(`Redis: ${REDIS_URL}`);
-  console.log(`CORS Origins: ${CORS_ORIGINS.join(", ")}`);
+  console.log(`Encryption Key: ${ENCRYPTION_KEY}`);
 
   // Create HTTP server
   const httpServer = createServer((_req, res) => {
@@ -26,7 +26,7 @@ function main() {
   // Attach Socket.io with Redis subscriber
   const { io, redisSubscriber } = attachSocketIO(httpServer, {
     redisUrl: REDIS_URL,
-    corsOrigins: CORS_ORIGINS,
+    encryptionKey: ENCRYPTION_KEY,
   });
 
   // Start HTTP server

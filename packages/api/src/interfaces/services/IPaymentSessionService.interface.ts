@@ -50,4 +50,14 @@ export interface IPaymentSessionService {
   }: {
     sessionId: string;
   }): Promise<QrCodeResult | null>;
+  getQrCodeBuffer({ sessionId }: { sessionId: string }): Promise<Buffer | null>;
+  verifySessionAccess({
+    sessionId,
+    clientToken,
+    origin,
+  }: {
+    sessionId: string;
+    clientToken: string;
+    origin: string;
+  }): Promise<void>;
 }

@@ -72,6 +72,7 @@ export default function PaymentDetailPage() {
   // Connect to WebSocket only if session is pending
   const { isConnected } = usePaymentSocket({
     sessionId: session?.status === "PENDING" ? session.sessionId : "",
+    clientToken: session?.clientToken,
     onPaymentUpdate: handlePaymentUpdate,
   });
 

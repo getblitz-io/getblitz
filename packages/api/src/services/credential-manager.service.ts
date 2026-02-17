@@ -1,12 +1,18 @@
-import type { BankCredentials, ProviderConfig } from "@getblitz/bank-providers";
+import type {
+  AuthenticatedProvider,
+  BankCredentials,
+  ConfiguredProvider,
+  ProviderConfig,
+} from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
+import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
-  CredentialManagerResult,
   ICredentialManagerService,
   IOrganizationBankConnectionRepository,
 } from "../interfaces";
 import type { SecurityService } from "./security.service";
+import { TokenExpiredError } from "../interfaces";
 
 export class CredentialManagerService implements ICredentialManagerService {
   constructor(
@@ -45,96 +51,99 @@ export class CredentialManagerService implements ICredentialManagerService {
     const json = this.securityService.decrypt({ text: encrypted });
     const parsed = JSON.parse(json) as BankCredentials;
     // Convert expiresAt string to Date if present
-    if (parsed.expiresAt && typeof parsed.expiresAt === "string") {
+    if ("expiresAt" in parsed && typeof parsed.expiresAt === "string") {
       parsed.expiresAt = new Date(parsed.expiresAt);
     }
     return parsed;
   }
 
   /**
-   * Get valid credentials for a bank connection, refreshing if needed.
-   * This is the primary method to use before making any provider API calls.
+   * Create a ConfiguredProvider — has provider config, can do auth flows.
+   * Use for: getAuthUrl, exchangeCode, refreshToken, verifyAndParseWebhook.
+   *
+   * Only requires providerConfig (not credentials).
    */
-  async getValidCredentials({
+  async createConfiguredProvider({
     connectionId,
   }: {
     connectionId: string;
-  }): Promise<CredentialManagerResult> {
-    // 1. Load connection from database
-    const connection = await this.organizationBankConnectionRepository.findById(
-      {
-        id: connectionId,
-      },
-    );
+  }): Promise<ConfiguredProvider> {
+    const connection = await this.loadConnection(connectionId);
 
-    if (!connection) {
-      throw new Error(`Bank connection not found: ${connectionId}`);
-    }
-
-    // 2. Check credentials and config exist (null means OAuth not yet completed)
-    if (!connection.credentials) {
-      throw new Error(
-        `Bank connection not fully configured: credentials missing for ${connectionId}`,
-      );
-    }
     if (!connection.providerConfig) {
       throw new Error(
         `Bank connection not fully configured: provider config missing for ${connectionId}`,
       );
     }
 
-    // 3. Decrypt stored credentials and provider config
-    const credentials = this.decryptCredentials(connection.credentials);
     const providerConfig = this.decryptProviderConfig(
       connection.providerConfig,
     );
 
-    // 4. Get provider template to check if it supports token refresh
-    const providerTemplate = ProviderRegistry.getProvider(
-      connection.providerId,
-    );
+    return ProviderRegistry.createConfiguredProvider({
+      id: connection.providerId,
+      config: providerConfig,
+    });
+  }
 
-    if (!providerTemplate) {
-      throw new Error(`Provider not found: ${connection.providerId}`);
+  /**
+   * Create an AuthenticatedProvider — has both config AND credentials.
+   * Use for: listAccounts, createWebhook, simulateSandboxPayment.
+   *
+   * Handles automatic token refresh when credentials are expiring.
+   */
+  async createAuthenticatedProvider({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<AuthenticatedProvider> {
+    const connection = await this.loadConnection(connectionId);
+
+    // Both config and credentials are required
+    if (!connection.providerConfig) {
+      throw new Error(
+        `Bank connection not fully configured: provider config missing for ${connectionId}`,
+      );
+    }
+    if (!connection.credentials) {
+      throw new Error(
+        `Bank connection not fully configured: credentials missing for ${connectionId}`,
+      );
     }
 
-    // 5. Check if refresh is needed and supported
+    const providerConfig = this.decryptProviderConfig(
+      connection.providerConfig,
+    );
+    let credentials = this.decryptCredentials(connection.credentials);
+
+    // Check if token refresh is needed
     const needsRefresh = this.isTokenExpiringSoon(credentials);
-    const supportsRefresh = providerTemplate.supportsTokenRefresh();
 
-    if (!needsRefresh || !supportsRefresh) {
-      return { credentials, wasRefreshed: false };
+    if (needsRefresh && "refreshToken" in credentials) {
+      try {
+        credentials = await this.refreshCredentials({
+          connectionId,
+          providerId: connection.providerId,
+          providerConfig,
+          credentials,
+          callbackUrl: connection.callbackUrl ?? undefined,
+        });
+      } catch {
+        // Refresh failed — mark connection for reauth
+        await this.markConnectionNeedsReauth(connectionId);
+        throw new TokenExpiredError({ connectionId });
+      }
+    } else if (needsRefresh) {
+      // No refresh token available — mark connection for reauth
+      await this.markConnectionNeedsReauth(connectionId);
+      throw new TokenExpiredError({ connectionId });
     }
 
-    // 6. Validate we have a refresh token
-    if (!credentials.refreshToken) {
-      throw new Error("No refresh token available for token refresh");
-    }
-
-    // 7. Create a configured provider instance for the refresh operation
-    const configuredProvider = ProviderRegistry.createProvider(
-      connection.providerId,
-      providerConfig,
-    );
-
-    if (!configuredProvider.refreshToken) {
-      throw new Error("Provider refresh token implementation is missing");
-    }
-
-    // 8. Refresh the token (pass callbackUrl for providers like Revolut that need it)
-    const newCredentials = await configuredProvider.refreshToken({
-      refreshToken: credentials.refreshToken,
-      callbackUrl: connection.callbackUrl ?? undefined,
+    return ProviderRegistry.createAuthenticatedProvider({
+      id: connection.providerId,
+      config: providerConfig,
+      credentials,
     });
-
-    // 9. Encrypt and persist new credentials to database
-    const encryptedCredentials = this.encryptCredentials(newCredentials);
-    await this.organizationBankConnectionRepository.update({
-      id: connectionId,
-      data: { credentials: encryptedCredentials },
-    });
-
-    return { credentials: newCredentials, wasRefreshed: true };
   }
 
   /**
@@ -145,7 +154,7 @@ export class CredentialManagerService implements ICredentialManagerService {
     credentials: BankCredentials,
     bufferMinutes = 5,
   ): boolean {
-    if (!credentials.expiresAt) {
+    if (!("expiresAt" in credentials)) {
       // No expiration info - assume it's valid
       return false;
     }
@@ -159,5 +168,147 @@ export class CredentialManagerService implements ICredentialManagerService {
     const expirationThreshold = new Date(Date.now() + bufferMs);
 
     return expiresAt <= expirationThreshold;
+  }
+
+  // -------------------------------------------------------------------
+  // Public helpers
+  // -------------------------------------------------------------------
+
+  /**
+   * Check the health of a bank connection's token.
+   * Uses a larger buffer (24h) than real-time checks to proactively flag issues.
+   * Marks connections as NEEDS_REAUTH if token is expiring and cannot be refreshed.
+   */
+  async checkTokenHealth({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<{ healthy: boolean; needsReauth: boolean }> {
+    const connection = await this.loadConnection(connectionId);
+
+    if (!connection.credentials) {
+      return { healthy: false, needsReauth: false };
+    }
+
+    const credentials = this.decryptCredentials(connection.credentials);
+    const proactiveBufferMinutes = 24 * 60; // 24 hours
+    const isExpiringSoon = this.isTokenExpiringSoon(
+      credentials,
+      proactiveBufferMinutes,
+    );
+
+    if (!isExpiringSoon) {
+      return { healthy: true, needsReauth: false };
+    }
+
+    // Token is expiring within 24h — try to refresh if possible
+    if ("refreshToken" in credentials && credentials.refreshToken) {
+      const providerTemplate = ProviderRegistry.getProvider(
+        connection.providerId,
+      );
+      if (
+        providerTemplate?.supportsTokenRefresh() &&
+        connection.providerConfig
+      ) {
+        try {
+          const providerConfig = this.decryptProviderConfig(
+            connection.providerConfig,
+          );
+          await this.refreshCredentials({
+            connectionId,
+            providerId: connection.providerId,
+            providerConfig,
+            credentials,
+            callbackUrl: connection.callbackUrl ?? undefined,
+          });
+          return { healthy: true, needsReauth: false };
+        } catch {
+          // Refresh failed — falls through to mark NEEDS_REAUTH
+        }
+      }
+    }
+
+    // Cannot auto-refresh — mark as NEEDS_REAUTH
+    await this.markConnectionNeedsReauth(connectionId);
+    return { healthy: false, needsReauth: true };
+  }
+
+  // -------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------
+
+  /**
+   * Mark a bank connection as needing re-authorization.
+   */
+  private async markConnectionNeedsReauth(connectionId: string): Promise<void> {
+    await this.organizationBankConnectionRepository.update({
+      id: connectionId,
+      data: { status: BankConnectionStatus.NEEDS_REAUTH },
+    });
+  }
+
+  private async loadConnection(connectionId: string) {
+    const connection = await this.organizationBankConnectionRepository.findOne({
+      where: { id: connectionId },
+    });
+
+    if (!connection) {
+      throw new Error(`Bank connection not found: ${connectionId}`);
+    }
+
+    return connection;
+  }
+
+  /**
+   * Perform token refresh using a ConfiguredProvider (only needs provider config).
+   * Persists the new credentials to the database and returns them.
+   */
+  private async refreshCredentials({
+    connectionId,
+    providerId,
+    providerConfig,
+    credentials,
+    callbackUrl,
+  }: {
+    connectionId: string;
+    providerId: string;
+    providerConfig: ProviderConfig;
+    credentials: BankCredentials;
+    callbackUrl?: string;
+  }): Promise<BankCredentials> {
+    // Check the provider actually supports refresh
+    const providerTemplate = ProviderRegistry.getProvider(providerId);
+
+    if (!providerTemplate) {
+      throw new Error(`Provider not found: ${providerId}`);
+    }
+
+    if (!providerTemplate.supportsTokenRefresh()) {
+      throw new Error("Provider does not support token refresh");
+    }
+
+    if (!("refreshToken" in credentials) || !credentials.refreshToken) {
+      throw new Error("No refresh token available for token refresh");
+    }
+
+    // Create a ConfiguredProvider (only needs config) for the refresh call
+    const configuredProvider = ProviderRegistry.createConfiguredProvider({
+      id: providerId,
+      config: providerConfig,
+    });
+
+    const newCredentials = await configuredProvider.refreshToken({
+      refreshToken: credentials.refreshToken,
+      callbackUrl,
+    });
+
+    // Persist refreshed credentials
+    const encryptedCredentials = this.encryptCredentials(newCredentials);
+    await this.organizationBankConnectionRepository.update({
+      id: connectionId,
+      data: { credentials: encryptedCredentials },
+    });
+
+    return newCredentials;
   }
 }

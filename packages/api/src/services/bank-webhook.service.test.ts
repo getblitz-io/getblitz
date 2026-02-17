@@ -1,8 +1,7 @@
-import type { Mocked } from "vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BankProvider } from "@getblitz/bank-providers";
-import { ProviderRegistry } from "@getblitz/bank-providers";
+import { WebhookVerificationStatus } from "@getblitz/bank-providers";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
@@ -12,7 +11,8 @@ import type {
 } from "../interfaces";
 import { BankWebhookService } from "./bank-webhook.service";
 
-vi.mock("@getblitz/bank-providers", () => ({
+vi.mock("@getblitz/bank-providers", async (importOriginal) => ({
+  ...(await importOriginal()),
   ProviderRegistry: {
     getProvider: vi.fn(),
   },
@@ -26,7 +26,6 @@ vi.mock("../utils/logger", () => ({
 }));
 
 describe("BankWebhookService", () => {
-  const mockedRegistry = ProviderRegistry as Mocked<typeof ProviderRegistry>;
   let service: BankWebhookService;
 
   const mockConnRepo = {
@@ -47,8 +46,9 @@ describe("BankWebhookService", () => {
     encryptCredentials: vi.fn(),
     decryptProviderConfig: vi.fn(),
     encryptProviderConfig: vi.fn(),
-    getValidCredentials: vi.fn(),
     isTokenExpiringSoon: vi.fn(),
+    createConfiguredProvider: vi.fn(),
+    createAuthenticatedProvider: vi.fn(),
   };
 
   beforeAll(() => {
@@ -75,14 +75,14 @@ describe("BankWebhookService", () => {
 
     const mockProvider = {
       verifyAndParseWebhook: vi.fn().mockResolvedValue({
-        valid: true,
+        status: WebhookVerificationStatus.Success,
         referenceId: "ref-1",
         txHash: "hash-1",
         amountCents: 1000,
         rawPayload: {},
       }),
     };
-    mockedRegistry.getProvider.mockReturnValue(
+    mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
       mockProvider as unknown as BankProvider,
     );
 
@@ -135,15 +135,16 @@ describe("BankWebhookService", () => {
     mockConnRepo.findById.mockResolvedValue({
       status: BankConnectionStatus.CONNECTED,
       providerId: "test",
+      webhookSecret: "secret",
     });
 
     const mockProvider = {
       verifyAndParseWebhook: vi.fn().mockResolvedValue({
-        valid: false,
+        status: "error",
         error: "Invalid signature",
       }),
     };
-    mockedRegistry.getProvider.mockReturnValue(
+    mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
       mockProvider as unknown as BankProvider,
     );
 
@@ -154,5 +155,32 @@ describe("BankWebhookService", () => {
 
     expect(result.success).toBe(false);
     expect(result.errorCode).toBe("INVALID_SIGNATURE");
+  });
+
+  it("should ignore if webhook is ignored", async () => {
+    mockConnRepo.findById.mockResolvedValue({
+      status: BankConnectionStatus.CONNECTED,
+      providerId: "test",
+      webhookSecret: "secret",
+    });
+
+    const mockProvider = {
+      verifyAndParseWebhook: vi.fn().mockResolvedValue({
+        status: "ignore",
+        reason: "Already processed",
+      }),
+    };
+    mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
+      mockProvider as unknown as BankProvider,
+    );
+
+    const result = await service.processWebhookByConnectionId({
+      connectionId: "conn-123",
+      request: new Request("https://test.com"),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.errorCode).toBe("IGNORE");
+    expect(result.error).toBe("Already processed");
   });
 });

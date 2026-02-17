@@ -12,6 +12,15 @@ export interface IOrganizationBankConnectionRepository {
   }): Promise<Prisma.OrganizationBankConnectionGetPayload<{
     include?: Prisma.OrganizationBankConnectionInclude;
   }> | null>;
+  findOne({
+    where,
+    include,
+  }: {
+    where: Prisma.OrganizationBankConnectionWhereInput;
+    include?: Prisma.OrganizationBankConnectionInclude;
+  }): Promise<Prisma.OrganizationBankConnectionGetPayload<{
+    include?: Prisma.OrganizationBankConnectionInclude;
+  }> | null>;
   findByOrganizationIdAndProviderId({
     organizationId,
     providerId,

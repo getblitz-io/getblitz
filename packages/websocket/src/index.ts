@@ -1,7 +1,11 @@
 import type { Server as HttpServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 
-import type { WebSocketConfig, WebSocketResult } from "./types";
+import type {
+  TypedSocketIOServer,
+  WebSocketConfig,
+  WebSocketResult,
+} from "./types";
 import { setupSocketHandlers } from "./handlers";
 import { createRedisSubscriber } from "./redis-subscriber";
 
@@ -18,18 +22,20 @@ export function attachSocketIO(
 ): WebSocketResult {
   const io = new SocketIOServer(httpServer, {
     cors: {
-      origin: config.corsOrigins ?? ["http://localhost:3000"],
       methods: ["GET", "POST"],
       credentials: true,
     },
     transports: ["websocket", "polling"],
-  });
+  }) as TypedSocketIOServer;
 
   // Setup socket handlers
-  setupSocketHandlers(io);
+  setupSocketHandlers({ io, encryptionKey: config.encryptionKey });
 
   // Create Redis subscriber
-  const redisSubscriber = createRedisSubscriber(config.redisUrl, io);
+  const redisSubscriber = createRedisSubscriber({
+    redisUrl: config.redisUrl,
+    io,
+  });
 
   console.log("Socket.io attached to HTTP server");
 

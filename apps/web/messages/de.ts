@@ -413,6 +413,17 @@ const messages = {
     deleteOrganizationDescription:
       "Diese Organisation und alle ihre Daten dauerhaft löschen",
     delete: "Löschen",
+    allowedOrigins: "Erlaubte Origins",
+    allowedOriginsDescription:
+      "Domains erlaubt, um das Payment Widget einzubetten und über WebSocket zu verbinden",
+    noOriginsConfigured:
+      "Keine Origins konfiguriert (alle Origins standardmäßig blockiert)",
+    add: "Hinzufügen",
+    remove: "Entfernen",
+    originAlreadyExists: "Origin bereits vorhanden",
+    originsUpdated: "Allowed Origins aktualisiert",
+    invalidUrl:
+      "Ungültige URL (muss das Protokoll enthalten, z.B. https://example.com)",
   },
   ProfilePage: {
     backToSettings: "← Zurück zu Einstellungen",
@@ -741,6 +752,27 @@ const messages = {
     previewModeDescription:
       "Diese Rechnung ist derzeit im Entwurf und nicht öffentlich sichtbar.",
     discount: "Gutschein",
+  },
+  TokenRevalidation: {
+    title: "Erneute Autorisierung erforderlich",
+    description: "Ihr {providerName}-Verbindungstoken ist abgelaufen.",
+    reauthorize: "Neu autorisieren",
+    reauthorizing: "Weiterleitung...",
+    manualConsent: {
+      title: "Autorisierung abschließen",
+      description:
+        "Bitte aktivieren Sie den API-Zugriff in Ihrer Bank-App erneut",
+      steps:
+        "Befolgen Sie die untenstehenden Schritte, um Ihre Verbindung neu zu autorisieren.",
+      openBankApp: "Öffnen Sie die {providerName} App oder Website",
+      navigateToApiSettings: "Navigieren Sie zu den API-Einstellungen",
+      clickEnableAccess:
+        'Klicken Sie auf "Zugriff aktivieren" oder "Autorisieren"',
+      youWillBeRedirected:
+        "Sie werden nach der Autorisierung automatisch hierher zurückgeleitet",
+      yourCallbackUrl: "Ihre registrierte Callback-URL:",
+      viewSetupGuide: "Einrichtungsanleitung anzeigen",
+    },
   },
 };
 

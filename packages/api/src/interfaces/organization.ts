@@ -2,6 +2,7 @@
  * Organization-related types for frontend display
  */
 
+import type { OAuthAuthType, OAuthFlowType } from "@getblitz/bank-providers";
 import type { BankConnectionStatus } from "@getblitz/database";
 
 /**
@@ -12,7 +13,7 @@ export interface ProviderWithConnectionStatus {
   name: string;
   providerId: string;
   domain: string;
-  authType: "oauth2" | "api_key" | "certificate" | "none";
+  authType: OAuthAuthType;
   isConnected: boolean;
   connectionId: string | null;
   webhookUrl: string | null;
@@ -32,13 +33,16 @@ export interface BankConnectionWithProvider {
   status: BankConnectionStatus;
   webhookUrl: string | null;
   webhookSecret: string | null;
+  callbackUrl: string;
   createdAt: Date;
   updatedAt: Date;
 
   // Provider metadata
   providerName: string;
   providerDomain: string | null;
-  providerAuthType: "oauth2" | "api_key" | "certificate" | "none";
+  providerAuthType: OAuthAuthType;
+  providerOAuthFlowType: OAuthFlowType;
+  providerSetupGuideUrl: string | null;
 
   // Optional: decrypted providerConfig for pre-filling forms
   providerConfig?: Record<string, unknown>;
