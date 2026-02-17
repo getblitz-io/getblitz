@@ -4,7 +4,7 @@ spec:
   databases:
     - name: getblitzdb
       engine: PG
-      version: "18"
+      version: "16"
       production: false
       db_name: getblitzdb
       db_user: getblitzdb
