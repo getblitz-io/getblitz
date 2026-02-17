@@ -3,6 +3,7 @@ services:
     name: getblitz-web
     env: node
     plan: starter
+    region: frankfurt
     buildCommand: pnpm install && pnpm db:generate && pnpm build:standalone
     startCommand: pnpm db:push && pnpm --filter @getblitz/web start:standalone
     envVars:
@@ -55,21 +56,24 @@ services:
       - key: NEXT_PUBLIC_APP_URL
         value: ${RENDER_EXTERNAL_URL}
       - key: NEXT_PUBLIC_WSS_URL
-        value: ${RENDER_EXTERNAL_URL}
-      - key: CORS_ORIGINS
-        value: ${RENDER_EXTERNAL_URL}
+        value: wss://${RENDER_EXTERNAL_HOSTNAME}
         
       - key: NODE_VERSION
         value: 22.12.0
+  - type: keyvalue
+    name: getblitz-valkey
+    ipAllowList: []
+    region: frankfurt
 
 databases:
   - name: getblitz-db
     databaseName: getblitz
+    postgresMajorVersion: 16
+    region: frankfurt
     user: getblitz
-    plan: starter
+    plan: basic-1gb
 
-services:
   - type: redis
     name: getblitz-redis
-    plan: starter
+    plan: basic-1gb
     ipAllowList: []
