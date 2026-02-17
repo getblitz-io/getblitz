@@ -5,10 +5,12 @@ export async function register() {
       initWebhookWorker,
       initExpireSessionsWorker,
       initCleanupBankConnectionsWorker,
+      initCheckTokenHealthWorker,
     } = await import("@getblitz/api");
 
     initWebhookWorker();
     initExpireSessionsWorker();
     initCleanupBankConnectionsWorker();
+    initCheckTokenHealthWorker();
   }
 }

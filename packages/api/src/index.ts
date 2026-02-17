@@ -112,3 +112,4 @@ export { initWebhookWorker } from "./queues/webhook.worker";
 export { addWebhookJob, WEBHOOK_QUEUE_NAME } from "./queues/webhook.queue";
 export { initExpireSessionsWorker } from "./queues/expire-sessions.worker";
 export { initCleanupBankConnectionsWorker } from "./queues/cleanup-bank-connections.worker";
+export { initCheckTokenHealthWorker } from "./queues/check-token-health.worker";

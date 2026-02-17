@@ -5,12 +5,14 @@ import type {
   ProviderConfig,
 } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
+import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
   ICredentialManagerService,
   IOrganizationBankConnectionRepository,
 } from "../interfaces";
 import type { SecurityService } from "./security.service";
+import { TokenExpiredError } from "../interfaces";
 
 export class CredentialManagerService implements ICredentialManagerService {
   constructor(
@@ -118,13 +120,23 @@ export class CredentialManagerService implements ICredentialManagerService {
     const needsRefresh = this.isTokenExpiringSoon(credentials);
 
     if (needsRefresh && "refreshToken" in credentials) {
-      credentials = await this.refreshCredentials({
-        connectionId,
-        providerId: connection.providerId,
-        providerConfig,
-        credentials,
-        callbackUrl: connection.callbackUrl ?? undefined,
-      });
+      try {
+        credentials = await this.refreshCredentials({
+          connectionId,
+          providerId: connection.providerId,
+          providerConfig,
+          credentials,
+          callbackUrl: connection.callbackUrl ?? undefined,
+        });
+      } catch {
+        // Refresh failed — mark connection for reauth
+        await this.markConnectionNeedsReauth(connectionId);
+        throw new TokenExpiredError({ connectionId });
+      }
+    } else if (needsRefresh) {
+      // No refresh token available — mark connection for reauth
+      await this.markConnectionNeedsReauth(connectionId);
+      throw new TokenExpiredError({ connectionId });
     }
 
     return ProviderRegistry.createAuthenticatedProvider({
@@ -159,8 +171,81 @@ export class CredentialManagerService implements ICredentialManagerService {
   }
 
   // -------------------------------------------------------------------
+  // Public helpers
+  // -------------------------------------------------------------------
+
+  /**
+   * Check the health of a bank connection's token.
+   * Uses a larger buffer (24h) than real-time checks to proactively flag issues.
+   * Marks connections as NEEDS_REAUTH if token is expiring and cannot be refreshed.
+   */
+  async checkTokenHealth({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<{ healthy: boolean; needsReauth: boolean }> {
+    const connection = await this.loadConnection(connectionId);
+
+    if (!connection.credentials) {
+      return { healthy: false, needsReauth: false };
+    }
+
+    const credentials = this.decryptCredentials(connection.credentials);
+    const proactiveBufferMinutes = 24 * 60; // 24 hours
+    const isExpiringSoon = this.isTokenExpiringSoon(
+      credentials,
+      proactiveBufferMinutes,
+    );
+
+    if (!isExpiringSoon) {
+      return { healthy: true, needsReauth: false };
+    }
+
+    // Token is expiring within 24h — try to refresh if possible
+    if ("refreshToken" in credentials && credentials.refreshToken) {
+      const providerTemplate = ProviderRegistry.getProvider(
+        connection.providerId,
+      );
+      if (
+        providerTemplate?.supportsTokenRefresh() &&
+        connection.providerConfig
+      ) {
+        try {
+          const providerConfig = this.decryptProviderConfig(
+            connection.providerConfig,
+          );
+          await this.refreshCredentials({
+            connectionId,
+            providerId: connection.providerId,
+            providerConfig,
+            credentials,
+            callbackUrl: connection.callbackUrl ?? undefined,
+          });
+          return { healthy: true, needsReauth: false };
+        } catch {
+          // Refresh failed — falls through to mark NEEDS_REAUTH
+        }
+      }
+    }
+
+    // Cannot auto-refresh — mark as NEEDS_REAUTH
+    await this.markConnectionNeedsReauth(connectionId);
+    return { healthy: false, needsReauth: true };
+  }
+
+  // -------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------
+
+  /**
+   * Mark a bank connection as needing re-authorization.
+   */
+  private async markConnectionNeedsReauth(connectionId: string): Promise<void> {
+    await this.organizationBankConnectionRepository.update({
+      id: connectionId,
+      data: { status: BankConnectionStatus.NEEDS_REAUTH },
+    });
+  }
 
   private async loadConnection(connectionId: string) {
     const connection = await this.organizationBankConnectionRepository.findOne({
@@ -202,7 +287,7 @@ export class CredentialManagerService implements ICredentialManagerService {
       throw new Error("Provider does not support token refresh");
     }
 
-    if (!("refreshToken" in credentials)) {
+    if (!("refreshToken" in credentials) || !credentials.refreshToken) {
       throw new Error("No refresh token available for token refresh");
     }
 

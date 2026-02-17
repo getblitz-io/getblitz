@@ -742,6 +742,27 @@ const messages = {
       "Diese Rechnung ist derzeit im Entwurf und nicht öffentlich sichtbar.",
     discount: "Gutschein",
   },
+  TokenRevalidation: {
+    title: "Erneute Autorisierung erforderlich",
+    description: "Ihr {providerName}-Verbindungstoken ist abgelaufen.",
+    reauthorize: "Neu autorisieren",
+    reauthorizing: "Weiterleitung...",
+    manualConsent: {
+      title: "Autorisierung abschließen",
+      description:
+        "Bitte aktivieren Sie den API-Zugriff in Ihrer Bank-App erneut",
+      steps:
+        "Befolgen Sie die untenstehenden Schritte, um Ihre Verbindung neu zu autorisieren.",
+      openBankApp: "Öffnen Sie die {providerName} App oder Website",
+      navigateToApiSettings: "Navigieren Sie zu den API-Einstellungen",
+      clickEnableAccess:
+        'Klicken Sie auf "Zugriff aktivieren" oder "Autorisieren"',
+      youWillBeRedirected:
+        "Sie werden nach der Autorisierung automatisch hierher zurückgeleitet",
+      yourCallbackUrl: "Ihre registrierte Callback-URL:",
+      viewSetupGuide: "Einrichtungsanleitung anzeigen",
+    },
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));

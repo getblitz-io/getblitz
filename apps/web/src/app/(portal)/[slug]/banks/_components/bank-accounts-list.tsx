@@ -1,11 +1,24 @@
 "use client";
 
-import { TrashIcon } from "@radix-ui/react-icons";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ExclamationTriangleIcon,
+  ExternalLinkIcon,
+  TrashIcon,
+} from "@radix-ui/react-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 
 import type { OrganizationWithDetails } from "@getblitz/api";
-import { Card, CardContent } from "@getblitz/ui";
+import {
+  Card,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@getblitz/ui";
 import { Button } from "@getblitz/ui/button";
 import { toast } from "@getblitz/ui/toast";
 
@@ -19,8 +32,17 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const t = useTranslations("BanksPage");
+  const tReauth = useTranslations("TokenRevalidation");
   const tCommon = useTranslations("Common");
   const tToast = useTranslations("Toast");
+  const router = useRouter();
+
+  const [reauthDialogOpen, setReauthDialogOpen] = useState(false);
+  const [reauthData, setReauthData] = useState<{
+    callbackUrl: string;
+    setupGuideUrl: string | null;
+    providerName: string;
+  } | null>(null);
 
   const { data: organization, isLoading } = useQuery(
     trpc.organization.getBySlug.queryOptions({ slug }),
@@ -60,6 +82,27 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
     }),
   );
 
+  const revalidateConnection = useMutation(
+    trpc.organization.revalidateBankConnection.mutationOptions({
+      onSuccess: (data) => {
+        if (data.flowType === "redirect") {
+          toast.success(tReauth("reauthorizing"));
+          router.push(data.authUrl);
+        } else {
+          setReauthData({
+            callbackUrl: data.callbackUrl,
+            setupGuideUrl: data.setupGuideUrl,
+            providerName: data.providerName,
+          });
+          setReauthDialogOpen(true);
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
   if (isLoading) {
     return (
       <Card>
@@ -69,6 +112,10 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
       </Card>
     );
   }
+
+  const needsReauthConnections = bankConnections.filter(
+    (c) => c.status === "NEEDS_REAUTH",
+  );
 
   const allBankAccounts = bankConnections.flatMap(
     (
@@ -100,6 +147,47 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
   return (
     <Card>
       <div className="divide-y">
+        {
+          /* Reauth Banners */
+          needsReauthConnections.map((connection) => (
+            <div
+              key={connection.id}
+              className="border-l-4 border-yellow-500 bg-yellow-500/10 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 text-yellow-600" />
+                <div className="space-y-2">
+                  <div>
+                    <h3 className="font-medium text-yellow-900 dark:text-yellow-100">
+                      {tReauth("title")}
+                    </h3>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      {tReauth("description", {
+                        providerName: connection.providerId,
+                      })}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-yellow-500/50 text-yellow-900 hover:bg-yellow-500/20 hover:text-yellow-950 dark:border-yellow-500/50 dark:text-yellow-100 dark:hover:bg-yellow-500/20 dark:hover:text-yellow-50"
+                    onClick={() =>
+                      revalidateConnection.mutate({
+                        connectionId: connection.id,
+                        slug,
+                      })
+                    }
+                    disabled={revalidateConnection.isPending}
+                  >
+                    {revalidateConnection.isPending
+                      ? tCommon("buttons.loading")
+                      : tReauth("reauthorize")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        }
         {allBankAccounts.map((account) => (
           <div key={account.id} className="p-4">
             <div className="space-y-3">
@@ -173,6 +261,58 @@ export function BankAccountsList({ slug }: BankAccountsListProps) {
           </div>
         ))}
       </div>
+
+      <Dialog open={reauthDialogOpen} onOpenChange={setReauthDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{tReauth("manualConsent.title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <p className="text-muted-foreground">
+              {tReauth("manualConsent.description")}
+            </p>
+
+            <ol className="list-inside list-decimal space-y-4 text-sm">
+              <li>
+                {tReauth("manualConsent.openBankApp", {
+                  providerName: reauthData?.providerName ?? "",
+                })}
+              </li>
+              <li>{tReauth("manualConsent.navigateToApiSettings")}</li>
+              <li>{tReauth("manualConsent.clickEnableAccess")}</li>
+              <li>{tReauth("manualConsent.youWillBeRedirected")}</li>
+            </ol>
+
+            <div className="bg-muted rounded-lg p-4">
+              <p className="text-muted-foreground mb-2 text-sm">
+                {tReauth("manualConsent.yourCallbackUrl")}
+              </p>
+              <code className="text-foreground block text-sm break-all">
+                {reauthData?.callbackUrl}
+              </code>
+            </div>
+
+            {reauthData?.setupGuideUrl && (
+              <a
+                href={reauthData.setupGuideUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-sm font-medium"
+              >
+                {tReauth("manualConsent.viewSetupGuide")}
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
+              </a>
+            )}
+
+            <Button
+              className="w-full"
+              onClick={() => setReauthDialogOpen(false)}
+            >
+              {tCommon("buttons.close")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

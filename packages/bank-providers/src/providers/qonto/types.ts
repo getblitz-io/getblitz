@@ -69,6 +69,6 @@ export interface QontoProviderConfig extends ProviderConfig {
 
 export interface QontoBankCredentials extends BaseBankCredentials {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   expiresAt: Date;
 }

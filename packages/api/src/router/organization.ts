@@ -11,7 +11,12 @@ import { BankConnectionStatus } from "@getblitz/database";
 
 import type { BankConnectionWithProvider } from "../interfaces";
 import { env } from "../env";
-import { ConflictError, ForbiddenError, NotFoundError } from "../interfaces";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  TokenExpiredError,
+} from "../interfaces";
 import {
   createTRPCRouter,
   organizationProcedure,
@@ -30,6 +35,13 @@ function handleServiceError(error: unknown): never {
   }
   if (error instanceof ConflictError) {
     throw new TRPCError({ code: "CONFLICT", message: error.message });
+  }
+  if (error instanceof TokenExpiredError) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: error.message,
+      cause: { connectionId: error.connectionId, code: "TOKEN_EXPIRED" },
+    });
   }
   throw error;
 }
@@ -266,6 +278,13 @@ export const organizationRouter = createTRPCRouter({
 
         return await provider.listAccounts();
       } catch (error: unknown) {
+        if (error instanceof TokenExpiredError) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: error.message,
+            cause: { connectionId: error.connectionId, code: "TOKEN_EXPIRED" },
+          });
+        }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: error instanceof Error ? error.message : "Unknown error",
@@ -857,6 +876,103 @@ export const organizationRouter = createTRPCRouter({
           message: error instanceof Error ? error.message : "Unknown error",
         });
       }
+    }),
+
+  /**
+   * Revalidate a bank connection that needs re-authorization.
+   * Supports both redirect (e.g. Qonto) and manual-consent (e.g. Revolut) flows.
+   */
+  revalidateBankConnection: organizationProcedure
+    .input(
+      z.object({
+        connectionId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const connection = await ctx.prisma.organizationBankConnection.findUnique(
+        {
+          where: {
+            id: input.connectionId,
+            organizationId: ctx.organization.id,
+          },
+        },
+      );
+
+      if (!connection) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Connection not found",
+        });
+      }
+
+      if (
+        connection.status !== BankConnectionStatus.NEEDS_REAUTH &&
+        connection.status !== BankConnectionStatus.CONNECTED
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Connection is not in a revalidatable state",
+        });
+      }
+
+      if (!connection.providerConfig) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provider configuration not saved",
+        });
+      }
+
+      if (!connection.callbackUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Callback URL not configured",
+        });
+      }
+
+      // Look up provider metadata for flow type
+      const providerTemplate = ProviderRegistry.getProvider(
+        connection.providerId,
+      );
+      if (!providerTemplate) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Provider not found",
+        });
+      }
+
+      // Update status to PENDING_OAUTH for both flow types
+      await ctx.prisma.organizationBankConnection.update({
+        where: { id: connection.id },
+        data: { status: BankConnectionStatus.PENDING_OAUTH },
+      });
+
+      const flowType = providerTemplate.oauthFlowType;
+
+      if (flowType === "redirect") {
+        // For redirect flow, generate auth URL and return it
+        const provider =
+          await ctx.services.credentialManager.createConfiguredProvider({
+            connectionId: connection.id,
+          });
+
+        const authUrl = provider.getAuthUrl({
+          redirectUri: connection.callbackUrl,
+          state: connection.id,
+        });
+
+        return {
+          flowType: "redirect" as const,
+          authUrl,
+        };
+      }
+
+      // For manual-consent flow, return callback URL and instructions
+      return {
+        flowType: "manual-consent" as const,
+        callbackUrl: connection.callbackUrl,
+        setupGuideUrl: providerTemplate.getSetupGuide(),
+        providerName: providerTemplate.displayName,
+      };
     }),
 
   /**

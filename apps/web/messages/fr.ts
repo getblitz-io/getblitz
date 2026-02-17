@@ -726,6 +726,25 @@ const messages = {
     amountWithCurrency: "Montant ({currency})",
     discount: "Remise",
   },
+  TokenRevalidation: {
+    title: "Réautorisation requise",
+    description: "Votre jeton de connexion {providerName} a expiré.",
+    reauthorize: "Réautoriser",
+    reauthorizing: "Redirection...",
+    manualConsent: {
+      title: "Terminer la réautorisation",
+      description:
+        "Veuillez réactiver l'accès API dans votre application bancaire",
+      steps: "Suivez les étapes ci-dessous pour réautoriser votre connexion.",
+      openBankApp: "Ouvrez l'application ou le site web {providerName}",
+      navigateToApiSettings: "Accédez aux paramètres API",
+      clickEnableAccess: 'Cliquez sur "Activer l\'accès" ou "Autoriser"',
+      youWillBeRedirected:
+        "Vous serez automatiquement redirigé ici après l'autorisation",
+      yourCallbackUrl: "Votre URL de rappel enregistrée :",
+      viewSetupGuide: "Voir le guide de configuration",
+    },
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));

@@ -90,9 +90,8 @@ export function ConfigureProviderClient({
   // For reconfiguring an existing connection
   const updateConnectionConfig = useMutation(
     trpc.organization.updateBankConnectionConfig.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: () => {
         toast.success(t("configurationUpdated"));
-        router.push(`/${slug}/banks/accounts/${data.connectionId}`);
       },
       onError: (error) => {
         toast.error(error.message);

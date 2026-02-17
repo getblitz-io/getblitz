@@ -40,4 +40,15 @@ export interface ICredentialManagerService {
   }: {
     connectionId: string;
   }): Promise<AuthenticatedProvider>;
+
+  /**
+   * Check the health of a bank connection's token.
+   * Proactively flags connections as NEEDS_REAUTH if token is expiring within 24h
+   * and cannot be auto-refreshed.
+   */
+  checkTokenHealth({
+    connectionId,
+  }: {
+    connectionId: string;
+  }): Promise<{ healthy: boolean; needsReauth: boolean }>;
 }

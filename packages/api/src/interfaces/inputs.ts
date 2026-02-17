@@ -2,7 +2,12 @@
  * Input types for creating/updating entities
  */
 
-import type { Currency, Invoice, Prisma } from "@getblitz/database";
+import type {
+  BankConnectionStatus,
+  Currency,
+  Invoice,
+  Prisma,
+} from "@getblitz/database";
 
 export interface CreatePaymentSessionInput {
   organizationId: string;
@@ -105,6 +110,7 @@ export interface CreateOrganizationBankConnectionInput {
   webhookUrl?: string | null;
   webhookSecret?: string | null;
   name?: string | null; // Optional connection name
+  status?: BankConnectionStatus;
 }
 
 // Invoice-related input types
