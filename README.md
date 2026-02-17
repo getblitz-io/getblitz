@@ -44,14 +44,14 @@ Each application has its own environment configuration. Create `.env` files base
 Key variables across apps:
 
 - `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis URL for pub/sub and queues
+- `REDIS_URL` - Valkey/Redis URL for pub/sub and queues
 - `AUTH_SECRET` - Better Auth secret key
 - `ENCRYPTION_KEY` - 32-byte hex string for credential encryption
 
 ### 3. Start Infrastructure
 
 ```bash
-# Start PostgreSQL and Redis
+# Start PostgreSQL and Valkey
 docker compose up -d
 ```
 
@@ -95,7 +95,7 @@ The dashboard will be available at http://localhost:3000
         │                   │    │                     │
         ▼                   ▼    ▼                     ▼
 ┌───────────────┐   ┌──────────────────┐   ┌──────────────────┐
-│  PostgreSQL   │   │  Bank Providers  │   │      Redis       │
+│  PostgreSQL   │   │  Bank Providers  │   │      Valkey      │
 │   (Prisma)    │◄──┤ (Qonto, Revolut) │   │     (Pub/Sub)    │
 └───────────────┘   └──────────────────┘   └──────────────────┘
 ```
@@ -115,7 +115,7 @@ getblitz/
 │   ├── bank-providers/      # Bank integration adapters & registry
 │   ├── database/            # Prisma schema and client
 │   ├── getblitz-client/     # Embeddable JS SDK (@getblitz/client)
-│   ├── redis/               # Redis client and pub/sub
+│   ├── redis/               # Valkey/Redis client and pub/sub
 │   ├── shared-types/        # Shared DTOs and Zod schemas
 │   ├── ui/                  # UI Component library (shadcn/ui)
 │   ├── validators/          # Shared validation logic
@@ -242,7 +242,7 @@ Getting security right is critical for a payment gateway.
 - **API Keys**: Secure, rotatable keys per organization
 - **Client Tokens**: Short-lived sessions with strict Origin validation
 - **Webhook Verification**: HMAC-SHA256 signature validation
-- **Rate Limiting**: Configurable limits via Redis
+- **Rate Limiting**: Configurable limits via Valkey/Redis
 - **CORS**: Strict origin validation on REST & WebSocket connections
 - **Database**: ACID transactions for payment state updates
 

@@ -41,7 +41,7 @@ This guide explains how to deploy GetBlitz to various cloud platforms.
 
 ### Docker Compose (Self-Hosted)
 
-For a simple VPS deployment (e.g., EC2, Droplet, Hetzner), you can use Docker Compose.
+For a simple VPS deployment (e.g., EC2, Droplet, Hetzner), you can use Docker Compose which now uses **Valkey** (an open-source Redis alternative).
 
 ```bash
 # 1. Clone the repository
