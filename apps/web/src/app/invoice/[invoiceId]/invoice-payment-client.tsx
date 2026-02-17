@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { CheckIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -54,6 +55,7 @@ export interface InvoiceData {
     amountCents: number;
     currency: string;
     sepaQrString: string | null;
+    clientToken: string;
     bankAccount: {
       accountName: string;
       iban?: string;
@@ -74,6 +76,7 @@ export function InvoicePaymentClient({
   previewToken,
   password,
 }: InvoicePaymentClientProps) {
+  const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -89,6 +92,7 @@ export function InvoicePaymentClient({
         toast.success(tToast("paymentReceived"), {
           description: tToast("paymentReceivedDescription"),
         });
+        router.refresh();
         void queryClient.invalidateQueries({
           queryKey: trpc.invoice.getByReference.queryKey({
             referenceId: invoice.referenceId,
@@ -99,6 +103,7 @@ export function InvoicePaymentClient({
         toast.error(tToast("paymentExpired"), {
           description: tToast("paymentExpiredDescription"),
         });
+        router.refresh();
         void queryClient.invalidateQueries({
           queryKey: trpc.invoice.getByReference.queryKey({
             referenceId: invoice.referenceId,
@@ -109,6 +114,7 @@ export function InvoicePaymentClient({
         toast.error(tToast("paymentFailed"), {
           description: tToast("paymentFailedDescription"),
         });
+        router.refresh();
         void queryClient.invalidateQueries({
           queryKey: trpc.invoice.getByReference.queryKey({
             referenceId: invoice.referenceId,
@@ -119,6 +125,7 @@ export function InvoicePaymentClient({
       }
     },
     [
+      router,
       queryClient,
       trpc.invoice.getByReference,
       invoice.referenceId,
@@ -134,6 +141,7 @@ export function InvoicePaymentClient({
       invoice.paymentSession.status === "PENDING"
         ? invoice.paymentSession.sessionId
         : "",
+    clientToken: invoice.paymentSession.clientToken,
     onPaymentUpdate: handlePaymentUpdate,
   });
 

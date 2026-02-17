@@ -50,6 +50,7 @@ describe("InvoiceService", () => {
 
   const mockPaymentSessionService = {
     createChallenge: vi.fn(),
+    getSessionDetails: vi.fn(),
   };
 
   const mockCustomerService = {
@@ -175,6 +176,14 @@ describe("InvoiceService", () => {
           currency: "EUR",
           status: "PENDING",
         },
+      });
+
+      mockPaymentSessionService.getSessionDetails.mockResolvedValue({
+        id: "sess-1",
+        referenceId: "ref-1",
+        amountCents: 1000,
+        currency: "EUR",
+        status: "PENDING",
       });
 
       // Mock rate limiter to allow

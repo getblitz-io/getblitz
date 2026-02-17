@@ -1,3 +1,4 @@
+import { jwtVerify, SignJWT } from "jose";
 import QRCode from "qrcode";
 
 import type { Prisma } from "@getblitz/database";
@@ -9,6 +10,7 @@ import type {
   CreateChallengeResult,
   IBankAccountRepository,
   ICredentialManagerService,
+  IOrganizationRepository,
   IPaymentSessionRepository,
   IPaymentSessionService,
   IPaymentSettlementService,
@@ -17,6 +19,7 @@ import type {
   SessionDetailsResult,
   SimulatePaymentResult,
 } from "../interfaces";
+import { env } from "../env";
 import { generateReferenceId } from "../utils/reference-id";
 import { centsToEuros, generateSepaQrString } from "../utils/sepa-qr";
 
@@ -26,7 +29,26 @@ export class PaymentSessionService implements IPaymentSessionService {
     private readonly bankAccountRepository: IBankAccountRepository,
     private readonly paymentSettlementService: IPaymentSettlementService,
     private readonly credentialManagerService: ICredentialManagerService,
+    private readonly organizationRepository: IOrganizationRepository,
   ) {}
+
+  private async generateClientToken(
+    sessionId: string,
+    organizationId: string,
+  ): Promise<string> {
+    const secret = new TextEncoder().encode(env.ENCRYPTION_KEY);
+    const alg = "HS256";
+
+    return new SignJWT({
+      sessionId,
+      organizationId,
+      typ: "payment_socket",
+    })
+      .setProtectedHeader({ alg })
+      .setIssuedAt()
+      .setExpirationTime("1h") // Token valid for 1 hour
+      .sign(secret);
+  }
 
   /**
    * Create a new payment challenge/session
@@ -117,6 +139,18 @@ export class PaymentSessionService implements IPaymentSessionService {
     // Generate payment URL
     const paymentUrl = `${baseUrl}/pay/${paymentSession.id}`;
 
+    // Validate origin and generate token
+    const organization = await this.organizationRepository.findById({
+      id: organizationId,
+    });
+
+    if (!organization) throw new Error("Organization not found");
+
+    const clientToken = await this.generateClientToken(
+      paymentSession.id,
+      organizationId,
+    );
+
     return {
       sessionId: paymentSession.id,
       referenceId,
@@ -124,6 +158,7 @@ export class PaymentSessionService implements IPaymentSessionService {
       paymentUrl,
       expiresAt: paymentSession.expiresAt?.toISOString() ?? null,
       connectionId: bankAccount.organizationBankConnection.id,
+      clientToken,
     };
   }
 
@@ -191,6 +226,11 @@ export class PaymentSessionService implements IPaymentSessionService {
       session.bankAccount.organizationBankConnection.providerId;
     const providerMeta = ProviderRegistry.getProvider(providerId);
 
+    const clientToken = await this.generateClientToken(
+      session.id,
+      session.organizationId,
+    );
+
     return {
       sessionId: session.id,
       referenceId: session.referenceId,
@@ -218,6 +258,7 @@ export class PaymentSessionService implements IPaymentSessionService {
           }
         : null,
       sepaQrString,
+      clientToken,
     };
   }
 
@@ -339,15 +380,79 @@ export class PaymentSessionService implements IPaymentSessionService {
     const session = await this.getSessionDetails({ sessionId });
     if (!session?.sepaQrString) return null;
 
-    const qrCodeBuffer = await QRCode.toBuffer(session.sepaQrString, {
-      type: "png",
-      width: 400,
-      margin: 2,
-    });
+    const qrCodeBuffer = await this.getQrCodeBuffer({ sessionId });
+    if (!qrCodeBuffer) return null;
 
     return {
       qrCodeBase64: `data:image/png;base64,${qrCodeBuffer.toString("base64")}`,
       qrString: session.sepaQrString,
     };
+  }
+
+  async getQrCodeBuffer({
+    sessionId,
+  }: {
+    sessionId: string;
+  }): Promise<Buffer | null> {
+    const session = await this.getSessionDetails({ sessionId });
+    if (!session?.sepaQrString) return null;
+
+    return QRCode.toBuffer(session.sepaQrString, {
+      type: "png",
+      width: 400,
+      margin: 2,
+    });
+  }
+  async verifySessionAccess({
+    sessionId,
+    clientToken,
+    origin,
+  }: {
+    sessionId: string;
+    clientToken: string;
+    origin: string;
+  }): Promise<void> {
+    const secret = new TextEncoder().encode(env.ENCRYPTION_KEY);
+
+    try {
+      const { payload } = await jwtVerify(clientToken, secret);
+
+      if (payload.sessionId !== sessionId) {
+        throw new Error("Invalid token for this session");
+      }
+
+      // Check organization allowed origins
+      const organizationId = payload.organizationId as string;
+      const organization = await this.organizationRepository.findById({
+        id: organizationId,
+      });
+
+      if (!organization) {
+        throw new Error("Organization not found");
+      }
+
+      // Allow if origin matches the app URL (e.g. self-hosted checkout)
+      const appUrl = new URL(env.NEXT_PUBLIC_APP_URL);
+      if (origin === appUrl.origin) {
+        return;
+      }
+
+      // Check allowed origins
+      if (organization.allowedOrigins.length > 0) {
+        if (!organization.allowedOrigins.includes(origin)) {
+          throw new Error(`Origin ${origin} is not allowed`);
+        }
+      } else {
+        // If no allowed origins are set, strictly allow only app URL (already checked)
+        // or potentially block all external access?
+        // For now, let's assume if the list is empty, we ONLY allow the app URL.
+        throw new Error(`Origin ${origin} is not allowed`);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Session verification failed: ${error.message}`);
+      }
+      throw new Error("Session verification failed");
+    }
   }
 }

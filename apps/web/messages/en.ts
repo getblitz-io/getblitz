@@ -402,6 +402,16 @@ const messages = {
     deleteOrganizationDescription:
       "Permanently delete this organization and all its data",
     delete: "Delete",
+    allowedOrigins: "Allowed Origins",
+    allowedOriginsDescription:
+      "Domains allowed to embed the payment widget and connect via WebSocket",
+    noOriginsConfigured:
+      "No origins configured (all origins blocked by default)",
+    add: "Add",
+    remove: "Remove",
+    originAlreadyExists: "Origin already exists",
+    originsUpdated: "Allowed origins updated",
+    invalidUrl: "Invalid URL (must include protocol, e.g. https://example.com)",
   },
   ProfilePage: {
     backToSettings: "← Back to Settings",

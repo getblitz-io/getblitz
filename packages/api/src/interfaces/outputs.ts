@@ -17,6 +17,7 @@ export interface CreateChallengeResult {
   paymentUrl: string;
   expiresAt: string | null; // Nullable for non-expiring payments
   connectionId: string;
+  clientToken: string;
 }
 
 export interface SessionDetailsResult {
@@ -46,6 +47,7 @@ export interface SessionDetailsResult {
     domain: string;
   } | null;
   sepaQrString: string | null;
+  clientToken: string;
 }
 
 export interface SimulatePaymentResult {

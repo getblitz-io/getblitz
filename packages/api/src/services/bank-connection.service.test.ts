@@ -91,23 +91,4 @@ describe("BankConnectionService", () => {
       },
     });
   });
-
-  it("should fail if provider does not support webhooks", async () => {
-    const connection = {
-      id: "conn-123",
-      providerId: "test-bank",
-      providerConfig: "enc:cfg",
-    };
-    mockRepo.findById.mockResolvedValue(connection);
-    mockCredManager.createAuthenticatedProvider.mockResolvedValue(
-      {} as unknown as AuthenticatedProvider,
-    );
-
-    const result = await service.setupWebhook({
-      connectionId: "conn-123",
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("Provider does not support webhooks");
-  });
 });

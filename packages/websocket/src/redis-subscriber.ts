@@ -1,5 +1,3 @@
-import type { Server as SocketIOServer } from "socket.io";
-
 import type { Redis } from "@getblitz/redis";
 import type { PaymentEvent } from "@getblitz/shared-types";
 import { getRedisSubscriber } from "@getblitz/redis";
@@ -8,10 +6,15 @@ import {
   PaymentEventSchema,
 } from "@getblitz/shared-types";
 
-export function createRedisSubscriber(
-  redisUrl: string,
-  io: SocketIOServer,
-): Redis {
+import type { TypedSocketIOServer } from "./types";
+
+export function createRedisSubscriber({
+  redisUrl,
+  io,
+}: {
+  redisUrl: string;
+  io: TypedSocketIOServer;
+}): Redis {
   const subscriber = getRedisSubscriber(redisUrl);
 
   subscriber.on("connect", () => {
@@ -57,25 +60,23 @@ export function createRedisSubscriber(
   return subscriber;
 }
 
-function handlePaymentEvent(io: SocketIOServer, event: PaymentEvent): void {
+function handlePaymentEvent(
+  io: TypedSocketIOServer,
+  event: PaymentEvent,
+): void {
   console.log(
-    `Processing payment event: ${event.type} for ${event.referenceId}`,
+    `Processing payment event: ${event.type} for ${event.referenceId} and session ${event.sessionId}`,
   );
 
   // Emit to session room
   io.to(`session:${event.sessionId}`).emit("payment:update", event);
 
-  // Also emit to reference room
-  io.to(`ref:${event.referenceId}`).emit("payment:update", event);
-
   // Log room membership for debugging
   const sessionRoom = io.sockets.adapter.rooms.get(
     `session:${event.sessionId}`,
   );
-  const refRoom = io.sockets.adapter.rooms.get(`ref:${event.referenceId}`);
 
   console.log(
-    `Emitted to ${String(sessionRoom?.size ?? 0)} clients in session room, ` +
-      `${String(refRoom?.size ?? 0)} clients in reference room`,
+    `Emitted to ${String(sessionRoom?.size ?? 0)} clients in session room`,
   );
 }

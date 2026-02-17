@@ -21,12 +21,17 @@ export class GetBlitz {
   async mount(selector: string): Promise<void> {
     const container = document.querySelector(selector);
     if (!container) throw new Error(`Element not found: ${selector}`);
-
     // Fetch session details
-    const session = await this.api.getSession(this.config.sessionId);
+    const session = await this.api.getSession({
+      sessionId: this.config.sessionId,
+      clientToken: this.config.clientToken,
+    });
 
     // Connect WebSocket
-    await this.socket.connect(this.config.sessionId);
+    await this.socket.connect({
+      sessionId: this.config.sessionId,
+      clientToken: this.config.clientToken,
+    });
 
     // Listen for payment events
     this.socket.onPaymentUpdate((event) => {

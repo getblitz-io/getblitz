@@ -26,6 +26,17 @@ export interface IOrganizationService {
     slug: string;
     userId: string;
   }): Promise<OrganizationWithDetails>;
+  update({
+    organizationId,
+    userId,
+    data,
+  }: {
+    organizationId: string;
+    userId: string;
+    data: {
+      allowedOrigins?: string[];
+    };
+  }): Promise<OrganizationWithDetails>;
   generateApiKey({
     organizationId,
     userId,

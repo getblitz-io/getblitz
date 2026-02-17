@@ -15,14 +15,55 @@ export function OPTIONS() {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
   try {
-    const { sessionId } = await params;
+    const authorizationHeader = request.headers.get("Authorization");
 
+    if (!authorizationHeader) {
+      return NextResponse.json(
+        { error: "Authorization header is required" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
+    const clientToken = authorizationHeader.replace("Bearer ", "");
+    if (!clientToken) {
+      return NextResponse.json(
+        { error: "Client token is required" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
+
+    const origin = request.headers.get("Origin");
+    if (!origin) {
+      return NextResponse.json(
+        { error: "Origin header is required" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
+
+    // Verify session access
+    const { sessionId } = await params;
     const container = getContainer();
     const { paymentSessionService } = container;
+
+    try {
+      await paymentSessionService.verifySessionAccess({
+        sessionId,
+        clientToken,
+        origin,
+      });
+    } catch (error) {
+      console.warn(
+        "Session access verification failed:",
+        error instanceof Error ? error.message : error,
+      );
+      return NextResponse.json(
+        { error: "Unauthorized access" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
 
     const sessionDetails = await paymentSessionService.getSessionDetails({
       sessionId,

@@ -9,8 +9,9 @@ import type { PaymentEvent } from "@getblitz/shared-types";
 import { env } from "~/env";
 
 interface UsePaymentSocketOptions {
-  sessionId: string;
-  onPaymentUpdate?: (event: PaymentEvent) => void;
+  sessionId?: string;
+  clientToken?: string;
+  onPaymentUpdate: (event: PaymentEvent) => void;
 }
 
 interface UsePaymentSocketReturn {
@@ -21,6 +22,7 @@ interface UsePaymentSocketReturn {
 
 export function usePaymentSocket({
   sessionId,
+  clientToken,
   onPaymentUpdate,
 }: UsePaymentSocketOptions): UsePaymentSocketReturn {
   const socketRef = useRef<Socket | null>(null);
@@ -44,10 +46,14 @@ export function usePaymentSocket({
   }, []);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || !clientToken) return;
 
     const wssUrl = env.NEXT_PUBLIC_WSS_URL;
-    const socket = io(wssUrl, { transports: ["websocket"] });
+
+    const socket = io(wssUrl, {
+      transports: ["websocket"],
+      auth: { token: clientToken },
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -67,13 +73,13 @@ export function usePaymentSocket({
 
     socket.on("payment:update", (event: PaymentEvent) => {
       setLastEvent(event);
-      onPaymentUpdateRef.current?.(event);
+      onPaymentUpdateRef.current(event);
     });
 
     return () => {
       disconnect();
     };
-  }, [sessionId, disconnect]);
+  }, [sessionId, clientToken, disconnect]);
 
   return { isConnected, error, lastEvent };
 }

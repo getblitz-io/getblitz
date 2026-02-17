@@ -413,6 +413,17 @@ const messages = {
     deleteOrganizationDescription:
       "Diese Organisation und alle ihre Daten dauerhaft löschen",
     delete: "Löschen",
+    allowedOrigins: "Erlaubte Origins",
+    allowedOriginsDescription:
+      "Domains erlaubt, um das Payment Widget einzubetten und über WebSocket zu verbinden",
+    noOriginsConfigured:
+      "Keine Origins konfiguriert (alle Origins standardmäßig blockiert)",
+    add: "Hinzufügen",
+    remove: "Entfernen",
+    originAlreadyExists: "Origin bereits vorhanden",
+    originsUpdated: "Allowed Origins aktualisiert",
+    invalidUrl:
+      "Ungültige URL (muss das Protokoll enthalten, z.B. https://example.com)",
   },
   ProfilePage: {
     backToSettings: "← Zurück zu Einstellungen",

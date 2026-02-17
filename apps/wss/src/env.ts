@@ -4,8 +4,8 @@ import { z } from "zod/v4";
 export const env = createEnv({
   server: {
     WSS_PORT: z.string().default("3001"),
-    REDIS_URL: z.url().default("redis://localhost:6380"),
-    CORS_ORIGINS: z.string().default("http://localhost:3000"),
+    REDIS_URL: z.string().default("redis://localhost:6380"),
+    ENCRYPTION_KEY: z.string().min(32),
   },
   runtimeEnv: process.env,
   skipValidation:

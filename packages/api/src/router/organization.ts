@@ -75,6 +75,27 @@ export const organizationRouter = createTRPCRouter({
       }
     }),
 
+  // Update organization
+  update: organizationProcedure
+    .input(
+      z.object({
+        allowedOrigins: z.array(z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        return await ctx.services.organization.update({
+          organizationId: ctx.organization.id,
+          userId: ctx.session.user.id,
+          data: {
+            allowedOrigins: input.allowedOrigins,
+          },
+        });
+      } catch (error) {
+        handleServiceError(error);
+      }
+    }),
+
   // Generate new API key
   generateApiKey: organizationProcedure.mutation(async ({ ctx }) => {
     try {

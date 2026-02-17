@@ -408,6 +408,17 @@ const messages = {
     deleteOrganizationDescription:
       "Supprimer définitivement cette organisation et toutes ses données",
     delete: "Supprimer",
+    allowedOrigins: "Origines autorisées",
+    allowedOriginsDescription:
+      "Origines autorisées à intégrer le widget de paiement et se connecter via WebSocket",
+    noOriginsConfigured:
+      "Aucune origine configurée (toutes les origines sont bloquées par défaut)",
+    add: "Ajouter",
+    remove: "Supprimer",
+    originAlreadyExists: "Origine déjà existante",
+    originsUpdated: "Origines autorisées mises à jour",
+    invalidUrl:
+      "URL invalide (doit inclure le protocole, par exemple https://example.com)",
   },
   ProfilePage: {
     backToSettings: "← Retour aux paramètres",
