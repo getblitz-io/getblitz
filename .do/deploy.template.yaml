@@ -17,7 +17,7 @@ spec:
   services:
     - name: web
       github:
-        repo: ${GITHUB_REPO}
+        repo: https://github.com/getblitz-io/getblitz
         branch: main
         deploy_on_push: true
       source_dir: /
