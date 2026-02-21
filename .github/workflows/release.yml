@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: "Force publish packages even if no new release was created"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -26,15 +32,17 @@ jobs:
           target-branch: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  # Publish @getblitz/shared-types to npm using trusted publishing (OIDC)
+  # Publish @getblitz/shared-types to npm
   publish-shared-types:
     needs: release-please
-    if: ${{ needs.release-please.outputs.shared_types_release_created == 'true' }}
+    if: |
+      needs.release-please.outputs.shared_types_release_created == 'true' || 
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_publish == 'true')
     runs-on: ubuntu-latest
     environment: npm
     permissions:
       contents: read
-      id-token: write # Required for npm trusted publishing (OIDC)
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -60,21 +68,19 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
 
-
-  # Publish @getblitz/client to npm using trusted publishing (OIDC)
+  # Publish @getblitz/client to npm
   publish-client:
     needs: [release-please, publish-shared-types]
-    # Run if client was released, regardless of whether shared-types was released
-    # The 'always()' ensures this job runs even if publish-shared-types was skipped
     if: |
       always() &&
-      needs.release-please.outputs.getblitz_client_release_created == 'true' &&
+      (needs.release-please.outputs.getblitz_client_release_created == 'true' || 
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_publish == 'true')) &&
       (needs.publish-shared-types.result == 'success' || needs.publish-shared-types.result == 'skipped')
     runs-on: ubuntu-latest
     environment: npm
     permissions:
       contents: read
-      id-token: write # Required for npm trusted publishing (OIDC)
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
