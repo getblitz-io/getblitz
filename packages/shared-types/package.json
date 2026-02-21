@@ -58,5 +58,9 @@
     "typescript": "catalog:",
     "zod": "catalog:"
   },
-  "prettier": "@getblitz/prettier-config"
+  "prettier": "@getblitz/prettier-config",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

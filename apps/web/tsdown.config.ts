@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   entry: ["server.ts"],
@@ -14,4 +14,5 @@ export default defineConfig({
   target: "node22",
   // Clean the output folder before building
   clean: true,
+  dts: false,
 });

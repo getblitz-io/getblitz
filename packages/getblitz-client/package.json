@@ -68,5 +68,9 @@
     "vite": "catalog:",
     "vite-plugin-dts": "^4.5.4"
   },
-  "prettier": "@getblitz/prettier-config"
+  "prettier": "@getblitz/prettier-config",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

@@ -16,7 +16,7 @@
   "dependencies": {
     "@getblitz/client": "workspace:*",
     "@t3-oss/env-nextjs": "catalog:",
-    "next": "16.0.10",
+    "next": "16.1.6",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
     "zod": "catalog:"

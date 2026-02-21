@@ -2,10 +2,10 @@
   "name": "getblitz",
   "private": true,
   "engines": {
-    "node": "^22.21.0",
+    "node": "^24",
     "pnpm": "^10.19.0"
   },
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.30.0",
   "scripts": {
     "build": "turbo run build",
     "build:standalone": "turbo run build:standalone",
@@ -36,14 +36,14 @@
   "devDependencies": {
     "@getblitz/eslint-config": "workspace:*",
     "@getblitz/prettier-config": "workspace:*",
-    "@turbo/gen": "^2.7.2",
+    "@turbo/gen": "^2.8.10",
     "dotenv-cli": "^10.0.0",
     "eslint": "catalog:",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "catalog:",
     "tsx": "^4.19.4",
-    "turbo": "^2.7.2",
+    "turbo": "^2.8.10",
     "typescript": "catalog:"
   },
   "prettier": "@getblitz/prettier-config",
