@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.4...getblitz-client-v0.0.5) (2026-02-21)
+
+
+### Code Refactoring
+
+* Migrate ESLint to flat config, add local Prettier configurations, and update TypeScript settings and dependencies. ([b9260d5](https://github.com/getblitz-io/getblitz/commit/b9260d5d3a0b63eb7539e964d69e3fcb54e86a8b))
+
 ## [0.0.4](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.3...getblitz-client-v0.0.4) (2026-02-17)
 
 
