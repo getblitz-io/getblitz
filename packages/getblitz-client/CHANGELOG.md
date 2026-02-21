@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.4](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.3...getblitz-client-v0.0.4) (2026-02-17)
+
+
+### Features
+
+* reconnect bank creds, websocket improvement, improved bank provider ([#24](https://github.com/getblitz-io/getblitz/issues/24)) ([5c7986c](https://github.com/getblitz-io/getblitz/commit/5c7986cb703e9d08dc1152f65a152ac1d8c75c8c))
+* update README with new features and architecture. ([2dc200e](https://github.com/getblitz-io/getblitz/commit/2dc200e7072196be778bfc8433cfef4702fcc79f))
+
 ## [0.0.3](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.2...getblitz-client-v0.0.3) (2026-01-06)
 
 

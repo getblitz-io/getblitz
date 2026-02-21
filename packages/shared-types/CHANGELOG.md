@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.4](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.3...shared-types-v0.0.4) (2026-02-17)
+
+
+### Features
+
+* Implement invoice and customer management with dedicated pages, API, and database support ([#23](https://github.com/getblitz-io/getblitz/issues/23)) ([f895921](https://github.com/getblitz-io/getblitz/commit/f89592102eccf0220e68bc58f2d7dd9ae89bafdb))
+* Introduce webhooks, multi-transaction payment support, and a new database schema for bank connections and organizations ([#20](https://github.com/getblitz-io/getblitz/issues/20)) ([656318f](https://github.com/getblitz-io/getblitz/commit/656318f611738ee7ea7f446d4e5241e435d85882))
+* reconnect bank creds, websocket improvement, improved bank provider ([#24](https://github.com/getblitz-io/getblitz/issues/24)) ([5c7986c](https://github.com/getblitz-io/getblitz/commit/5c7986cb703e9d08dc1152f65a152ac1d8c75c8c))
+* update README with new features and architecture. ([2dc200e](https://github.com/getblitz-io/getblitz/commit/2dc200e7072196be778bfc8433cfef4702fcc79f))
+
 ## [0.0.3](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.2...shared-types-v0.0.3) (2026-01-06)
 
 
