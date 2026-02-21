@@ -16,6 +16,7 @@
   "dependencies": {
     "@getblitz/websocket": "workspace:*",
     "@t3-oss/env-core": "catalog:",
+    "jose": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
