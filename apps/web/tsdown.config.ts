@@ -5,7 +5,7 @@ export default defineConfig({
   format: ["esm"],
   outDir: "dist",
   // Keep these as external since they're native Node modules or have CJS dependencies
-  external: ["next", "socket.io", "ioredis"],
+  external: ["next", "socket.io", "ioredis", "jose", "@t3-oss/env-core"],
   // Bundle all @getblitz packages since they export TypeScript source
   noExternal: [/@getblitz\/.*/],
   // Ensure we're targeting Node.js
