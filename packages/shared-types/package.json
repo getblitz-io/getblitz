@@ -38,7 +38,7 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "peerDependencies": {
@@ -50,15 +50,12 @@
     }
   },
   "devDependencies": {
-    "@getblitz/eslint-config": "workspace:*",
-    "@getblitz/prettier-config": "workspace:*",
-    "@getblitz/tsconfig": "workspace:*",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
-    "typescript": "catalog:",
-    "zod": "catalog:"
+    "@eslint/js": "^9.38.0",
+    "eslint": "^9.38.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.12"
   },
-  "prettier": "@getblitz/prettier-config",
   "publishConfig": {
     "access": "public",
     "provenance": true

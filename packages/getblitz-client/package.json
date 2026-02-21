@@ -48,27 +48,24 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "vite",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
-    "lint": "eslint --flag unstable_native_nodejs_ts_config",
+    "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@getblitz/shared-types": "workspace:^",
-    "qrcode": "catalog:",
-    "socket.io-client": "catalog:"
+    "@getblitz/shared-types": "^0.0.4",
+    "qrcode": "^1.5.4",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "@getblitz/eslint-config": "workspace:*",
-    "@getblitz/prettier-config": "workspace:*",
-    "@getblitz/tsconfig": "workspace:*",
-    "@types/qrcode": "catalog:",
-    "eslint": "catalog:",
-    "prettier": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
+    "@eslint/js": "^9.38.0",
+    "@types/qrcode": "^1.5.6",
+    "eslint": "^9.38.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vite": "7.1.12",
     "vite-plugin-dts": "^4.5.4"
   },
-  "prettier": "@getblitz/prettier-config",
   "publishConfig": {
     "access": "public",
     "provenance": true

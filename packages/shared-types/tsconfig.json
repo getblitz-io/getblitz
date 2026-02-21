@@ -1,10 +1,23 @@
 {
-  "extends": "@getblitz/tsconfig/compiled-package.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "emitDeclarationOnly": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "checkJs": true,
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

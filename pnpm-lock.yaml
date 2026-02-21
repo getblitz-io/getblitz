@@ -703,35 +703,29 @@ importers:
   packages/getblitz-client:
     dependencies:
       '@getblitz/shared-types':
-        specifier: workspace:^
+        specifier: ^0.0.4
         version: link:../shared-types
       qrcode:
-        specifier: 'catalog:'
+        specifier: ^1.5.4
         version: 1.5.4
       socket.io-client:
-        specifier: 'catalog:'
+        specifier: ^4.8.1
         version: 4.8.3
     devDependencies:
-      '@getblitz/eslint-config':
-        specifier: workspace:*
-        version: link:../../tooling/eslint
-      '@getblitz/prettier-config':
-        specifier: workspace:*
-        version: link:../../tooling/prettier
-      '@getblitz/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
+      '@eslint/js':
+        specifier: ^9.38.0
+        version: 9.39.2
       '@types/qrcode':
-        specifier: 'catalog:'
+        specifier: ^1.5.6
         version: 1.5.6
       eslint:
-        specifier: 'catalog:'
+        specifier: ^9.38.0
         version: 9.39.2(jiti@2.6.1)
       prettier:
-        specifier: 'catalog:'
+        specifier: ^3.6.2
         version: 3.7.4
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.9.3
         version: 5.9.3
       vite:
         specifier: 7.1.12
@@ -825,26 +819,20 @@ importers:
 
   packages/shared-types:
     devDependencies:
-      '@getblitz/eslint-config':
-        specifier: workspace:*
-        version: link:../../tooling/eslint
-      '@getblitz/prettier-config':
-        specifier: workspace:*
-        version: link:../../tooling/prettier
-      '@getblitz/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
+      '@eslint/js':
+        specifier: ^9.38.0
+        version: 9.39.2
       eslint:
-        specifier: 'catalog:'
+        specifier: ^9.38.0
         version: 9.39.2(jiti@2.6.1)
       prettier:
-        specifier: 'catalog:'
+        specifier: ^3.6.2
         version: 3.7.4
       typescript:
-        specifier: 'catalog:'
+        specifier: ^5.9.3
         version: 5.9.3
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.1.12
         version: 4.3.5
 
   packages/ui:
