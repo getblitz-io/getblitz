@@ -57,8 +57,11 @@ minimumReleaseAgeExclude:
   - minimatch
 
 onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
   - '@tailwindcss/oxide'
   - esbuild
+  - prisma
 
 overrides:
   '@isaacs/brace-expansion': 5.0.1
