@@ -4,5 +4,5 @@ export default [
   eslint.configs.recommended,
   {
     ignores: ["dist/**"],
-  }
+  },
 ];
