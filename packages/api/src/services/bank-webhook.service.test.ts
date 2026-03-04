@@ -105,6 +105,48 @@ describe("BankWebhookService", () => {
     });
   });
 
+  it("should process webhook successfully if connection is in NEEDS_REAUTH status", async () => {
+    const connection = {
+      id: "conn-123",
+      providerId: "test-bank",
+      status: BankConnectionStatus.NEEDS_REAUTH,
+      webhookSecret: "secret",
+      credentials: "encrypted-credentials",
+    };
+    mockConnRepo.findById.mockResolvedValue(connection);
+
+    const mockProvider = {
+      verifyAndParseWebhook: vi.fn().mockResolvedValue({
+        status: WebhookVerificationStatus.Success,
+        referenceId: "ref-1",
+        txHash: "hash-1",
+        amountCents: 1000,
+        rawPayload: {},
+      }),
+    };
+    mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
+      mockProvider as unknown as BankProvider,
+    );
+
+    mockSettlement.settle.mockResolvedValue({ success: true });
+
+    const request = new Request("https://test.com", { method: "POST" });
+    const result = await service.processWebhookByConnectionId({
+      connectionId: "conn-123",
+      request,
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockSettlement.settle).toHaveBeenCalledWith({
+      input: {
+        referenceId: "ref-1",
+        txHash: "hash-1",
+        amountCents: 1000,
+        rawPayload: {},
+      },
+    });
+  });
+
   it("should fail if connection not found", async () => {
     mockConnRepo.findById.mockResolvedValue(null);
 

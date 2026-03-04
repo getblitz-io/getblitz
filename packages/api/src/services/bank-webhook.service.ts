@@ -48,7 +48,10 @@ export class BankWebhookService implements IBankWebhookService {
       const providerId = connection.providerId;
 
       // 2. Validate connection is in CONNECTED status
-      if (connection.status !== BankConnectionStatus.CONNECTED) {
+      if (
+        connection.status !== BankConnectionStatus.CONNECTED &&
+        connection.status !== BankConnectionStatus.NEEDS_REAUTH
+      ) {
         webhookLogger.error(`Organization bank connection is not connected`, {
           connectionId,
           providerId,
