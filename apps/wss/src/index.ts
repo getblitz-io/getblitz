@@ -11,8 +11,6 @@ const ENCRYPTION_KEY = env.ENCRYPTION_KEY;
 function main() {
   console.log("Starting GetBlitz WebSocket Server...");
   console.log(`Port: ${String(PORT)}`);
-  console.log(`Redis: ${REDIS_URL}`);
-  console.log(`Encryption Key: ${ENCRYPTION_KEY}`);
 
   // Create HTTP server
   const httpServer = createServer((_req, res) => {

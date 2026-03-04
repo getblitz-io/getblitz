@@ -35,8 +35,6 @@ app
       const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6380";
 
       console.log("Attaching WebSocket server...");
-      console.log(`Redis URL: ${redisUrl}`);
-      console.log(`Encryption Key: ${encryptionKey}`);
 
       attachSocketIO(httpServer, {
         redisUrl,
