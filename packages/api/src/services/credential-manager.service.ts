@@ -94,8 +94,12 @@ export class CredentialManagerService implements ICredentialManagerService {
    */
   async createAuthenticatedProvider({
     connectionId,
+    options = { throwIfRefreshFailed: true },
   }: {
     connectionId: string;
+    options?: {
+      throwIfRefreshFailed: boolean;
+    };
   }): Promise<AuthenticatedProvider> {
     const connection = await this.loadConnection(connectionId);
 
@@ -131,12 +135,16 @@ export class CredentialManagerService implements ICredentialManagerService {
       } catch {
         // Refresh failed — mark connection for reauth
         await this.markConnectionNeedsReauth(connectionId);
-        throw new TokenExpiredError({ connectionId });
+        if (options.throwIfRefreshFailed) {
+          throw new TokenExpiredError({ connectionId });
+        }
       }
     } else if (needsRefresh) {
       // No refresh token available — mark connection for reauth
       await this.markConnectionNeedsReauth(connectionId);
-      throw new TokenExpiredError({ connectionId });
+      if (options.throwIfRefreshFailed) {
+        throw new TokenExpiredError({ connectionId });
+      }
     }
 
     return ProviderRegistry.createAuthenticatedProvider({

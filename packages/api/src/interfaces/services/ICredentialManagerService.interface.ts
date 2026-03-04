@@ -37,8 +37,12 @@ export interface ICredentialManagerService {
    */
   createAuthenticatedProvider({
     connectionId,
+    options,
   }: {
     connectionId: string;
+    options?: {
+      throwIfRefreshFailed: boolean;
+    };
   }): Promise<AuthenticatedProvider>;
 
   /**

@@ -8,9 +8,11 @@ import type {
   ConfiguredProvider,
 } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
+import { BankConnectionStatus } from "@getblitz/database";
 
 import type { IOrganizationBankConnectionRepository } from "../interfaces";
 import type { SecurityService } from "./security.service";
+import { TokenExpiredError } from "../interfaces";
 import { CredentialManagerService } from "./credential-manager.service";
 
 vi.mock("@getblitz/bank-providers", () => ({
@@ -207,5 +209,103 @@ describe("CredentialManagerService", () => {
         credentials: expect.objectContaining({ accessToken: "new" }),
       }),
     );
+  });
+
+  it("should not throw an exception if access token is old, refresh token is not provided and forceRefresh is false", async () => {
+    const connection = {
+      id: "conn-123",
+      credentials: `enc:{"accessToken":"old","expiresAt":"${new Date(Date.now() + 1000).toISOString()}"}`,
+      providerConfig: 'enc:{"clientId":"cid"}',
+      providerId: "test-bank",
+    };
+    mockRepo.findOne.mockResolvedValue(connection);
+
+    const mockProviderTemplate = {
+      supportsTokenRefresh: () => true,
+    };
+    const mockConfiguredProvider = {
+      refreshToken: vi
+        .fn()
+        .mockResolvedValue({ accessToken: "new", refreshToken: "ref-123" }),
+    };
+    const mockAuthenticatedProvider = {
+      listAccounts: vi.fn(),
+    };
+
+    mockedRegistry.getProvider.mockReturnValue(
+      mockProviderTemplate as unknown as BankProvider,
+    );
+    mockedRegistry.createConfiguredProvider.mockReturnValue(
+      mockConfiguredProvider as unknown as ConfiguredProvider,
+    );
+    mockedRegistry.createAuthenticatedProvider.mockReturnValue(
+      mockAuthenticatedProvider as unknown as AuthenticatedProvider,
+    );
+
+    const result = await service.createAuthenticatedProvider({
+      connectionId: "conn-123",
+      options: { throwIfRefreshFailed: false },
+    });
+
+    expect(result).toBe(mockAuthenticatedProvider);
+    expect(mockConfiguredProvider.refreshToken).not.toHaveBeenCalled();
+    expect(mockRepo.update).toHaveBeenCalledWith({
+      id: "conn-123",
+      data: { status: BankConnectionStatus.NEEDS_REAUTH },
+    });
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(mockedRegistry.createAuthenticatedProvider).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "test-bank",
+        config: { clientId: "cid" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        credentials: expect.objectContaining({ accessToken: "old" }),
+      }),
+    );
+  });
+
+  it("should throw an exception if access token is old, refresh token is not provided and forceRefresh is true", async () => {
+    const connection = {
+      id: "conn-123",
+      credentials: `enc:{"accessToken":"old","expiresAt":"${new Date(Date.now() + 1000).toISOString()}"}`,
+      providerConfig: 'enc:{"clientId":"cid"}',
+      providerId: "test-bank",
+    };
+    mockRepo.findOne.mockResolvedValue(connection);
+
+    const mockProviderTemplate = {
+      supportsTokenRefresh: () => true,
+    };
+    const mockConfiguredProvider = {
+      refreshToken: vi
+        .fn()
+        .mockResolvedValue({ accessToken: "new", refreshToken: "ref-123" }),
+    };
+    const mockAuthenticatedProvider = {
+      listAccounts: vi.fn(),
+    };
+
+    mockedRegistry.getProvider.mockReturnValue(
+      mockProviderTemplate as unknown as BankProvider,
+    );
+    mockedRegistry.createConfiguredProvider.mockReturnValue(
+      mockConfiguredProvider as unknown as ConfiguredProvider,
+    );
+    mockedRegistry.createAuthenticatedProvider.mockReturnValue(
+      mockAuthenticatedProvider as unknown as AuthenticatedProvider,
+    );
+
+    await expect(
+      service.createAuthenticatedProvider({
+        connectionId: "conn-123",
+        options: { throwIfRefreshFailed: true },
+      }),
+    ).rejects.toThrowError(TokenExpiredError);
+
+    expect(mockConfiguredProvider.refreshToken).not.toHaveBeenCalled();
+    expect(mockRepo.update).toHaveBeenCalledWith({
+      id: "conn-123",
+      data: { status: BankConnectionStatus.NEEDS_REAUTH },
+    });
   });
 });

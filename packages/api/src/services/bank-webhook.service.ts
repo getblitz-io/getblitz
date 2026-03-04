@@ -79,6 +79,7 @@ export class BankWebhookService implements IBankWebhookService {
       const provider =
         await this.credentialManagerService.createAuthenticatedProvider({
           connectionId,
+          options: { throwIfRefreshFailed: false },
         });
 
       // 5. Verify webhook signature and parse payload
