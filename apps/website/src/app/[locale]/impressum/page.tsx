@@ -20,6 +20,7 @@ export default function ImpressumPage() {
             </h2>
             <p
               className="text-muted-foreground"
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               dangerouslySetInnerHTML={{ __html: t.raw("tmg.content") }}
             />
           </section>
@@ -30,6 +31,7 @@ export default function ImpressumPage() {
             </h2>
             <p
               className="text-muted-foreground"
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               dangerouslySetInnerHTML={{ __html: t.raw("register.content") }}
             />
           </section>

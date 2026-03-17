@@ -11,7 +11,9 @@ export function CookieBanner() {
     // Check if the user has already accepted the banner.
     const hasAccepted = localStorage.getItem("getblitz-cookie-consent");
     if (!hasAccepted) {
-      setIsVisible(true);
+      // Delay state update to avoid synchronous setState warning
+      const timer = setTimeout(() => setIsVisible(true), 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 
