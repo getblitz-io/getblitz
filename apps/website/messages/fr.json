@@ -1,0 +1,391 @@
+{
+  "nav": {
+    "features": "Fonctionnalités",
+    "howItWorks": "Comment ça marche",
+    "pricing": "Tarifs",
+    "docs": "Documentation",
+    "github": "GitHub",
+    "getStarted": "Commencer"
+  },
+  "hero": {
+    "badge": "Open Source · Licence MIT · Made in Europe 🇪🇺",
+    "headline": "Votre Passerelle de Paiement.",
+    "headlineAccent": "Vos Données. Vos Règles.",
+    "subheadline": "GetBlitz est une passerelle de virement instantané SEPA open source qui fonctionne sur votre infrastructure — zéro intermédiaire, zéro tracking, zéro dépendance. Conçu pour les entreprises européennes qui valorisent la souveraineté.",
+    "ctaPrimary": "Commencer — €10/mois",
+    "ctaSecondary": "Auto-hébergement gratuit",
+    "trustBar": {
+      "sepa": "SEPA Instantané",
+      "selfHosted": "Auto-hébergé",
+      "realtime": "WebSockets Temps Réel",
+      "mit": "Licence MIT"
+    },
+    "stats": {
+      "countries": "Pays SEPA",
+      "settlement": "Délai de règlement",
+      "uptime": "Disponibilité",
+      "openSource": "Open Source"
+    }
+  },
+  "problem": {
+    "badge": "Le Problème",
+    "headline": "La Taxe Américaine sur les Paiements Européens",
+    "subheadline": "Stripe, PayPal et Square sont des entreprises américaines opérant sous la loi américaine — et vous en payez le prix chaque jour.",
+    "their": {
+      "title": "Leur Façon",
+      "items": [
+        "Vos données clients transitent vers des serveurs US",
+        "1,4 %–2,9 % par transaction, plus frais fixes",
+        "Le CLOUD Act expose les données aux autorités US",
+        "La conformité RGPD devient votre problème",
+        "Dépendance au fournisseur — pas de stratégie de sortie",
+        "T+1 règlement, vous ne possédez pas la relation de règlement"
+      ]
+    },
+    "your": {
+      "title": "Votre Façon",
+      "items": [
+        "Les données restent sur vos serveurs, votre juridiction",
+        "Forfait €10/mois — zéro frais de transaction",
+        "Natif RGPD, pas de transfers transatlantiques",
+        "Relation bancaire directe — vous contrôlez le flux",
+        "Licence MIT — forkez, possédez, modifiez",
+        "Instant règlement, vous possédez la relation de règlement"
+      ]
+    }
+  },
+  "features": {
+    "badge": "Fonctionnalités",
+    "headline": "Tout ce dont vous avez besoin,",
+    "headlineAccent": "rien de superflu",
+    "subheadline": "Un ensemble de fonctionnalités ciblé pour les entreprises européennes qui ont besoin d'une véritable infrastructure de paiement.",
+    "items": [
+      {
+        "icon": "🏦",
+        "title": "Virements SEPA Instantanés",
+        "description": "Acceptez des virements bancaires EUR en temps réel dans les 36 pays SEPA — les fonds sont réglés en moins de 10 secondes, directement sur votre compte bancaire."
+      },
+      {
+        "icon": "⚡",
+        "title": "Notifications WebSocket Temps Réel",
+        "description": "Sachez instantanément quand un paiement arrive. GetBlitz utilise Socket.io pour pousser des événements de paiement en direct vers votre application."
+      },
+      {
+        "icon": "🔐",
+        "title": "Souveraineté Totale des Données",
+        "description": "Votre base de données. Votre serveur. Vos règles. Aucun tiers ne touche jamais vos données de transaction ou informations clients."
+      },
+      {
+        "icon": "🏢",
+        "title": "Architecture Multi-tenant",
+        "description": "Gérez plusieurs organisations, comptes bancaires et clés API depuis un seul tableau de bord."
+      },
+      {
+        "icon": "📱",
+        "title": "SDK JavaScript Intégrable",
+        "description": "Ajoutez un seul tag script sur n'importe quel site. Le widget léger GetBlitz gère automatiquement l'interface de paiement."
+      },
+      {
+        "icon": "🧪",
+        "title": "Mode Test Intégré",
+        "description": "Un simulateur de banque fictive est inclus pour que vous puissiez développer et tester sans argent réel."
+      },
+      {
+        "icon": "🔒",
+        "title": "Sécurité Niveau Entreprise",
+        "description": "Vérification webhook HMAC-SHA256, clés API rotatives, limitation de taux Redis configurable et transactions ACID."
+      },
+      {
+        "icon": "🔗",
+        "title": "Événements Webhook",
+        "description": "Recevez payment.success, payment.partial, payment.failed et payment.expired avec tous les détails du payload."
+      },
+      {
+        "icon": "🔌",
+        "title": "Fournisseurs Bancaires Extensibles",
+        "description": "Connectez votre compte professionnel Qonto ou Revolut aujourd'hui, ou implémentez un fournisseur personnalisé."
+      },
+      {
+        "icon": "🧾",
+        "title": "Gestion des Factures Intelligente",
+        "description": "Générez, envoyez et suivez des factures professionnelles directement depuis le tableau de bord. Réconciliation automatique avec les virements SEPA entrants."
+      },
+      {
+        "icon": "👥",
+        "title": "Répertoire Clients Intégré",
+        "description": "Tous vos détails clients et historiques de paiement en un seul endroit sécurisé et conforme au RGPD."
+      },
+      {
+        "icon": "🌍",
+        "title": "36 Pays SEPA",
+        "description": "De Lisbonne à Tallinn, tout compte bancaire professionnel dans la zone SEPA peut recevoir des virements EUR instantanés."
+      }
+    ]
+  },
+  "howItWorks": {
+    "badge": "Comment ça marche",
+    "headline": "Paiements en 4 étapes,",
+    "headlineAccent": "zéro friction",
+    "steps": [
+      {
+        "title": "Session Créée",
+        "description": "Appelez l'API et GetBlitz renvoie une URL de paiement sécurisée et un ID de session."
+      },
+      {
+        "title": "Client Scanne le QR",
+        "description": "Affichez la page de paiement et le client scanne le code avec son application bancaire."
+      },
+      {
+        "title": "Webhook SEPA Instantané",
+        "description": "Le client termine le virement et la banque envoie instantanément un webhook à GetBlitz."
+      },
+      {
+        "title": "Callback Temps Réel",
+        "description": "Votre application reçoit le callback onSuccess via WebSockets — paiement terminé !"
+      }
+    ],
+    "sdkTitle": "Intégration SDK"
+  },
+  "hosting": {
+    "badge": "Déploiement",
+    "headline": "Votre infrastructure,",
+    "headlineAccent": "ou la nôtre",
+    "options": [
+      {
+        "icon": "☁️",
+        "title": "SaaS Géré",
+        "price": "€10/mois",
+        "description": "La façon la plus simple de commencer. Nous hébergeons et gérons tout pour vous.",
+        "features": [
+          "Opérationnel en minutes",
+          "2 connexions bancaires incluses",
+          "Banques supplémentaires : +€3/mois",
+          "Mises à jour et monitoring automatiques",
+          "Accès au tableau de bord",
+          "Support par e-mail"
+        ],
+        "cta": "Démarrer l'essai gratuit",
+        "highlighted": true
+      },
+      {
+        "icon": "🖥️",
+        "title": "DigitalOcean",
+        "price": "Déploiement en un clic",
+        "description": "Déployez sur votre propre compte DigitalOcean en un seul clic.",
+        "features": [
+          "Contrôle total de vos données",
+          "Pas de frais SaaS mensuels",
+          "Environnement Docker préconfiguré",
+          "S'adapte à vos besoins"
+        ],
+        "cta": "Déployer sur DigitalOcean",
+        "highlighted": false
+      },
+      {
+        "icon": "🐳",
+        "title": "Docker Compose",
+        "price": "Gratuit pour toujours",
+        "description": "Exécutez localement ou sur n'importe quel serveur avec support Docker.",
+        "features": [
+          "PostgreSQL + Redis inclus",
+          "Tous les services préconfigurés",
+          "Idéal pour les déploiements on-premise"
+        ],
+        "cta": "Voir la configuration Docker",
+        "highlighted": false
+      }
+    ]
+  },
+  "banks": {
+    "badge": "Intégrations",
+    "headline": "Connectez votre banque",
+    "headlineAccent": "professionnelle européenne",
+    "subheadline": "GetBlitz se connecte directement à votre compte bancaire. Pas d'intermédiaire — les fonds vous parviennent directement.",
+    "providers": [
+      {
+        "name": "Qonto",
+        "auth": "OAuth2",
+        "bestFor": "PME & startups en Europe",
+        "flag": "🇫🇷"
+      },
+      {
+        "name": "Revolut Business",
+        "auth": "Basé sur certificat",
+        "bestFor": "Entreprises tech-forward",
+        "flag": "🇬🇧"
+      },
+      {
+        "name": "Plus de Banques",
+        "auth": "Bientôt",
+        "bestFor": "Extension de la couverture en Europe",
+        "flag": "🇪🇺"
+      }
+    ],
+    "extensibility": "Votre banque n'est pas disponible ? Implémentez notre interface BankProvider ouverte en TypeScript et soumettez une PR."
+  },
+  "privacy": {
+    "badge": "Confidentialité & Souveraineté",
+    "headline": "Reprenez le contrôle de",
+    "headlineAccent": "vos données financières",
+    "items": [
+      {
+        "icon": "🇪🇺",
+        "title": "RGPD-natif by design",
+        "description": "Lorsque vous auto-hébergez GetBlitz, vos données de transaction ne quittent jamais votre juridiction."
+      },
+      {
+        "icon": "🔒",
+        "title": "Pas de capitalisme de surveillance",
+        "description": "GetBlitz n'a pas d'analytics, pas de télémétrie, pas de trackers tiers. C'est votre logiciel, selon vos conditions."
+      },
+      {
+        "icon": "⚖️",
+        "title": "Open Source, Licence MIT",
+        "description": "Auditez chaque ligne. Forkez-le. Modifiez-le. Vous n'êtes jamais à la merci d'un changement de tarif ou d'un arrêt produit."
+      },
+      {
+        "icon": "🏦",
+        "title": "Relations bancaires directes",
+        "description": "Vous vous connectez directement à votre banque. GetBlitz est un middleware, pas un transmetteur d'argent."
+      },
+      {
+        "icon": "🌍",
+        "title": "36 pays SEPA",
+        "description": "De Lisbonne à Tallinn, tout compte bancaire professionnel dans la zone SEPA peut recevoir des virements EUR instantanés."
+      },
+      {
+        "icon": "💻",
+        "title": "API Centrée Développeurs",
+        "description": "Construit sur des standards ouverts avec des webhooks modernes, des SDK en temps réel et une architecture propre."
+      }
+    ]
+  },
+  "pricing": {
+    "badge": "Tarifs",
+    "headline": "Tarification simple et",
+    "headlineAccent": "transparente",
+    "note": "Pas de frais de transaction. Pas de pourcentages prélevés. Pas de coûts cachés. Vous payez un forfait mensuel — ou rien du tout.",
+    "saas": {
+      "title": "Plan SaaS",
+      "price": "€10",
+      "period": "/mois",
+      "features": [
+        "Accès tableau de bord & API",
+        "2 connexions bancaires incluses",
+        "Notifications WebSocket temps réel",
+        "SDK intégrable",
+        "Sécurité webhook HMAC",
+        "Support par e-mail",
+        "Connexions bancaires supplémentaires : +€3/mois"
+      ],
+      "cta": "Démarrer l'essai gratuit"
+    },
+    "selfHosted": {
+      "title": "Auto-hébergé",
+      "price": "Gratuit",
+      "period": "pour toujours",
+      "features": [
+        "Tout open source (MIT)",
+        "Aucune limite d'utilisateurs, pas de frais",
+        "Support communautaire via GitHub",
+        "Vous gérez l'hébergement & les opérations"
+      ],
+      "cta": "Voir sur GitHub"
+    }
+  },
+  "quickstart": {
+    "badge": "Démarrage Rapide",
+    "headline": "Opérationnel en",
+    "headlineAccent": "moins de 5 minutes",
+    "github": "Étoiler sur GitHub",
+    "trial": "Démarrer l'essai SaaS — €10/mois"
+  },
+  "footer": {
+    "tagline": "Paiements SEPA open source pour les entreprises européennes",
+    "links": {
+      "github": "GitHub",
+      "docs": "Documentation",
+      "pricing": "Tarifs",
+      "selfHost": "Guide Auto-hébergement",
+      "changelog": "Journal des modifications",
+      "impressum": "Mentions Légales",
+      "privacy": "Politique de Confidentialité",
+      "terms": "Conditions d'Utilisation"
+    },
+    "legal": "Licence MIT · Made in Europe 🇪🇺"
+  },
+  "cookieBanner": {
+    "message": "Nous utilisons uniquement des cookies essentiels pour fournir nos services et nous protéger contre la fraude. Aucun suivi, aucune analyse.",
+    "accept": "Compris"
+  },
+  "impressum": {
+    "title": "Impressum (Legal Notice)",
+    "tmg": {
+      "title": "Angaben gemäß § 5 TMG",
+      "content": "JAyokunle Enterpise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
+    },
+    "register": {
+      "title": "Registereintrag",
+      "content": "Eintragung im Handelsregister.<br />Registergericht: Amtsgericht Augsburg<br />Registernummer: HRB 40780"
+    },
+    "representedBy": {
+      "title": "Vertreten durch",
+      "content": "Jacob Ayokunle"
+    },
+    "contact": {
+      "title": "Kontakt",
+      "email": "E-Mail:",
+      "emailAddress": "jacob@ayokunle.com",
+      "inquiries": "For all issues and complaints, please contact us at the email above."
+    },
+    "disclaimer": {
+      "title": "Haftungsausschluss (Disclaimer)",
+      "content": "The contents of our pages were created with the greatest care. However, we cannot guarantee the accuracy, completeness, or timeliness of the content. As a service provider, we are responsible for our own content on these pages under general law."
+    }
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "intro": "Bienvenue sur GetBlitz. En accédant à notre site Web et en utilisant notre logiciel, vous acceptez ces conditions d'utilisation.",
+    "sections": [
+      {
+        "title": "1. Utilisation du site Web",
+        "content": "Vous acceptez d'utiliser le site GetBlitz uniquement à des fins légales."
+      },
+      {
+        "title": "2. Logiciel Open Source",
+        "content": "Le logiciel GetBlitz est fourni sous licence MIT. Votre utilisation du logiciel auto-hébergé est régie par cette licence."
+      },
+      {
+        "title": "3. Limitation de responsabilité",
+        "content": "GetBlitz est fourni 'tel quel', sans garantie d'aucune sorte. Les auteurs ne sauraient être tenus responsables de réclamations ou dommages."
+      },
+      {
+        "title": "4. Modifications des conditions",
+        "content": "Nous nous réservons le droit de modifier ces conditions à tout moment."
+      }
+    ]
+  },
+  "privacyPolicy": {
+    "title": "Politique de confidentialité",
+    "intro": "Chez GetBlitz, nous prenons votre vie privée au sérieux. Cette politique de confidentialité détaille la façon dont nous traitons les informations lorsque vous visitez notre site Web. En tant que produit open source auto-hébergé, GetBlitz garantit une souveraineté maximale.",
+    "sections": [
+      {
+        "title": "1. Informations que nous ne collectons pas",
+        "content": "Lorsque vous utilisez la version auto-hébergée de GetBlitz, nous n'avons aucun accès à vos données financières, enregistrements de transactions ou informations clients. Vos données restent sur vos serveurs."
+      },
+      {
+        "title": "2. Analyses du site Web et Cookies",
+        "content": "Notre site Web utilise uniquement des cookies essentiels pour fonctionner correctement et prévenir la fraude. Nous n'utilisons aucun outil de suivi."
+      },
+      {
+        "title": "3. Liens Tiers",
+        "content": "Notre site Web peut contenir des liens vers des sites tiers (comme GitHub). Nous ne sommes pas responsables des pratiques de confidentialité de ces sites."
+      },
+      {
+        "title": "4. Contactez-nous",
+        "content": "Si vous avez des questions concernant cette politique de confidentialité, veuillez nous contacter à l'adresse suivante :",
+        "email": "jacob@ayokunle.com"
+      }
+    ]
+  }
+}

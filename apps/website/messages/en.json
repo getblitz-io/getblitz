@@ -1,0 +1,391 @@
+{
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "github": "GitHub",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "Open Source · MIT Licensed · Made in Europe 🇪🇺",
+    "headline": "Your Payment Gateway.",
+    "headlineAccent": "Your Data. Your Rules.",
+    "subheadline": "GetBlitz is an open-source SEPA Instant Transfer gateway that runs on your infrastructure — zero middlemen, zero tracking, zero lock-in. Built for European businesses that value sovereignty.",
+    "ctaPrimary": "Get Started — €10/month",
+    "ctaSecondary": "Self-Host for Free",
+    "trustBar": {
+      "sepa": "SEPA Instant",
+      "selfHosted": "Self-Hosted",
+      "realtime": "Real-Time WebSockets",
+      "mit": "MIT Licensed"
+    },
+    "stats": {
+      "countries": "SEPA Countries",
+      "settlement": "Settlement Time",
+      "uptime": "Uptime",
+      "openSource": "Open Source"
+    }
+  },
+  "problem": {
+    "badge": "The Problem",
+    "headline": "The American Tax on European Payments",
+    "subheadline": "Stripe, PayPal, and Square are American companies operating under US law — and you're paying for it every day.",
+    "their": {
+      "title": "Their Way",
+      "items": [
+        "Your customer data flows to US servers",
+        "1.4%–2.9% per transaction, plus fixed fees",
+        "CLOUD Act exposes data to US authorities",
+        "GDPR compliance becomes your problem",
+        "Vendor lock-in — no exit strategy",
+        "T+1 settlement. You don't own the settlement relationship"
+      ]
+    },
+    "your": {
+      "title": "Your Way",
+      "items": [
+        "Data stays on your servers, your jurisdiction",
+        "Flat €10/month — zero transaction fees",
+        "GDPR-native, no transatlantic data transfers",
+        "Direct bank relationship — you own the flow",
+        "MIT licensed — fork it, own it, modify it",
+        "Instant settlement in your bank account"
+      ]
+    }
+  },
+  "features": {
+    "badge": "Features",
+    "headline": "Everything You Need,",
+    "headlineAccent": "Nothing You Don't",
+    "subheadline": "A focused feature set built for European businesses that need real payment infrastructure — not a bloated SaaS platform.",
+    "items": [
+      {
+        "icon": "🏦",
+        "title": "SEPA Instant Transfers",
+        "description": "Accept real-time EUR bank transfers across all 36 SEPA countries — funds settle in under 10 seconds, directly to your bank account."
+      },
+      {
+        "icon": "⚡",
+        "title": "Real-Time WebSocket Notifications",
+        "description": "Know the moment a payment lands. GetBlitz uses Socket.io to push live payment events to your app — no polling, no delays."
+      },
+      {
+        "icon": "🔐",
+        "title": "Full Data Sovereignty",
+        "description": "Your database. Your server. Your rules. No third party ever touches your transaction data or customer information."
+      },
+      {
+        "icon": "🏢",
+        "title": "Multi-Tenant Architecture",
+        "description": "Manage multiple organizations, bank accounts, and API keys from a single dashboard — ideal for agencies, SaaS platforms, and marketplace operators."
+      },
+      {
+        "icon": "📱",
+        "title": "Embeddable JavaScript SDK",
+        "description": "Drop a single script tag into any website. The lightweight GetBlitz widget handles the payment UI, QR code display, and real-time status updates automatically."
+      },
+      {
+        "icon": "🧪",
+        "title": "Built-In Test Mode",
+        "description": "A mock bank simulator is included out of the box so you can develop and test your integration without touching real money."
+      },
+      {
+        "icon": "🔒",
+        "title": "Enterprise-Grade Security",
+        "description": "HMAC-SHA256 webhook verification, rotatable API keys, configurable Redis-backed rate limiting, strict CORS enforcement, and ACID-compliant database transactions."
+      },
+      {
+        "icon": "🔗",
+        "title": "Webhook Events",
+        "description": "Receive payment.success, payment.partial, payment.failed, and payment.expired events with full payload details — integrate with any backend."
+      },
+      {
+        "icon": "🔌",
+        "title": "Pluggable Bank Providers",
+        "description": "Connect your Qonto or Revolut business account today, or implement a custom provider using the open BankProvider interface."
+      },
+      {
+        "icon": "🧾",
+        "title": "Smart Invoice Management",
+        "description": "Generate, send, and track professional invoices directly from the dashboard. Automatically reconcile incoming SEPA transfers with open invoices by matching payment references."
+      },
+      {
+        "icon": "👥",
+        "title": "Built-in Customer Directory",
+        "description": "Keep all your customer details and payment histories in one secure, GDPR-compliant place. Easily associate transactions and invoices with specific clients."
+      },
+      {
+        "icon": "🌍",
+        "title": "36 SEPA Countries",
+        "description": "From Lisbon to Tallinn, any business bank account in the SEPA zone can receive instant EUR transfers. True pan-European payment coverage."
+      }
+    ]
+  },
+  "howItWorks": {
+    "badge": "How It Works",
+    "headline": "Payments in 4 Steps,",
+    "headlineAccent": "Zero Friction",
+    "steps": [
+      {
+        "title": "Session Created",
+        "description": "Call the API and GetBlitz returns a secure payment URL and session ID."
+      },
+      {
+        "title": "Customer Scans QR",
+        "description": "Display the payment page and the customer scans the code with their banking app."
+      },
+      {
+        "title": "Instant SEPA Webhook",
+        "description": "Customer completes the transfer and the bank instantly sends a webhook to GetBlitz."
+      },
+      {
+        "title": "Real-Time Callback",
+        "description": "Your app receives the onSuccess callback via WebSockets — payment complete!"
+      }
+    ],
+    "sdkTitle": "SDK Integration"
+  },
+  "hosting": {
+    "badge": "Deployment",
+    "headline": "Your Infrastructure,",
+    "headlineAccent": "or Ours",
+    "options": [
+      {
+        "icon": "☁️",
+        "title": "Managed SaaS",
+        "price": "€10/month",
+        "description": "The easiest way to get started. We host and manage everything for you.",
+        "features": [
+          "Up and running in minutes",
+          "2 bank connections included",
+          "Additional banks: +€3/month each",
+          "Automatic updates and monitoring",
+          "Dashboard access",
+          "Email support"
+        ],
+        "cta": "Start Free Trial",
+        "highlighted": true
+      },
+      {
+        "icon": "🖥️",
+        "title": "DigitalOcean",
+        "price": "One-Click Deploy",
+        "description": "Deploy to your own DigitalOcean account in a single click.",
+        "features": [
+          "Full control of your data",
+          "No monthly SaaS fee",
+          "Pre-configured Docker environment",
+          "Scales to your needs"
+        ],
+        "cta": "Deploy to DigitalOcean",
+        "highlighted": false
+      },
+      {
+        "icon": "🐳",
+        "title": "Docker Compose",
+        "price": "Free Forever",
+        "description": "Run locally or on any server with Docker support.",
+        "features": [
+          "PostgreSQL + Redis included",
+          "All services pre-configured",
+          "Ideal for on-premise or private cloud"
+        ],
+        "cta": "View Docker Setup",
+        "highlighted": false
+      }
+    ]
+  },
+  "banks": {
+    "badge": "Integrations",
+    "headline": "Connect Your European",
+    "headlineAccent": "Business Bank",
+    "subheadline": "GetBlitz connects directly to your bank account. No money transmitter in the middle — funds flow straight to you.",
+    "providers": [
+      {
+        "name": "Qonto",
+        "auth": "OAuth2",
+        "bestFor": "SMEs & startups across Europe",
+        "flag": "🇫🇷"
+      },
+      {
+        "name": "Revolut Business",
+        "auth": "Certificate-based",
+        "bestFor": "Tech-forward businesses",
+        "flag": "🇬🇧"
+      },
+      {
+        "name": "More Banks",
+        "auth": "Coming Soon",
+        "bestFor": "Expanding coverage across Europe",
+        "flag": "🇪🇺"
+      }
+    ],
+    "extensibility": "Don't see your bank? Implement our open BankProvider interface in TypeScript and submit a PR."
+  },
+  "privacy": {
+    "badge": "Privacy & Sovereignty",
+    "headline": "Take Back Control of",
+    "headlineAccent": "Your Financial Data",
+    "items": [
+      {
+        "icon": "🇪🇺",
+        "title": "GDPR-native by design",
+        "description": "When you self-host GetBlitz, your transaction data never leaves your jurisdiction. No data processing agreements to negotiate with a US company."
+      },
+      {
+        "icon": "🔒",
+        "title": "No surveillance capitalism",
+        "description": "GetBlitz has no analytics, no telemetry, no third-party trackers. It's your software, running on your terms."
+      },
+      {
+        "icon": "⚖️",
+        "title": "Open Source, MIT Licensed",
+        "description": "Audit every line. Fork it. Modify it. You're never at the mercy of a pricing change or a product sunset."
+      },
+      {
+        "icon": "🏦",
+        "title": "Direct bank relationships",
+        "description": "You connect directly to your bank. GetBlitz is middleware, not a money transmitter. Funds flow straight to your account."
+      },
+      {
+        "icon": "🌍",
+        "title": "36 SEPA countries",
+        "description": "From Lisbon to Tallinn, any business bank account in the SEPA zone can receive instant EUR transfers."
+      },
+      {
+        "icon": "💻",
+        "title": "Developer-First API",
+        "description": "Built on open standards with modern webhooks, real-time SDKs, and a clean architecture."
+      }
+    ]
+  },
+  "pricing": {
+    "badge": "Pricing",
+    "headline": "Simple, Transparent",
+    "headlineAccent": "Pricing",
+    "note": "No transaction fees. No percentage cuts. No hidden costs. You pay a flat monthly fee — or nothing at all.",
+    "saas": {
+      "title": "SaaS Plan",
+      "price": "€10",
+      "period": "/month",
+      "features": [
+        "Dashboard & API access",
+        "2 bank connections included",
+        "Real-time WebSocket notifications",
+        "Embeddable SDK",
+        "HMAC webhook security",
+        "Email support",
+        "Additional bank connections: +€3/month each"
+      ],
+      "cta": "Start Free Trial"
+    },
+    "selfHosted": {
+      "title": "Self-Hosted",
+      "price": "Free",
+      "period": "Forever",
+      "features": [
+        "Everything open source (MIT)",
+        "No seat limits, no transaction fees",
+        "Community support via GitHub",
+        "You handle hosting & ops"
+      ],
+      "cta": "View on GitHub"
+    }
+  },
+  "quickstart": {
+    "badge": "Quick Start",
+    "headline": "Up and Running in",
+    "headlineAccent": "Under 5 Minutes",
+    "github": "Star on GitHub",
+    "trial": "Start SaaS Trial — €10/month"
+  },
+  "footer": {
+    "tagline": "Open-source SEPA payments for European businesses",
+    "links": {
+      "github": "GitHub",
+      "docs": "Docs",
+      "pricing": "Pricing",
+      "selfHost": "Self-Host Guide",
+      "changelog": "Changelog",
+      "impressum": "Impressum",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "legal": "MIT Licensed · Made in Europe 🇪🇺"
+  },
+  "cookieBanner": {
+    "message": "We only use essential cookies to provide our services and protect against fraud. No tracking, no analytics.",
+    "accept": "Got it"
+  },
+  "impressum": {
+    "title": "Impressum (Legal Notice)",
+    "tmg": {
+      "title": "Angaben gemäß § 5 TMG",
+      "content": "JAyokunle Enterpise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
+    },
+    "register": {
+      "title": "Registereintrag",
+      "content": "Eintragung im Handelsregister.<br />Registergericht: Amtsgericht Augsburg<br />Registernummer: HRB 40780"
+    },
+    "representedBy": {
+      "title": "Vertreten durch",
+      "content": "Jacob Ayokunle"
+    },
+    "contact": {
+      "title": "Kontakt",
+      "email": "E-Mail:",
+      "emailAddress": "jacob@ayokunle.com",
+      "inquiries": "For all issues and complaints, please contact us at the email above."
+    },
+    "disclaimer": {
+      "title": "Haftungsausschluss (Disclaimer)",
+      "content": "The contents of our pages were created with the greatest care. However, we cannot guarantee the accuracy, completeness, or timeliness of the content. As a service provider, we are responsible for our own content on these pages under general law."
+    }
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "intro": "Welcome to GetBlitz. By accessing our website and using our software, you agree to these Terms of Service.",
+    "sections": [
+      {
+        "title": "1. Use of the Website",
+        "content": "You agree to use the GetBlitz website only for lawful purposes. You must not use the website in any way that causes damage to the website."
+      },
+      {
+        "title": "2. Open Source Software",
+        "content": "The core GetBlitz software is provided under the MIT License. Your use of the self-hosted software is governed entirely by the terms of the MIT License."
+      },
+      {
+        "title": "3. Limitation of Liability",
+        "content": "GetBlitz is provided 'as is', without warranty of any kind. In no event shall the authors or copyright holders be liable for any claim or damages."
+      },
+      {
+        "title": "4. Changes to Terms",
+        "content": "We reserve the right to modify these terms at any time. We will notify users of any significant changes by updating this page."
+      }
+    ]
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "intro": "At GetBlitz, we take your privacy seriously. This Privacy Policy details how we handle information when you visit our website. As an open-source, self-hosted product, GetBlitz is designed to ensure maximum data sovereignty.",
+    "sections": [
+      {
+        "title": "1. Information We Do Not Collect",
+        "content": "When you use the self-hosted version of GetBlitz, we do not have access to any of your financial data, transaction records, bank details, or customer information. Your data remains entirely on your servers and within your chosen infrastructure."
+      },
+      {
+        "title": "2. Website Analytics and Cookies",
+        "content": "Our website (getblitz.com) uses essential cookies only to function correctly and prevent fraud. We do not use tracking cookies or third-party behavioral analytics tools that compromise your privacy."
+      },
+      {
+        "title": "3. Third-Party Links",
+        "content": "Our website may contain links to third-party sites (like GitHub or DigitalOcean). We are not responsible for the privacy practices or content of these external sites."
+      },
+      {
+        "title": "4. Contact Us",
+        "content": "If you have any questions about this Privacy Policy, please contact us at:",
+        "email": "jacob@ayokunle.com"
+      }
+    ]
+  }
+}

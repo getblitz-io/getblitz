@@ -21,3 +21,4 @@ export {
   DialogDescription,
   DialogFooter,
 } from "./dialog";
+export * from "./theme";

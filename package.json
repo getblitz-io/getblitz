@@ -5,7 +5,7 @@
     "node": "^24",
     "pnpm": "^10.19.0"
   },
-  "packageManager": "pnpm@10.30.0",
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
   "scripts": {
     "build": "turbo run build",
     "build:standalone": "turbo run build:standalone",
@@ -22,6 +22,7 @@
     "dev:wss": "pnpm --filter @getblitz/wss dev",
     "dev:demo": "pnpm --filter @getblitz/demo dev",
     "dev:test-bank": "pnpm --filter @getblitz/test-bank dev",
+    "dev:website": "pnpm --filter @getblitz/website dev",
     "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",
     "format:fix": "turbo run format --continue -- --write --cache --cache-location .cache/.prettiercache",
     "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
