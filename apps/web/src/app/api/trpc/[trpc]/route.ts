@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
+import type { Auth } from "@getblitz/auth";
 import { appRouter, createTRPCContext } from "@getblitz/api";
 
 import { auth } from "~/auth/server";
@@ -31,7 +32,7 @@ const handler = async (req: NextRequest) => {
     req,
     createContext: () =>
       createTRPCContext({
-        auth: auth,
+        auth: auth as unknown as Auth,
         headers: req.headers,
         request: req,
       }),

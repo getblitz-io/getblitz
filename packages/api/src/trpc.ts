@@ -61,14 +61,14 @@ export interface TRPCServices {
 export const createTRPCContext = async (opts: {
   request: Request;
   headers: Headers;
-  auth: any; // Using any for auth to bypass complex plugin type mismatches between packages
+  auth: Auth;
 }): Promise<{
   headers: Headers;
   services: TRPCServices;
   prisma: PrismaClient;
   request: Request;
-  auth: any;
-  session: any;
+  auth: Auth;
+  session: Auth["$Infer"]["Session"] | null;
 }> => {
   const session = await opts.auth.api.getSession({
     headers: opts.headers,
