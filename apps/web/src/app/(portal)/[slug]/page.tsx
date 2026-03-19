@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
@@ -11,6 +12,7 @@ import {
 } from "@getblitz/ui";
 import { Button } from "@getblitz/ui/button";
 
+import { auth } from "~/auth/server";
 import { api } from "~/trpc/server";
 
 export default async function DashboardPage({
@@ -26,6 +28,20 @@ export default async function DashboardPage({
   const paidCount = await caller.organization.getPaidCount({
     slug,
   });
+
+  const reqHeaders = await headers();
+  // Fetch API keys count using Better Auth Server API
+  const apiKeysResult = await auth.api
+    .listApiKeys({
+      query: {
+        configId: "org-keys",
+        organizationId: slug,
+      },
+      headers: reqHeaders,
+    })
+    .catch(() => ({ apiKeys: [] }));
+
+  const apiKeysCount = apiKeysResult.apiKeys.length;
 
   const bankAccountCount = organization.organizationBankConnections.flatMap(
     (c) => c.bankAccounts,
@@ -112,9 +128,7 @@ export default async function DashboardPage({
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t("apiKeys")}</CardDescription>
-            <CardTitle className="text-3xl">
-              {organization.secretKeys.length}
-            </CardTitle>
+            <CardTitle className="text-3xl">{apiKeysCount}</CardTitle>
           </CardHeader>
           <CardContent>
             <Link

@@ -1,6 +1,6 @@
 import type { Organization, Prisma } from "@getblitz/database";
 
-import type { OrganizationCounts, OrganizationWithDetails } from "..";
+import type { OrganizationWithDetails } from "..";
 
 export interface IOrganizationRepository {
   findById({ id }: { id: string }): Promise<OrganizationWithDetails | null>;
@@ -10,11 +10,6 @@ export interface IOrganizationRepository {
     slug: string;
   }): Promise<OrganizationWithDetails | null>;
   findByUserId({ userId }: { userId: string }): Promise<Organization[]>;
-  getCountsByOrgIds({
-    orgIds,
-  }: {
-    orgIds: string[];
-  }): Promise<OrganizationCounts[]>;
   findMemberByUserAndOrg({
     userId,
     organizationId,

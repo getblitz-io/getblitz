@@ -18,6 +18,7 @@
     "with-env": "dotenv -e ./.env --"
   },
   "dependencies": {
+    "@better-auth/api-key": "catalog:",
     "@getblitz/api": "workspace:*",
     "@getblitz/auth": "workspace:*",
     "@getblitz/bank-providers": "workspace:*",

@@ -2,7 +2,6 @@
  * Service interfaces for dependency injection
  */
 
-export type { IApiKeyService } from "./IApiKeyService.interface";
 export type {
   IBankConnectionService,
   SetupWebhookParams,

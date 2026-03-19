@@ -18,7 +18,7 @@
     "db:format": "pnpm -F @getblitz/database prisma:format",
     "db:studio": "pnpm -F @getblitz/database prisma:studio",
     "dev": "turbo watch dev --continue",
-    "dev:next": "turbo watch dev -F @getblitz/web...",
+    "dev:next": "turbo run dev -F @getblitz/web",
     "dev:wss": "pnpm --filter @getblitz/wss dev",
     "dev:demo": "pnpm --filter @getblitz/demo dev",
     "dev:test-bank": "pnpm --filter @getblitz/test-bank dev",

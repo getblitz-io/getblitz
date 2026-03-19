@@ -1,46 +1,18 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import {
-  apiLogger,
-  checkRateLimit,
-  createRateLimitHeaders,
-  getContainer,
-} from "@getblitz/api";
+import { getContainer } from "@getblitz/api";
 import { CreateChallengeRequestSchema } from "@getblitz/shared-types";
 
 import { env } from "~/env";
+import { withApiAuth } from "../with-api-auth";
 
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withApiAuth(
+  async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();
-    const { apiKeyService, paymentSessionService } = container;
+    const { paymentSessionService } = container;
 
-    // 1. Validate API Key
-    const authHeader = request.headers.get("authorization");
-    const keyValidation = await apiKeyService.validate({ authHeader });
-
-    if (!keyValidation.valid || !keyValidation.organizationId) {
-      return NextResponse.json(
-        { error: keyValidation.error ?? "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
-    const { organizationId } = keyValidation;
-
-    // 2. Check rate limit (using organization ID as identifier)
-    const rateLimitResult = await checkRateLimit(`org:${organizationId}`);
-    const rateLimitHeaders = createRateLimitHeaders(rateLimitResult);
-
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
-        { status: 429, headers: rateLimitHeaders },
-      );
-    }
-
-    // 3. Parse and validate request body
+    // 1. Parse and validate request body
     const body: unknown = await request.json();
     const parseResult = CreateChallengeRequestSchema.safeParse(body);
 
@@ -60,7 +32,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Create payment challenge via service
+    // 2. Create payment challenge via service
     try {
       const result = await paymentSessionService.createChallenge({
         input: {
@@ -82,11 +54,5 @@ export async function POST(request: NextRequest) {
       }
       throw error;
     }
-  } catch (error) {
-    apiLogger.error("Challenge API Error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

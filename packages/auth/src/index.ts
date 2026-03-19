@@ -1,5 +1,5 @@
-import { randomBytes } from "crypto";
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { oAuthProxy, organization } from "better-auth/plugins";
@@ -14,7 +14,7 @@ export function initAuth<
   secret: string | undefined;
   googleClientId: string;
   googleClientSecret: string;
-  extraPlugins?: TExtraPlugins;
+  extraPlugins: TExtraPlugins;
 }) {
   const config = {
     database: prismaAdapter(prisma, {
@@ -27,20 +27,15 @@ export function initAuth<
         productionURL: options.productionUrl,
         currentURL: options.baseUrl,
       }),
-      organization({
-        organizationHooks: {
-          afterCreateOrganization: async ({ organization }) => {
-            const secretKey = randomBytes(32).toString("hex");
-            await prisma.organizationSecretKey.create({
-              data: {
-                organization: { connect: { id: organization.id } },
-                secretKey,
-              },
-            });
-          },
+      organization(),
+      apiKey([
+        {
+          configId: "org-keys",
+          defaultPrefix: "sk_",
+          references: "organization",
         },
-      }),
-      ...(options.extraPlugins ?? []),
+      ]),
+      ...options.extraPlugins,
     ],
     socialProviders: {
       google: {

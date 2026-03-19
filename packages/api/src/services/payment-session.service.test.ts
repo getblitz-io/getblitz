@@ -107,7 +107,6 @@ describe("PaymentSessionService", () => {
     findById: vi.fn(),
     findBySlug: vi.fn(),
     findByUserId: vi.fn(),
-    getCountsByOrgIds: vi.fn(),
     findMemberByUserAndOrg: vi.fn(),
     update: vi.fn(),
   };

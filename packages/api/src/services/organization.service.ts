@@ -1,14 +1,9 @@
-import type {
-  BankAccount,
-  OrganizationSecretKey,
-  OrganizationWebhook,
-} from "@getblitz/database";
+import type { BankAccount, OrganizationWebhook } from "@getblitz/database";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
   AddBankAccountInput,
   CreateOrganizationWebhookInput,
-  IApiKeyRepository,
   IBankAccountRepository,
   IOrganizationBankConnectionRepository,
   IOrganizationRepository,
@@ -23,7 +18,6 @@ import { ForbiddenError, NotFoundError } from "../interfaces";
 export class OrganizationService implements IOrganizationService {
   constructor(
     private readonly organizationRepository: IOrganizationRepository,
-    private readonly apiKeyRepository: IApiKeyRepository,
     private readonly paymentSessionRepository: IPaymentSessionRepository,
     private readonly bankAccountRepository: IBankAccountRepository,
     private readonly organizationWebhookRepository: IOrganizationWebhookRepository,
@@ -115,60 +109,6 @@ export class OrganizationService implements IOrganizationService {
       id: organizationId,
       data,
     });
-  }
-
-  /**
-   * Generate a new API key for an organization
-   */
-  async generateApiKey({
-    organizationId,
-    userId,
-  }: {
-    organizationId: string;
-    userId: string;
-  }): Promise<OrganizationSecretKey> {
-    // Verify user has access
-    const member = await this.organizationRepository.findMemberByUserAndOrg({
-      userId,
-      organizationId,
-    });
-
-    if (!member) {
-      throw new ForbiddenError("You don't have access to this organization");
-    }
-
-    return this.apiKeyRepository.create({ organizationId });
-  }
-
-  /**
-   * Delete an API key
-   */
-  async deleteApiKey({
-    keyId,
-    userId,
-  }: {
-    keyId: string;
-    userId: string;
-  }): Promise<OrganizationSecretKey> {
-    const key = await this.apiKeyRepository.findByIdWithOrganization({
-      id: keyId,
-    });
-
-    if (!key) {
-      throw new NotFoundError("API key not found");
-    }
-
-    // Verify user has access
-    const member = await this.organizationRepository.findMemberByUserAndOrg({
-      userId,
-      organizationId: key.organizationId,
-    });
-
-    if (!member) {
-      throw new ForbiddenError("You don't have access to this organization");
-    }
-
-    return this.apiKeyRepository.delete({ id: keyId });
   }
 
   /**

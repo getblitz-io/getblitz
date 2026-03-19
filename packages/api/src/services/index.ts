@@ -1,5 +1,4 @@
 // Service classes
-export { ApiKeyService } from "./api-key.service";
 export { BankConnectionService } from "./bank-connection.service";
 export { BankWebhookService } from "./bank-webhook.service";
 export { CredentialManagerService } from "./credential-manager.service";
@@ -16,7 +15,6 @@ export {
   ForbiddenError,
   NotFoundError,
   type AddBankAccountInput,
-  type ApiKeyValidationResult,
   type BankWebhookResult,
   type CreateChallengeInput,
   type CreateChallengeResult,

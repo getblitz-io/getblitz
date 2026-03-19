@@ -5,6 +5,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import type { AppRouter } from "@getblitz/api";
+import type { Auth } from "@getblitz/auth";
 import { appRouter, createTRPCContext } from "@getblitz/api";
 
 import { auth } from "~/auth/server";
@@ -20,7 +21,7 @@ const createContext = cache(async () => {
 
   return createTRPCContext({
     headers: heads,
-    auth,
+    auth: auth as unknown as Auth,
     request: new Request("http://localhost"),
   });
 });

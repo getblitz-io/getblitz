@@ -37,13 +37,11 @@ export type {
   IPaymentSessionRepository,
   IOrganizationRepository,
   IBankAccountRepository,
-  IApiKeyRepository,
   ITransactionRepository,
   // Service interfaces
   IPaymentSessionService,
   IPaymentSettlementService,
   IOrganizationService,
-  IApiKeyService,
   IWebhookService,
   IBankWebhookService,
   // Input/Output types
@@ -57,12 +55,10 @@ export type {
   SettlementInput,
   SettlementResult,
   AddBankAccountInput,
-  ApiKeyValidationResult,
   WebhookEventType,
   // Composite types
   PaymentSessionWithRelations,
   OrganizationWithDetails,
-  ApiKeyWithOrganization,
   // Dashboard/Stats types
   DashboardStats,
   OrganizationCounts,

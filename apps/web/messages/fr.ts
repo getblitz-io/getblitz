@@ -27,6 +27,7 @@ const messages = {
       createPayment: "Créer un paiement",
       createOrganization: "Créer une organisation",
       generate: "Générer",
+      done: "Terminé",
       copy: "Copier",
       reveal: "Révéler",
       hide: "Masquer",
@@ -435,9 +436,16 @@ const messages = {
   ApiKeysList: {
     noKeys:
       "Aucune clé API pour le moment. Générez-en une pour commencer à faire des requêtes API.",
+    loading: "Chargement des clés API...",
+    defaultName: "Clé API",
+    createDescription: "Entrez un nom pour votre nouvelle clé API.",
+    namePlaceholder: "ex: Clé de Production",
+    copyWarning:
+      "Veuillez copier cette clé API maintenant. Vous ne pourrez plus la voir par la suite !",
     created: "Créé le {date}",
     lastUsed: "Dernière utilisation le {date}",
     apiKeyDeleted: "Clé API supprimée",
+    apiKeyCreateFailed: "Échec de la création de la clé API",
     copiedToClipboard: "Copié dans le presse-papiers",
   },
   WebhookSettings: {
@@ -523,6 +531,7 @@ const messages = {
     invoiceUpdated: "Facture mise à jour avec succès",
     invoiceDeleted: "Facture supprimée avec succès",
     linkCopied: "Lien copié dans le presse-papiers",
+    apiKeyCreateFailed: "Échec de la création de la clé API",
   },
   BankCallbackPage: {
     title: "Finalisation de la connexion",

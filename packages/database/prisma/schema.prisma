@@ -108,7 +108,6 @@ model Organization {
   members                     Member[]
   invitations                 Invitation[]
   paymentSessions             PaymentSession[]
-  secretKeys                  OrganizationSecretKey[]
   webhooks                    OrganizationWebhook[]
   organizationBankConnections OrganizationBankConnection[]
   invoices                    Invoice[]
@@ -127,6 +126,8 @@ model Member {
   role           String       @db.Text
   createdAt      DateTime
 
+  @@index([organizationId])
+  @@index([userId])
   @@map("member")
 }
 
@@ -142,6 +143,8 @@ model Invitation {
   inviterId      String
   user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
+  @@index([email])
   @@map("invitation")
 }
 
@@ -186,19 +189,6 @@ model OrganizationBankConnection {
   @@map("organization_bank_account")
 }
 
-model OrganizationSecretKey {
-  id             String       @id @default(uuid(7)) @db.VarChar(36)
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  secretKey      String       @db.Text
-  lastUsedAt     DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@map("organization_secret_key")
-}
-
-// Organization-level webhook configuration
 model OrganizationWebhook {
   id             String       @id @default(uuid(7)) @db.VarChar(36)
   organizationId String       @db.VarChar(36)
@@ -227,6 +217,7 @@ enum BankAccountStatus {
 }
 
 // New: Generic bank account configuration
+
 model BankAccount {
   id                           String                     @id @default(uuid(7)) @db.VarChar(36)
   externalAccountId            String // Bank's unique account ID
@@ -237,7 +228,7 @@ model BankAccount {
   isDefault                    Boolean                    @default(false)
   organizationBankConnectionId String
   organizationBankConnection   OrganizationBankConnection @relation(fields: [organizationBankConnectionId], references: [id], onDelete: Cascade)
-  metadata                     Json?                      // IBAN, account ID, etc.
+  metadata                     Json? // IBAN, account ID, etc.
   createdAt                    DateTime                   @default(now())
   updatedAt                    DateTime                   @updatedAt
   status                       BankAccountStatus          @default(ENABLED)
@@ -261,7 +252,7 @@ model PaymentSession {
   amountPaidCents     Int
   amountPaidCurrency  Currency      @default(EUR)
   status              PaymentStatus @default(PENDING)
-  expiresAt           DateTime?     // Nullable for non-expiring payments
+  expiresAt           DateTime? // Nullable for non-expiring payments
   clientToken         String?       @db.VarChar(255)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -281,17 +272,17 @@ model PaymentSession {
 }
 
 model Transaction {
-  id               String   @id @default(uuid(7)) @db.VarChar(36)
-  paymentSessionId String   @db.VarChar(36)
-  txHash           String   @unique @db.VarChar(255)
+  id               String            @id @default(uuid(7)) @db.VarChar(36)
+  paymentSessionId String            @db.VarChar(36)
+  txHash           String            @unique @db.VarChar(255)
   amountCents      Int
-  currency         Currency @default(EUR)
+  currency         Currency          @default(EUR)
   status           TransactionStatus @default(PENDING)
-  customerIban     String?  @db.VarChar(34)
-  customerBic      String?  @db.VarChar(11)
-  customerName     String?  @db.VarChar(255)
+  customerIban     String?           @db.VarChar(34)
+  customerBic      String?           @db.VarChar(11)
+  customerName     String?           @db.VarChar(255)
   rawPayload       Json?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime          @default(now())
 
   paymentSession PaymentSession @relation(fields: [paymentSessionId], references: [id], onDelete: Cascade)
 
@@ -314,15 +305,16 @@ enum InvoiceStatus {
 }
 
 // Invoice model for shareable invoices with extended payment features
+
 model Invoice {
-  id             String   @id @default(uuid(7)) @db.VarChar(36)
-  organizationId String   @db.VarChar(36)
-  referenceId    String   @unique @db.VarChar(35)
+  id             String        @id @default(uuid(7)) @db.VarChar(36)
+  organizationId String        @db.VarChar(36)
+  referenceId    String        @unique @db.VarChar(35)
   status         InvoiceStatus @default(DRAFT)
 
   // Customer information
-  customer       Customer? @relation(fields: [customerId], references: [id])
-  customerId     String?   @db.VarChar(36)
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.VarChar(36)
 
   // Snapshot of customer details at time of invoice creation (in case customer is deleted/changed)
   customerEmail   String? @db.VarChar(255)
@@ -341,10 +333,10 @@ model Invoice {
   // Structure: [{ description, quantity, unitPriceCents }]
   lineItems      Json? // Array of line items
   subtotalCents  Int // Sum of line items before tax/discount
-  taxRateBps     Int  @default(0) // Tax rate in basis points (e.g., 1900 = 19%)
-  taxAmountCents Int  @default(0) // Calculated tax amount
-  discountCents  Int  @default(0) // Discount amount in cents
-  totalCents     Int  @default(0) // Total amount (subtotal + tax - discount)
+  taxRateBps     Int      @default(0) // Tax rate in basis points (e.g., 1900 = 19%)
+  taxAmountCents Int      @default(0) // Calculated tax amount
+  discountCents  Int      @default(0) // Discount amount in cents
+  totalCents     Int      @default(0) // Total amount (subtotal + tax - discount)
   currency       Currency @default(EUR)
 
   // Security
@@ -357,18 +349,18 @@ model Invoice {
   // Organization relation
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
-  bankAccountId String @db.VarChar(36)
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  bankAccountId String      @db.VarChar(36)
 
   // Metadata
   metadata  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([organizationId, invoiceNumber])
   @@index([organizationId])
   @@index([referenceId])
   @@index([customerId])
-  @@unique([organizationId, invoiceNumber])
   @@map("invoice")
 }
 
@@ -387,8 +379,37 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([organizationId])
   @@unique([email, organizationId])
-  
+  @@index([organizationId])
   @@map("customer")
+}
+
+model Apikey {
+  id                  String    @id
+  configId            String    @default("default")
+  name                String?
+  start               String?
+  referenceId         String
+  prefix              String?
+  key                 String
+  refillInterval      Int?
+  refillAmount        Int?
+  lastRefillAt        DateTime?
+  enabled             Boolean?  @default(true)
+  rateLimitEnabled    Boolean?  @default(true)
+  rateLimitTimeWindow Int?      @default(86400000)
+  rateLimitMax        Int?      @default(10)
+  requestCount        Int?      @default(0)
+  remaining           Int?
+  lastRequest         DateTime?
+  expiresAt           DateTime?
+  createdAt           DateTime
+  updatedAt           DateTime
+  permissions         String?
+  metadata            String?
+
+  @@index([configId])
+  @@index([referenceId])
+  @@index([key])
+  @@map("apikey")
 }

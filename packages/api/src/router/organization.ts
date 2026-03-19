@@ -96,26 +96,58 @@ export const organizationRouter = createTRPCRouter({
       }
     }),
 
-  // Generate new API key
-  generateApiKey: organizationProcedure.mutation(async ({ ctx }) => {
+  // Get API keys for an organization
+  getApiKeys: organizationProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.services.organization.generateApiKey({
-        organizationId: ctx.organization.id,
-        userId: ctx.session.user.id,
+      return await ctx.prisma.apikey.findMany({
+        where: { referenceId: ctx.organization.id },
+        orderBy: { createdAt: "desc" },
       });
     } catch (error) {
       handleServiceError(error);
     }
   }),
 
+  // Generate new API key
+  generateApiKey: organizationProcedure
+    .input(z.object({ name: z.string().min(1, "Name is required") }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        return await ctx.auth.api.createApiKey({
+          body: {
+            name: input.name,
+            organizationId: ctx.organization.id,
+            configId: "org-keys",
+          },
+          headers: ctx.headers,
+        });
+      } catch (error) {
+        handleServiceError(error);
+      }
+    }),
+
   // Delete API key
   deleteApiKey: organizationProcedure
     .input(z.object({ keyId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        return await ctx.services.organization.deleteApiKey({
-          keyId: input.keyId,
-          userId: ctx.session.user.id,
+        const apiKey = await ctx.prisma.apikey.findUnique({
+          where: { id: input.keyId },
+        });
+
+        if (apiKey?.referenceId !== ctx.organization.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "API key not found",
+          });
+        }
+
+        return await ctx.auth.api.deleteApiKey({
+          body: {
+            keyId: input.keyId,
+            configId: "org-keys",
+          },
+          headers: ctx.headers,
         });
       } catch (error) {
         handleServiceError(error);

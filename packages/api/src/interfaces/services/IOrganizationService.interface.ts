@@ -1,8 +1,4 @@
-import type {
-  BankAccount,
-  OrganizationSecretKey,
-  OrganizationWebhook,
-} from "@getblitz/database";
+import type { BankAccount, OrganizationWebhook } from "@getblitz/database";
 
 import type {
   AddBankAccountInput,
@@ -37,20 +33,6 @@ export interface IOrganizationService {
       allowedOrigins?: string[];
     };
   }): Promise<OrganizationWithDetails>;
-  generateApiKey({
-    organizationId,
-    userId,
-  }: {
-    organizationId: string;
-    userId: string;
-  }): Promise<OrganizationSecretKey>;
-  deleteApiKey({
-    keyId,
-    userId,
-  }: {
-    keyId: string;
-    userId: string;
-  }): Promise<OrganizationSecretKey>;
   getPaidCount({ orgId }: { orgId: string }): Promise<number>;
 
   // Bank account methods

@@ -2,16 +2,12 @@ import type { Organization, Prisma, PrismaClient } from "@getblitz/database";
 
 import type {
   IOrganizationRepository,
-  OrganizationCounts,
   OrganizationWithDetails,
 } from "../interfaces";
 import { BaseRepository } from "./base.repository";
 
 // Shared include for organization queries with full details
 const organizationWithDetailsInclude = {
-  secretKeys: {
-    orderBy: { createdAt: "desc" },
-  },
   organizationBankConnections: {
     orderBy: { createdAt: "desc" },
     select: {
@@ -132,48 +128,5 @@ export class OrganizationRepository
         userId: true,
       },
     });
-  }
-
-  /**
-   * Get counts of related entities for multiple organizations
-   */
-  async getCountsByOrgIds({
-    orgIds,
-  }: {
-    orgIds: string[];
-  }): Promise<OrganizationCounts[]> {
-    if (orgIds.length === 0) return [];
-
-    const [secretKeyCounts, bankAccountCounts, paymentCounts] =
-      await Promise.all([
-        this.prisma.organizationSecretKey.groupBy({
-          by: ["organizationId"],
-          where: { organizationId: { in: orgIds } },
-          _count: true,
-        }),
-        this.prisma.bankAccount.groupBy({
-          by: ["organizationBankConnectionId"],
-          where: {
-            organizationBankConnection: { organizationId: { in: orgIds } },
-          },
-          _count: true,
-        }),
-        this.prisma.paymentSession.groupBy({
-          by: ["organizationId"],
-          where: { organizationId: { in: orgIds } },
-          _count: true,
-        }),
-      ]);
-
-    return orgIds.map((orgId) => ({
-      organizationId: orgId,
-      secretKeyCount:
-        secretKeyCounts.find((c) => c.organizationId === orgId)?._count ?? 0,
-      bankAccountCount:
-        bankAccountCounts.find((c) => c.organizationBankConnectionId === orgId)
-          ?._count ?? 0,
-      paymentCount:
-        paymentCounts.find((c) => c.organizationId === orgId)?._count ?? 0,
-    }));
   }
 }

@@ -1,4 +1,3 @@
-export { validateApiKey, type ApiKeyValidationResult } from "./api-key";
 export { generateReferenceId } from "./reference-id";
 export {
   generateSepaQrString,

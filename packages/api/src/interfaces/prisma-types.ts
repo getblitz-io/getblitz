@@ -21,9 +21,6 @@ export type PaymentSessionWithRelations = Prisma.PaymentSessionGetPayload<{
 
 export type OrganizationWithDetails = Prisma.OrganizationGetPayload<{
   include: {
-    secretKeys: {
-      orderBy: { createdAt: "desc" };
-    };
     organizationBankConnections: {
       orderBy: { createdAt: "desc" };
       select: {
@@ -69,12 +66,6 @@ export type OrganizationWithDetails = Prisma.OrganizationGetPayload<{
         webhooks: true;
       };
     };
-  };
-}>;
-
-export type ApiKeyWithOrganization = Prisma.OrganizationSecretKeyGetPayload<{
-  include: {
-    organization: true;
   };
 }>;
 

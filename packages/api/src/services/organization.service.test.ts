@@ -4,7 +4,6 @@ import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
   AddBankAccountInput,
-  IApiKeyRepository,
   IBankAccountRepository,
   IOrganizationBankConnectionRepository,
   IOrganizationRepository,
@@ -20,9 +19,6 @@ describe("OrganizationService", () => {
     findById: vi.fn(),
     findMemberByUserAndOrg: vi.fn(),
   };
-  const mockApiKeyRepo = {
-    create: vi.fn(),
-  };
   const mockSessionRepo = {};
   const mockBankRepo = {
     upsert: vi.fn(),
@@ -36,7 +32,6 @@ describe("OrganizationService", () => {
   beforeAll(() => {
     service = new OrganizationService(
       mockOrgRepo as unknown as IOrganizationRepository,
-      mockApiKeyRepo as unknown as IApiKeyRepository,
       mockSessionRepo as unknown as IPaymentSessionRepository,
       mockBankRepo as unknown as IBankAccountRepository,
       mockWebhookRepo as unknown as IOrganizationWebhookRepository,
@@ -74,21 +69,6 @@ describe("OrganizationService", () => {
     await expect(
       service.getById({ id: "unknown", userId: "user-1" }),
     ).rejects.toThrow(NotFoundError);
-  });
-
-  it("should generate API key", async () => {
-    mockOrgRepo.findMemberByUserAndOrg.mockResolvedValue({ userId: "user-1" });
-    mockApiKeyRepo.create.mockResolvedValue({ id: "key-1" });
-
-    const result = await service.generateApiKey({
-      organizationId: "org-1",
-      userId: "user-1",
-    });
-
-    expect(result.id).toBe("key-1");
-    expect(mockApiKeyRepo.create).toHaveBeenCalledWith({
-      organizationId: "org-1",
-    });
   });
 
   it("should add bank account if connection is connected", async () => {

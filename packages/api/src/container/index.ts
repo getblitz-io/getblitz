@@ -10,7 +10,6 @@ import {
 import { prisma } from "@getblitz/database";
 import { getRedisClient } from "@getblitz/redis";
 
-import { ApiKeyRepository } from "../repositories/api-key.repository";
 import { BankAccountRepository } from "../repositories/bank-account.repository";
 import { CustomerRepository } from "../repositories/customer.repository";
 import { InvoiceRepository } from "../repositories/invoice.repository";
@@ -20,7 +19,6 @@ import { OrganizationRepository } from "../repositories/organization.repository"
 // Repositories
 import { PaymentSessionRepository } from "../repositories/payment-session.repository";
 import { TransactionRepository } from "../repositories/transaction.repository";
-import { ApiKeyService } from "../services/api-key.service";
 import { BankConnectionService } from "../services/bank-connection.service";
 import { BankWebhookService } from "../services/bank-webhook.service";
 import { CredentialCacheService } from "../services/credential-cache.service";
@@ -48,7 +46,6 @@ export interface ServiceContainer {
   // Repositories
   paymentSessionRepository: PaymentSessionRepository;
   organizationRepository: OrganizationRepository;
-  apiKeyRepository: ApiKeyRepository;
   transactionRepository: TransactionRepository;
   bankAccountRepository: BankAccountRepository;
   organizationWebhookRepository: OrganizationWebhookRepository;
@@ -60,7 +57,6 @@ export interface ServiceContainer {
   paymentSessionService: PaymentSessionService;
   paymentSettlementService: PaymentSettlementService;
   organizationService: OrganizationService;
-  apiKeyService: ApiKeyService;
   webhookService: WebhookService;
   securityService: SecurityService;
   credentialCacheService: CredentialCacheService;
@@ -94,7 +90,6 @@ function createContainer(): ServiceContainer {
   // Create repositories (depend on Prisma)
   const paymentSessionRepository = new PaymentSessionRepository(prisma);
   const organizationRepository = new OrganizationRepository(prisma);
-  const apiKeyRepository = new ApiKeyRepository(prisma);
   const transactionRepository = new TransactionRepository(prisma);
   const bankAccountRepository = new BankAccountRepository(prisma);
   const organizationWebhookRepository = new OrganizationWebhookRepository(
@@ -122,13 +117,11 @@ function createContainer(): ServiceContainer {
   );
   const organizationService = new OrganizationService(
     organizationRepository,
-    apiKeyRepository,
     paymentSessionRepository,
     bankAccountRepository,
     organizationWebhookRepository,
     organizationBankConnectionRepository,
   );
-  const apiKeyService = new ApiKeyService(apiKeyRepository);
   const credentialCacheService = new CredentialCacheService();
   const bankWebhookService = new BankWebhookService(
     organizationBankConnectionRepository,
@@ -153,7 +146,6 @@ function createContainer(): ServiceContainer {
     redis,
     paymentSessionRepository,
     organizationRepository,
-    apiKeyRepository,
     transactionRepository,
     bankAccountRepository,
     organizationWebhookRepository,
@@ -163,7 +155,6 @@ function createContainer(): ServiceContainer {
     paymentSessionService,
     paymentSettlementService,
     organizationService,
-    apiKeyService,
     webhookService,
     securityService,
     credentialCacheService,

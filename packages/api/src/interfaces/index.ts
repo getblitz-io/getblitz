@@ -25,7 +25,6 @@ export type {
 
 // Output types
 export type {
-  ApiKeyValidationResult,
   BankWebhookResult,
   CreateChallengeResult,
   SessionDetailsResult,
@@ -39,7 +38,6 @@ export type {
 
 // Prisma composite types
 export type {
-  ApiKeyWithOrganization,
   BankAccountWithOrganizationBankConnection,
   OrganizationWithDetails,
   PaymentSessionWithOrg,
@@ -50,7 +48,6 @@ export type {
 
 // Repository interfaces
 export type {
-  IApiKeyRepository,
   IBankAccountRepository,
   ICustomerRepository,
   IOrganizationBankConnectionRepository,
@@ -64,7 +61,6 @@ export type {
 // Service interfaces
 export type {
   CredentialManagerResult,
-  IApiKeyService,
   IBankConnectionService,
   IBankWebhookService,
   ICredentialManagerService,

@@ -13,7 +13,7 @@ import { Button } from "@getblitz/ui/button";
 
 import { api } from "~/trpc/server";
 import { AllowedOriginsSettings } from "./_components/allowed-origins-settings";
-import { ApiKeysList } from "./_components/api-keys-list";
+import { ApiKeysSection } from "./_components/api-keys-section";
 import { WebhookSettings } from "./_components/webhook-settings";
 
 export default async function SettingsPage({
@@ -82,28 +82,7 @@ export default async function SettingsPage({
         </Card>
 
         {/* API Keys Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>{t("apiKeys")}</CardTitle>
-                <CardDescription>{t("apiKeysDescription")}</CardDescription>
-              </div>
-              <Link href={`/${slug}/settings/keys/new`} className="shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto"
-                >
-                  {t("generateNewKey")}
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ApiKeysList keys={organization.secretKeys} slug={slug} />
-          </CardContent>
-        </Card>
+        <ApiKeysSection slug={slug} />
 
         {/* Allowed Origins Settings */}
         <AllowedOriginsSettings initialOrigins={organization.allowedOrigins} />

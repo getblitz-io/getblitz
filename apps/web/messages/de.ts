@@ -27,6 +27,7 @@ const messages = {
       createPayment: "Zahlung erstellen",
       createOrganization: "Organisation erstellen",
       generate: "Generieren",
+      done: "Fertig",
       copy: "Kopieren",
       reveal: "Anzeigen",
       hide: "Ausblenden",
@@ -440,9 +441,17 @@ const messages = {
   ApiKeysList: {
     noKeys:
       "Noch keine API-Schlüssel. Generieren Sie einen, um API-Anfragen zu stellen.",
+    loading: "API-Schlüssel werden geladen...",
+    defaultName: "API-Schlüssel",
+    createDescription:
+      "Geben Sie einen Namen für Ihren neuen API-Schlüssel ein.",
+    namePlaceholder: "z.B. Produktions-Schlüssel",
+    copyWarning:
+      "Bitte kopieren Sie diesen API-Schlüssel jetzt. Sie können ihn später nicht mehr ansehen!",
     created: "Erstellt {date}",
     lastUsed: "Zuletzt verwendet {date}",
     apiKeyDeleted: "API-Schlüssel gelöscht",
+    apiKeyCreateFailed: "API-Schlüssel konnte nicht erstellt werden",
     copiedToClipboard: "In Zwischenablage kopiert",
   },
   WebhookSettings: {
@@ -529,6 +538,7 @@ const messages = {
     invoiceDeleted: "Rechnung erfolgreich gelöscht",
     linkCopied: "Link in Zwischenablage kopiert",
     invoiceFinalized: "Rechnung erfolgreich finalisiert",
+    apiKeyCreateFailed: "API-Schlüssel konnte nicht erstellt werden",
   },
   BankCallbackPage: {
     title: "Vervollständigung der Verbindung",

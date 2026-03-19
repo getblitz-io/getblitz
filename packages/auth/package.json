@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/api-key": "catalog:",
     "@getblitz/database": "workspace:*",
     "@t3-oss/env-core": "catalog:",
     "better-auth": "catalog:",

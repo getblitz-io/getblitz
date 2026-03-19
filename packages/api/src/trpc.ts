@@ -10,10 +10,9 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { z, ZodError } from "zod";
 
-import type { Auth, Session } from "@getblitz/auth";
+import type { Auth } from "@getblitz/auth";
 import type { PrismaClient } from "@getblitz/database";
 
-import type { ApiKeyService } from "./services/api-key.service";
 import type { BankConnectionService } from "./services/bank-connection.service";
 import type { CredentialCacheService } from "./services/credential-cache.service";
 import type { CredentialManagerService } from "./services/credential-manager.service";
@@ -36,7 +35,6 @@ export interface TRPCServices {
   paymentSession: PaymentSessionService;
   paymentSettlement: PaymentSettlementService;
 
-  apiKey: ApiKeyService;
   webhook: WebhookService;
   security: SecurityService;
   credentialCache: CredentialCacheService;
@@ -63,13 +61,14 @@ export interface TRPCServices {
 export const createTRPCContext = async (opts: {
   request: Request;
   headers: Headers;
-  auth: Auth;
+  auth: any; // Using any for auth to bypass complex plugin type mismatches between packages
 }): Promise<{
   headers: Headers;
-  session: Session | null;
   services: TRPCServices;
   prisma: PrismaClient;
   request: Request;
+  auth: any;
+  session: any;
 }> => {
   const session = await opts.auth.api.getSession({
     headers: opts.headers,
@@ -82,11 +81,11 @@ export const createTRPCContext = async (opts: {
     request: opts.request,
     headers: opts.headers,
     session,
+    auth: opts.auth,
     services: {
       organization: container.organizationService,
       paymentSession: container.paymentSessionService,
       paymentSettlement: container.paymentSettlementService,
-      apiKey: container.apiKeyService,
       webhook: container.webhookService,
       security: container.securityService,
       credentialCache: container.credentialCacheService,
