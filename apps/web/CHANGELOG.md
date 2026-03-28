@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.7](https://github.com/getblitz-io/getblitz/compare/web-v0.0.6...web-v0.0.7) (2026-03-28)
+
+
+### Features
+
+* migrate API key management to better-auth, update dependencies, and fix tRPC context type mismatch ([507f76f](https://github.com/getblitz-io/getblitz/commit/507f76f4b9162dfb5efc52d5a3c59e63b4db3348))
+
+
+### Bug Fixes
+
+* Correctly type tRPC context auth and session parameters by replacing `any` with explicit `Auth` and derived session types. ([750a3d5](https://github.com/getblitz-io/getblitz/commit/750a3d54b946066429e75df8b20ab38089bdf582))
+
 ## [0.0.6](https://github.com/getblitz-io/getblitz/compare/web-v0.0.5...web-v0.0.6) (2026-02-17)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.6](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.5...shared-types-v0.0.6) (2026-03-28)
+
+
+### Features
+
+* add support for partial payment type ([f14fbb8](https://github.com/getblitz-io/getblitz/commit/f14fbb8a4c9715d73e554c51b5ede5378fc36195))
+* update webhook payload with metadata ([145ae06](https://github.com/getblitz-io/getblitz/commit/145ae0641fddb6c851416b1e2a8a487e74a83e35))
+
+
+### Bug Fixes
+
+* Add ESLint disable comments for unsafe assignments, delay cookie banner visibility, and enforce formatting in pre-commit hook. ([a2b0f7e](https://github.com/getblitz-io/getblitz/commit/a2b0f7edd7b0418e2abab7b72b8df269fe16cbee))
+
 ## [0.0.5](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.4...shared-types-v0.0.5) (2026-02-21)
 
 
