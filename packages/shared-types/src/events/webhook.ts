@@ -26,6 +26,7 @@ export const MerchantWebhookPayloadSchema = z.object({
     iban: z.string(),
     bic: z.string(),
   }),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 export type MerchantWebhookPayload = z.infer<
   typeof MerchantWebhookPayloadSchema
