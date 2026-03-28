@@ -145,14 +145,22 @@ describe("PaymentSettlementService", () => {
         where: { id: "session-123" },
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: expect.objectContaining({
-          status: "PENDING", // Still pending
+          status: "PARTIAL", // Still pending
           amountPaidCents: 500,
         }),
       }),
     );
 
-    // No Redis event for partial payments (only for completion)
-    expect(publishPaymentEvent).not.toHaveBeenCalled();
+    // Redis event for partial payment should be published
+    expect(publishPaymentEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "PAYMENT_PARTIAL",
+        referenceId: "ref-123",
+        sessionId: "session-123",
+        status: "PARTIAL",
+        clientToken: "test-token",
+      }),
+    );
     expect(mockWebhookService.notifyMerchant).toHaveBeenCalledWith({
       sessionId: "session-123",
       event: "payment.partial",
@@ -333,5 +341,124 @@ describe("PaymentSettlementService", () => {
       }),
     );
     expect(publishPaymentEvent).toHaveBeenCalled();
+  });
+
+  it("should transition from PARTIAL to PAID when the remaining amount is paid", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PARTIAL", // Already explicitly partial
+      expiresAt: new Date(Date.now() + 10000),
+      amountCents: 1000,
+      amountPaidCents: 500, // 500 already paid
+      currency: "EUR",
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const finalPaymentInput = {
+      referenceId: "ref-123",
+      txHash: "hash-789",
+      amountCents: 500, // Remaining 500
+      rawPayload: { some: "data" },
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({}),
+        aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 1000 } }), // 500 + 500 = 1000
+      },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({ input: finalPaymentInput });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.paymentSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "session-123" },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({
+          status: "PAID",
+          amountPaidCents: 1000,
+        }),
+      }),
+    );
+
+    expect(publishPaymentEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "PAYMENT_SUCCESS",
+        status: "PAID",
+      }),
+    );
+    expect(mockWebhookService.notifyMerchant).toHaveBeenCalledWith({
+      sessionId: "session-123",
+      event: "payment.success",
+    });
+  });
+
+  it("should emit another payment.partial if a subsequent payment still does not cover the full amount", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PARTIAL",
+      expiresAt: new Date(Date.now() + 10000),
+      amountCents: 1000,
+      amountPaidCents: 200, // 200 already paid
+      currency: "EUR",
+      clientToken: "test-token",
+      bankAccount: {},
+    };
+
+    const nextPartialInput = {
+      referenceId: "ref-123",
+      txHash: "hash-890",
+      amountCents: 300,
+      rawPayload: { some: "data" },
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({}),
+        aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 500 } }), // 200 + 300 = 500 total
+      },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({ input: nextPartialInput });
+
+    expect(result.success).toBe(true);
+    expect(mockTx.paymentSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({
+          status: "PARTIAL",
+          amountPaidCents: 500,
+        }),
+      }),
+    );
+
+    expect(publishPaymentEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "PAYMENT_PARTIAL",
+        status: "PARTIAL",
+      }),
+    );
+    expect(mockWebhookService.notifyMerchant).toHaveBeenCalledWith({
+      sessionId: "session-123",
+      event: "payment.partial",
+    });
   });
 });

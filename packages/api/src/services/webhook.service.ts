@@ -79,6 +79,7 @@ export class WebhookService implements IWebhookService {
         iban: session.bankAccount.accountIban,
         bic: session.bankAccount.accountBic,
       },
+      metadata: this.parseMetadata(session.metadata),
     };
 
     // 1. Notify Organization-level webhook
@@ -101,6 +102,23 @@ export class WebhookService implements IWebhookService {
     }
 
     await Promise.allSettled(requests);
+  }
+
+  private parseMetadata(metadata: unknown): Record<string, string> | undefined {
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+      return undefined;
+    }
+
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(metadata)) {
+      if (typeof value === "string") {
+        result[key] = value;
+      } else if (typeof value === "number" || typeof value === "boolean") {
+        result[key] = String(value);
+      }
+    }
+
+    return Object.keys(result).length > 0 ? result : undefined;
   }
 
   private shouldNotifyOrg({

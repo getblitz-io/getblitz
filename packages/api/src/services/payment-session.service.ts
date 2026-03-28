@@ -57,11 +57,9 @@ export class PaymentSessionService implements IPaymentSessionService {
     {
       input,
       baseUrl,
-      expiresInMinutes,
     }: {
       input: CreateChallengeInput;
       baseUrl: string;
-      expiresInMinutes?: number | null; // null = no expiration
     },
     tx?: Prisma.TransactionClient,
   ): Promise<CreateChallengeResult> {
@@ -71,6 +69,8 @@ export class PaymentSessionService implements IPaymentSessionService {
       currency,
       bankAccountId,
       merchantReferenceId,
+      metadata,
+      expiresInMinutes,
     } = input;
 
     // Validate merchantReferenceId uniqueness per organization if provided
@@ -131,6 +131,7 @@ export class PaymentSessionService implements IPaymentSessionService {
           amountCents: amount,
           currency,
           expiresAt,
+          metadata,
         },
       },
       tx,

@@ -119,9 +119,9 @@ function CheckoutContent() {
 
       payment.on("onSuccess", (token: string) => {
         console.log("Payment successful! Token:", token);
-        setStatus("paid");
         // Redirect after short delay
         setTimeout(() => {
+          setStatus("paid");
           router.push(`/success?session=${currentSessionId}&token=${token}`);
         }, 1500);
       });

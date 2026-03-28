@@ -8,7 +8,7 @@ interface PaymentDetailsProps {
   session: {
     referenceId: string;
     amountCents: number;
-    status: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
+    status: "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "PARTIAL";
     expiresAt: string | null;
     bankAccount: {
       accountName: string;
@@ -59,6 +59,10 @@ export function PaymentDetails({
           ) : session.status === "PAID" ? (
             <span className="font-medium text-green-500">
               {tCommon("status.paid")}
+            </span>
+          ) : session.status === "PARTIAL" ? (
+            <span className="font-medium text-amber-500">
+              {tCommon("status.partial")}
             </span>
           ) : (
             <span className="font-medium text-red-500">

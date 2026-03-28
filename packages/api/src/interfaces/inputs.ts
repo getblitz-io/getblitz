@@ -17,6 +17,7 @@ export interface CreatePaymentSessionInput {
   amountCents: number;
   currency: Currency;
   expiresAt: Date | null; // Nullable for non-expiring payments
+  metadata?: Record<string, string>;
 }
 
 export interface CreateBankAccountInput {
@@ -60,6 +61,8 @@ export interface CreateChallengeInput {
   currency: Currency;
   bankAccountId?: string;
   merchantReferenceId?: string;
+  metadata?: Record<string, string>;
+  expiresInMinutes?: number | null;
 }
 
 export interface SettlementInput {

@@ -12,6 +12,7 @@ const statusColors = {
   PAID: "bg-green-500/10 text-green-600",
   FAILED: "bg-red-500/10 text-red-600",
   EXPIRED: "bg-gray-500/10 text-gray-600",
+  PARTIAL: "bg-amber-500/10 text-amber-600",
 } as const;
 
 export default async function PaymentsPage({

@@ -55,7 +55,7 @@ linkWorkspacePackages: true
 minimumReleaseAge: 1440
 
 minimumReleaseAgeExclude:
-  - minimatch
+  - '@getblitz/shared-types'
 
 onlyBuiltDependencies:
   - '@prisma/client'

@@ -23,7 +23,14 @@ export const POST = withApiAuth(
       );
     }
 
-    const { amount, currency, bankAccountId } = parseResult.data;
+    const {
+      amount,
+      currency,
+      bankAccountId,
+      merchantReferenceId,
+      metadata,
+      expiresInMinutes,
+    } = parseResult.data;
 
     if (bankAccountId && typeof bankAccountId !== "string") {
       return NextResponse.json(
@@ -39,7 +46,10 @@ export const POST = withApiAuth(
           organizationId,
           amount,
           currency,
-          bankAccountId: bankAccountId ?? undefined,
+          bankAccountId,
+          merchantReferenceId,
+          metadata,
+          expiresInMinutes,
         },
         baseUrl: env.NEXT_PUBLIC_APP_URL,
       });

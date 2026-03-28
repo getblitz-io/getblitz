@@ -14,11 +14,9 @@ export interface IPaymentSessionService {
     {
       input,
       baseUrl,
-      expiresInMinutes,
     }: {
       input: CreateChallengeInput;
       baseUrl: string;
-      expiresInMinutes?: number | null;
     },
     tx?: Prisma.TransactionClient,
   ): Promise<CreateChallengeResult>;

@@ -35,8 +35,13 @@ export class GetBlitz {
 
     // Listen for payment events
     this.socket.onPaymentUpdate((event) => {
+      this.widget?.updateStatus(event.status);
+
       if (event.status === "PAID" && this.callbacks.onSuccess) {
         this.callbacks.onSuccess(event.clientToken ?? "");
+      }
+      if (event.status === "PARTIAL" && this.callbacks.onPartial) {
+        this.callbacks.onPartial();
       }
       if (event.status === "FAILED" && this.callbacks.onError) {
         this.callbacks.onError(new Error("Payment failed"));

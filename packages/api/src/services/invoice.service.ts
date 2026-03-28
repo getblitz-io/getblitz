@@ -84,8 +84,12 @@ export class InvoiceService implements IInvoiceService {
             amount: invoice.totalCents,
             currency: invoice.currency,
             merchantReferenceId: invoice.referenceId,
+            metadata: {
+              invoiceId: invoice.id,
+              referenceId: invoice.referenceId,
+            },
+            expiresInMinutes,
           },
-          expiresInMinutes,
           baseUrl: env.NEXT_PUBLIC_APP_URL,
         },
         tx,

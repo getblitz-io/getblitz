@@ -44,6 +44,7 @@ const messages = {
       canceled: "Annulé",
       draft: "Brouillon",
       finalized: "Finalisé",
+      partial: "Partiel",
     },
     labels: {
       email: "E-mail",

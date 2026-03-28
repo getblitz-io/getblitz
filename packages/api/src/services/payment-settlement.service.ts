@@ -116,7 +116,12 @@ export class PaymentSettlementService implements IPaymentSettlementService {
 
           // Determine if payment is complete
           const isPaymentComplete = totalPaidCents >= session.amountCents;
-          const newStatus = isPaymentComplete ? "PAID" : "PENDING";
+          const isPartial = !isPaymentComplete && totalPaidCents > 0;
+          const newStatus = isPaymentComplete
+            ? "PAID"
+            : isPartial
+              ? "PARTIAL"
+              : "PENDING";
 
           // Update session with new totals and status
           await tx.paymentSession.update({
@@ -129,12 +134,12 @@ export class PaymentSettlementService implements IPaymentSettlementService {
           });
 
           // Publish event to Redis for real-time notifications
-          if (isPaymentComplete) {
+          if (isPaymentComplete || isPartial) {
             const event: PaymentEvent = {
-              type: "PAYMENT_SUCCESS",
+              type: isPaymentComplete ? "PAYMENT_SUCCESS" : "PAYMENT_PARTIAL",
               referenceId: session.referenceId,
               sessionId: session.id,
-              status: "PAID",
+              status: newStatus,
               timestamp: new Date().toISOString(),
               clientToken: session.clientToken ?? undefined,
             };

@@ -93,6 +93,7 @@ export class PaymentSessionRepository
         currency: data.currency,
         expiresAt: data.expiresAt,
         status: "PENDING",
+        metadata: data.metadata,
       },
     });
   }

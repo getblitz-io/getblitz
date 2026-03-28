@@ -24,6 +24,7 @@ enum Currency {
 
 enum PaymentStatus {
   PENDING
+  PARTIAL
   PAID
   FAILED
   EXPIRED
