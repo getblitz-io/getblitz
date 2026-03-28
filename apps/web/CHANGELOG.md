@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/getblitz-io/getblitz/compare/web-v0.0.7...web-v0.0.8) (2026-03-28)
+
+
+### Features
+
+* add support for partial payment status, including database migration, event handling, and UI updates for the widget. ([7b83d00](https://github.com/getblitz-io/getblitz/commit/7b83d0073ab7794138ef3880ece31deb3f5790fc))
+
 ## [0.0.7](https://github.com/getblitz-io/getblitz/compare/web-v0.0.6...web-v0.0.7) (2026-03-28)
 
 

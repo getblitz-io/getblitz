@@ -1,6 +1,6 @@
 {
   "name": "@getblitz/client",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Embeddable payment SDK for GetBlitz Payment Gateway - Self-hosted SEPA instant transfers across Europe",
   "author": "GetBlitz <hello@getblitz.io>",
   "license": "MIT",
