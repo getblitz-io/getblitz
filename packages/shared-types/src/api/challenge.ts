@@ -57,7 +57,7 @@ export const PaymentSessionDetailsSchema = z.object({
   referenceId: z.string(),
   amountCents: z.number().int(),
   currency: z.enum(["EUR"]),
-  status: z.enum(["PENDING", "PAID", "FAILED", "EXPIRED"]),
+  status: z.enum(["PENDING", "PARTIAL", "PAID", "FAILED", "EXPIRED"]),
   expiresAt: z.date().nullable(),
   organization: z.object({
     name: z.string(),

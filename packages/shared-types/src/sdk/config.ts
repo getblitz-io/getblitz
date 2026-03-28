@@ -14,6 +14,7 @@ export type GetBlitzClientConfig = z.infer<typeof GetBlitzClientConfigSchema>;
 // SDK event callbacks
 export interface GetBlitzEventCallbacks {
   onSuccess?: (token: string) => void;
+  onPartial?: () => void;
   onError?: (error: Error) => void;
   onExpired?: () => void;
   onCancel?: () => void;

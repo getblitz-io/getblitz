@@ -6,6 +6,7 @@ export const PAYMENT_EVENTS_CHANNEL = "payment_events";
 // Event types for realtime notifications
 export const PaymentEventTypeSchema = z.enum([
   "PAYMENT_SUCCESS",
+  "PAYMENT_PARTIAL",
   "PAYMENT_FAILED",
   "PAYMENT_EXPIRED",
 ]);
@@ -16,7 +17,7 @@ export const PaymentEventSchema = z.object({
   type: PaymentEventTypeSchema,
   referenceId: z.string(),
   sessionId: z.uuid(),
-  status: z.enum(["PENDING", "PAID", "FAILED", "EXPIRED"]),
+  status: z.enum(["PENDING", "PARTIAL", "PAID", "FAILED", "EXPIRED"]),
   clientToken: z.string().optional(), // Proof of payment for the buyer
   timestamp: z.string(), // ISO timestamp string for JSON serialization
 });
