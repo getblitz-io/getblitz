@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.5...getblitz-client-v0.0.6) (2026-03-28)
+
+
+### Features
+
+* add support for partial payment status, including database migration, event handling, and UI updates for the widget. ([7b83d00](https://github.com/getblitz-io/getblitz/commit/7b83d0073ab7794138ef3880ece31deb3f5790fc))
+
 ## [0.0.5](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.4...getblitz-client-v0.0.5) (2026-02-21)
 
 
