@@ -121,6 +121,36 @@ export class PaymentSessionService implements IPaymentSessionService {
         ? null
         : new Date(Date.now() + (expiresInMinutes ?? 15) * 60 * 1000);
 
+    // Validate organization and redirectUrl
+    const organization = await this.organizationRepository.findById({
+      id: organizationId,
+    });
+
+    if (!organization) throw new Error("Organization not found");
+
+    if (redirectUrl) {
+      try {
+        const redirectOrigin = new URL(redirectUrl).origin;
+        const appUrl = new URL(env.NEXT_PUBLIC_APP_URL).origin;
+
+        const isAllowed =
+          redirectOrigin === appUrl ||
+          organization.allowedOrigins.includes(redirectOrigin);
+
+        if (!isAllowed) {
+          throw new Error("Invalid redirectUrl: origin not allowed");
+        }
+      } catch (err: unknown) {
+        if (
+          err instanceof Error &&
+          err.message === "Invalid redirectUrl: origin not allowed"
+        ) {
+          throw err;
+        }
+        throw new Error("Invalid redirectUrl format");
+      }
+    }
+
     // Create payment session
     const paymentSession = await this.paymentSessionRepository.create(
       {
@@ -141,13 +171,6 @@ export class PaymentSessionService implements IPaymentSessionService {
 
     // Generate payment URL
     const paymentUrl = `${baseUrl}/pay/${paymentSession.id}`;
-
-    // Validate origin and generate token
-    const organization = await this.organizationRepository.findById({
-      id: organizationId,
-    });
-
-    if (!organization) throw new Error("Organization not found");
 
     const clientToken = await this.generateClientToken(
       paymentSession.id,

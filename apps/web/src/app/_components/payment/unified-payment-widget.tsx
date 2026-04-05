@@ -153,6 +153,23 @@ export function UnifiedPaymentWidget({
   const [session, setSession] = useState<SessionDetails>(initialSession);
   const [redirecting, setRedirecting] = useState(false);
   const t = useTranslations("PaymentDetailPage");
+
+  // Sync session state if initialSession changes from parent (e.g., background refetch)
+  useEffect(() => {
+    setSession(initialSession);
+  }, [initialSession]);
+
+  // Manage redirect side effect with cleanup
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (redirecting && session.redirectUrl) {
+      const url = session.redirectUrl;
+      timeout = setTimeout(() => {
+        window.location.href = url;
+      }, 3000);
+    }
+    return () => clearTimeout(timeout);
+  }, [redirecting, session.redirectUrl]);
   const tCommon = useTranslations("Common");
   const tToast = useTranslations("Toast");
   const tDetails = useTranslations("PaymentDetails");
@@ -176,11 +193,6 @@ export function UnifiedPaymentWidget({
         // Trigger redirect if configured
         if (session.redirectUrl) {
           setRedirecting(true);
-          setTimeout(() => {
-            if (session.redirectUrl) {
-              window.location.href = session.redirectUrl;
-            }
-          }, 3000);
         }
       } else if (event.status === "EXPIRED") {
         toast.error(tToast("paymentExpired"));
@@ -243,7 +255,7 @@ export function UnifiedPaymentWidget({
               className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
               aria-hidden="true"
             >
-              <div className="relative left-[calc(50%-11rem)] aspect-1155/678 w-144.5 -translate-x-1/2 rotate-30 bg-linear-to-tr from-green-500 to-emerald-300 opacity-20 sm:left-[calc(50%-30rem)] sm:w-288.75" />
+              <div className="relative left-[calc(50%-11rem)] aspect-1155/678 w-144.5 -translate-x-1/2 rotate-30 bg-linear-to-tr from-green-500 to-emerald-300 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
             </div>
 
             <CardContent className="z-10 flex flex-col items-center space-y-6 p-6 text-center sm:p-8">
@@ -479,10 +491,12 @@ export function UnifiedPaymentWidget({
                 <div className="flex shrink-0 flex-col items-end">
                   <span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-bold tracking-[0.1em] text-amber-600 uppercase dark:text-amber-400">
                     Expires{" "}
-                    {new Date(session.expiresAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <span suppressHydrationWarning>
+                      {new Date(session.expiresAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </span>
                 </div>
               )}

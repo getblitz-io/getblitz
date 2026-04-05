@@ -201,6 +201,71 @@ describe("PaymentSessionService", () => {
     );
   });
 
+  it("should create a challenge with allowed redirectUrl", async () => {
+    const input: CreateChallengeInput = {
+      organizationId: "org-1",
+      amount: 1000,
+      currency: Currency.EUR,
+      redirectUrl: "https://merchant.com/success",
+    };
+    const bankAccount = {
+      id: "bank-1",
+      organizationBankConnection: { id: "conn-1" },
+    };
+    mockSessionRepo.findByMerchantReferenceId.mockResolvedValue(null);
+    mockBankRepo.findDefaultByOrganizationId.mockResolvedValue(bankAccount);
+    mockSessionRepo.create.mockResolvedValue({
+      id: "session-1",
+      referenceId: "ref-1",
+      expiresAt: new Date(),
+    });
+    mockOrganizationRepo.findById.mockResolvedValue({
+      id: "org-1",
+      allowedOrigins: ["https://merchant.com"],
+    });
+
+    const result = await service.createChallenge({
+      input,
+      baseUrl: "https://pay.test",
+    });
+
+    expect(result.sessionId).toBe("session-1");
+  });
+
+  it("should throw error if redirectUrl origin is not allowed", async () => {
+    const input: CreateChallengeInput = {
+      organizationId: "org-1",
+      amount: 1000,
+      currency: Currency.EUR,
+      redirectUrl: "https://hacker.com/steal",
+    };
+    mockOrganizationRepo.findById.mockResolvedValue({
+      id: "org-1",
+      allowedOrigins: ["https://merchant.com"],
+    });
+
+    await expect(
+      service.createChallenge({ input, baseUrl: "https://pay.test" }),
+    ).rejects.toThrow("Invalid redirectUrl: origin not allowed");
+  });
+
+  it("should throw error if redirectUrl is invalid format", async () => {
+    const input: CreateChallengeInput = {
+      organizationId: "org-1",
+      amount: 1000,
+      currency: Currency.EUR,
+      redirectUrl: "not-a-url",
+    };
+    mockOrganizationRepo.findById.mockResolvedValue({
+      id: "org-1",
+      allowedOrigins: ["https://merchant.com"],
+    });
+
+    await expect(
+      service.createChallenge({ input, baseUrl: "https://pay.test" }),
+    ).rejects.toThrow("Invalid redirectUrl format");
+  });
+
   it("should get session details and expire if needed", async () => {
     const session = {
       id: "session-1",
