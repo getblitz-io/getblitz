@@ -11,11 +11,14 @@
   "dependencies": {
     "@getblitz/ui": "workspace:*",
     "@radix-ui/react-icons": "catalog:",
+    "@scalar/nextjs-api-reference": "catalog:",
+    "@t3-oss/env-nextjs": "catalog:",
     "next": "16.1.6",
     "next-intl": "catalog:",
     "next-themes": "^0.4.6",
     "react": "catalog:react19",
-    "react-dom": "catalog:react19"
+    "react-dom": "catalog:react19",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@getblitz/eslint-config": "workspace:*",
