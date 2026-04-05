@@ -1,9 +1,10 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-export type ApiResponseOptions = {
+export interface ApiResponseOptions {
   status?: number;
   headers?: HeadersInit;
-};
+}
 
 /**
  * Unified API Response helper to standardize response format and headers.
@@ -17,9 +18,20 @@ export class ApiResponse {
     options: ApiResponseOptions = {},
   ): NextResponse<T | { error: string; details?: unknown }> {
     return NextResponse.json(data, {
-      status: options.status || 200,
+      status: options.status ?? 200,
       headers: options.headers,
     });
+  }
+
+  /**
+   * Safely parse request body and return 400 response on failure.
+   */
+  static async parseBody<T>(request: NextRequest): Promise<T | NextResponse> {
+    try {
+      return (await request.json()) as T;
+    } catch {
+      return this.error("Invalid JSON body");
+    }
   }
 
   /**
@@ -56,7 +68,7 @@ export class ApiResponse {
         ...(options.details !== undefined ? { details: options.details } : {}),
       },
       {
-        status: options.status || 400,
+        status: options.status ?? 400,
         headers: options.headers,
       },
     ) as NextResponse<{ error: string; details?: unknown }>;

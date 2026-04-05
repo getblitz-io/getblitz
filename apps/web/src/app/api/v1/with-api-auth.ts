@@ -55,10 +55,9 @@ export function withApiAuth<TParams = void>(
     if (!authHeader) {
       return ApiResponse.unauthorized("Authorization header is required");
     }
-    const token = authHeader.replace("Bearer ", "");
-
-    if (!token) {
-      return ApiResponse.unauthorized("Bearer token is required");
+    const [scheme, token] = authHeader.split(" ");
+    if (scheme?.toLowerCase() !== "bearer" || !token) {
+      return ApiResponse.unauthorized("Invalid or missing Bearer token");
     }
 
     let organizationId: string | undefined;
@@ -121,7 +120,9 @@ export function withApiAuth<TParams = void>(
           const { jwtVerify } = await import("jose");
 
           const secret = new TextEncoder().encode(env.ENCRYPTION_KEY);
-          const { payload } = await jwtVerify(token, secret);
+          const { payload } = await jwtVerify(token, secret, {
+            algorithms: ["HS256"],
+          });
 
           organizationId = payload.organizationId as string;
           authType = "ClientToken";

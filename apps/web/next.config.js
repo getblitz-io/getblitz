@@ -33,7 +33,6 @@ const config = {
       {
         source: "/api/v1/:path*",
         headers: [
-          { key: "Access-Control-Allow-Credentials", value: "true" },
           { key: "Access-Control-Allow-Origin", value: "*" },
           {
             key: "Access-Control-Allow-Methods",
@@ -49,7 +48,6 @@ const config = {
       {
         source: "/api/swagger",
         headers: [
-          { key: "Access-Control-Allow-Credentials", value: "true" },
           { key: "Access-Control-Allow-Origin", value: "*" },
           {
             key: "Access-Control-Allow-Methods",

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 import { CreateChallengeRequestSchema } from "@getblitz/shared-types";
@@ -53,7 +54,10 @@ export const POST = withApiAuth(
     const { paymentSessionService } = container;
 
     // 1. Parse and validate request body
-    const body: unknown = await request.json();
+    const bodyResult = await ApiResponse.parseBody(request);
+    if (bodyResult instanceof NextResponse) return bodyResult;
+    const body = bodyResult;
+
     const parseResult = CreateChallengeRequestSchema.safeParse(body);
 
     if (!parseResult.success) {

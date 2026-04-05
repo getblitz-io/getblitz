@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getContainer } from "@getblitz/api";
@@ -148,7 +149,10 @@ export const POST = withApiAuth(
     const container = getContainer();
     const { customerService } = container;
 
-    const body: unknown = await request.json();
+    const bodyResult = await ApiResponse.parseBody(request);
+    if (bodyResult instanceof NextResponse) return bodyResult;
+    const body = bodyResult;
+
     const parseResult = CustomerFormSchema.safeParse(body);
 
     if (!parseResult.success) {

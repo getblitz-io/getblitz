@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 import { UpdateCustomerInputSchema } from "@getblitz/validators";
@@ -128,7 +129,9 @@ export const PATCH = withApiAuth<Params>(
     const container = getContainer();
     const { customerService } = container;
 
-    const body = (await request.json()) as unknown;
+    const bodyResult = await ApiResponse.parseBody(request);
+    if (bodyResult instanceof NextResponse) return bodyResult;
+    const body = bodyResult;
 
     if (!body || typeof body !== "object") {
       return ApiResponse.error("Invalid request body");
