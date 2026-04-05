@@ -13,6 +13,33 @@ const querySchema = z.object({
   ),
 });
 
+/**
+ * @swagger
+ * /sessions:
+ *   get:
+ *     summary: List payment sessions
+ *     description: Retrieve a list of payment sessions with pagination.
+ *     tags:
+ *       - Sessions
+ *     parameters:
+ *       - in: query
+ *         name: take
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Number of records to return
+ *     responses:
+ *       200:
+ *         description: A list of payment sessions
+ *       400:
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();

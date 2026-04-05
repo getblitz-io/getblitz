@@ -10,6 +10,29 @@ interface Params {
   id: string;
 }
 
+/**
+ * @swagger
+ * /customers/{id}:
+ *   get:
+ *     summary: Get a customer by ID
+ *     description: Retrieve a specific customer by their ID.
+ *     tags:
+ *       - Customers
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     responses:
+ *       200:
+ *         description: The customer details
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth<Params>(
   async (
     request: NextRequest,
@@ -37,6 +60,37 @@ export const GET = withApiAuth<Params>(
   },
 );
 
+/**
+ * @swagger
+ * /customers/{id}:
+ *   patch:
+ *     summary: Update a customer
+ *     description: Update an existing customer's details.
+ *     tags:
+ *       - Customers
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Customer updated successfully
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 export const PATCH = withApiAuth<Params>(
   async (
     request: NextRequest,
@@ -84,6 +138,29 @@ export const PATCH = withApiAuth<Params>(
   },
 );
 
+/**
+ * @swagger
+ * /customers/{id}:
+ *   delete:
+ *     summary: Delete a customer
+ *     description: Delete a customer by their ID.
+ *     tags:
+ *       - Customers
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The customer ID
+ *     responses:
+ *       204:
+ *         description: Customer deleted successfully
+ *       404:
+ *         description: Customer not found
+ *       500:
+ *         description: Internal server error
+ */
 export const DELETE = withApiAuth<Params>(
   async (
     request: NextRequest,

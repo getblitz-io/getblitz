@@ -9,6 +9,31 @@ interface Params {
   sessionId: string;
 }
 
+/**
+ * @swagger
+ * /sessions/{sessionId}:
+ *   get:
+ *     summary: Get session details
+ *     description: Retrieve details of a specific payment session by ID or reference ID.
+ *     tags:
+ *       - Sessions
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID or reference ID
+ *     responses:
+ *       200:
+ *         description: Session details
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth<Params>(
   async (
     request: NextRequest,

@@ -7,6 +7,43 @@ import { env } from "~/env";
 import { ApiResponse } from "../api-response";
 import { withApiAuth } from "../with-api-auth";
 
+/**
+ * @swagger
+ * /challenge:
+ *   post:
+ *     summary: Create a payment challenge
+ *     description: Create a payment challenge for a bank account.
+ *     tags:
+ *       - Challenge
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *               currency:
+ *                 type: string
+ *               bankAccountId:
+ *                 type: string
+ *               merchantReferenceId:
+ *                 type: string
+ *               metadata:
+ *                 type: object
+ *               expiresInMinutes:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Payment challenge created successfully
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 export const POST = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();

@@ -10,6 +10,33 @@ interface Params {
   sessionId: string;
 }
 
+/**
+ * @swagger
+ * /sessions/{sessionId}/simulate-payment:
+ *   post:
+ *     summary: Simulate a payment (Dev only)
+ *     description: Simulate a successful payment for a session. Only available in development environment.
+ *     tags:
+ *       - Sessions
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID
+ *     responses:
+ *       200:
+ *         description: Payment simulation successful
+ *       400:
+ *         description: Simulation failed
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Not in development mode)
+ *       500:
+ *         description: Internal server error
+ */
 export const POST = withApiAuth<Params>(
   async (
     request: NextRequest,

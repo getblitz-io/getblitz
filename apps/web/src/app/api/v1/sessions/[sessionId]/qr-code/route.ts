@@ -9,6 +9,31 @@ interface Params {
   sessionId: string;
 }
 
+/**
+ * @swagger
+ * /sessions/{sessionId}/qr-code:
+ *   get:
+ *     summary: Get session QR code
+ *     description: Retrieve the base64 encoded QR code for a specific payment session.
+ *     tags:
+ *       - Sessions
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID
+ *     responses:
+ *       200:
+ *         description: Base64 encoded QR code
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: QR code not found
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth<Params>(
   async (
     request: NextRequest,

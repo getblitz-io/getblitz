@@ -10,6 +10,29 @@ interface Params {
   id: string;
 }
 
+/**
+ * @swagger
+ * /invoices/{id}:
+ *   get:
+ *     summary: Get an invoice by ID
+ *     description: Retrieve a specific invoice by its ID.
+ *     tags:
+ *       - Invoices
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     responses:
+ *       200:
+ *         description: The invoice details
+ *       404:
+ *         description: Invoice not found
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth<Params>(
   async (
     request: NextRequest,
@@ -39,6 +62,37 @@ export const GET = withApiAuth<Params>(
   },
 );
 
+/**
+ * @swagger
+ * /invoices/{id}:
+ *   patch:
+ *     summary: Update an invoice
+ *     description: Update an existing invoice's details.
+ *     tags:
+ *       - Invoices
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Invoice updated successfully
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Invoice not found
+ *       500:
+ *         description: Internal server error
+ */
 export const PATCH = withApiAuth<Params>(
   async (
     request: NextRequest,
@@ -86,6 +140,29 @@ export const PATCH = withApiAuth<Params>(
   },
 );
 
+/**
+ * @swagger
+ * /invoices/{id}:
+ *   delete:
+ *     summary: Delete an invoice
+ *     description: Delete an invoice by its ID.
+ *     tags:
+ *       - Invoices
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     responses:
+ *       204:
+ *         description: Invoice deleted successfully
+ *       404:
+ *         description: Invoice not found
+ *       500:
+ *         description: Internal server error
+ */
 export const DELETE = withApiAuth<Params>(
   async (
     request: NextRequest,

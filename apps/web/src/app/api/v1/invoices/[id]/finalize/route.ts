@@ -9,6 +9,29 @@ interface Params {
   id: string;
 }
 
+/**
+ * @swagger
+ * /invoices/{id}/finalize:
+ *   post:
+ *     summary: Finalize an invoice
+ *     description: Mark a specific invoice as finalized.
+ *     tags:
+ *       - Invoices
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The invoice ID
+ *     responses:
+ *       200:
+ *         description: Invoice finalized successfully
+ *       400:
+ *         description: Bad request (e.g. invalid state)
+ *       500:
+ *         description: Internal server error
+ */
 export const POST = withApiAuth<Params>(
   async (
     request: NextRequest,

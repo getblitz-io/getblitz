@@ -5,6 +5,22 @@ import { getContainer } from "@getblitz/api";
 import { ApiResponse } from "../api-response";
 import { withApiAuth } from "../with-api-auth";
 
+/**
+ * @swagger
+ * /me:
+ *   get:
+ *     summary: Get current organization
+ *     description: Retrieve details about the authenticated organization.
+ *     tags:
+ *       - Me
+ *     responses:
+ *       200:
+ *         description: Organization details
+ *       404:
+ *         description: Organization not found
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();

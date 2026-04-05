@@ -18,6 +18,40 @@ const querySchema = z.object({
   ),
 });
 
+/**
+ * @swagger
+ * /customers:
+ *   get:
+ *     summary: List customers
+ *     description: Retrieve a list of customers with pagination.
+ *     tags:
+ *       - Customers
+ *     parameters:
+ *       - in: query
+ *         name: take
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Number of records to return
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Number of records to skip
+ *     responses:
+ *       200:
+ *         description: A list of customers
+ *       400:
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 export const GET = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();
@@ -51,6 +85,30 @@ export const GET = withApiAuth(
   },
 );
 
+/**
+ * @swagger
+ * /customers:
+ *   post:
+ *     summary: Create a customer
+ *     description: Create a new customer for the authenticated organization.
+ *     tags:
+ *       - Customers
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Customer created successfully
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 export const POST = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();
