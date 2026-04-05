@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import * as QRCode from "qrcode";
 
+import type { SessionDetailsResult } from "@getblitz/api";
 import type { PaymentEvent } from "@getblitz/shared-types";
 import { Card, CardContent } from "@getblitz/ui";
 import { Button } from "@getblitz/ui/button";
@@ -17,39 +18,8 @@ import { CopyButton } from "~/app/_components/copy-button";
 import { usePaymentSocket } from "~/hooks/use-payment-socket";
 import { useTRPC } from "~/trpc/react";
 
-// Local strictly typed interface to ensure compatibility while monorepo types sync
-interface SessionDetails {
-  sessionId: string;
-  referenceId: string;
-  amountCents: number;
-  currency: string;
-  status: "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "PARTIAL";
-  expiresAt: string | null;
-  redirectUrl?: string | null;
-  organization: {
-    name: string;
-    logo?: string | null;
-  };
-  bankAccount: {
-    organizationBankConnection: {
-      id: string;
-      providerId: string;
-    };
-    accountName: string;
-    iban?: string;
-    walletAddressEvm?: string;
-  } | null;
-  provider: {
-    id: string;
-    displayName: string;
-    domain: string;
-  } | null;
-  sepaQrString: string | null;
-  clientToken: string;
-}
-
 interface UnifiedPaymentWidgetProps {
-  session: SessionDetails;
+  session: SessionDetailsResult;
   slug?: string;
   isEmbedded?: boolean;
 }
@@ -150,8 +120,13 @@ export function UnifiedPaymentWidget({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [session, setSession] = useState<SessionDetails>(initialSession);
+  const [session, setSession] = useState<SessionDetailsResult>(initialSession);
   const [redirecting, setRedirecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const t = useTranslations("PaymentDetailPage");
 
   // Sync session state if initialSession changes from parent (e.g., background refetch)
@@ -175,6 +150,16 @@ export function UnifiedPaymentWidget({
   const tDetails = useTranslations("PaymentDetails");
 
   const amountFormatted = (session.amountCents / 100).toFixed(2);
+  const amountPaidFormatted = (session.amountPaidCents / 100).toFixed(2);
+  const remainingCents = Math.max(
+    0,
+    session.amountCents - session.amountPaidCents,
+  );
+  const remainingFormatted = (remainingCents / 100).toFixed(2);
+
+  // Decide which amount to show based on status
+  const displayAmount =
+    session.status === "PARTIAL" ? remainingFormatted : amountFormatted;
 
   // Handle payment updates from WebSocket
   const handlePaymentUpdate = useCallback(
@@ -183,6 +168,7 @@ export function UnifiedPaymentWidget({
       setSession((prev) => ({
         ...prev,
         status: event.status,
+        amountPaidCents: event.amountPaidCents ?? prev.amountPaidCents,
       }));
 
       if (event.status === "PAID") {
@@ -221,7 +207,10 @@ export function UnifiedPaymentWidget({
   );
 
   const { isConnected } = usePaymentSocket({
-    sessionId: session.status === "PENDING" ? session.sessionId : "",
+    sessionId:
+      session.status === "PENDING" || session.status === "PARTIAL"
+        ? session.sessionId
+        : "",
     clientToken: session.clientToken,
     onPaymentUpdate: handlePaymentUpdate,
   });
@@ -231,7 +220,7 @@ export function UnifiedPaymentWidget({
     if (
       session.sepaQrString &&
       canvasRef.current &&
-      session.status === "PENDING"
+      (session.status === "PENDING" || session.status === "PARTIAL")
     ) {
       void QRCode.toCanvas(canvasRef.current, session.sepaQrString, {
         width: 180,
@@ -390,17 +379,27 @@ export function UnifiedPaymentWidget({
 
               {/* Amount Info */}
               <div className="group/amount relative space-y-1 text-center">
+                {session.status === "PARTIAL" && (
+                  <p className="mb-2 text-xs font-bold tracking-wider text-amber-500 uppercase">
+                    Partial Payment: €{amountPaidFormatted} Received
+                  </p>
+                )}
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-foreground text-4xl font-black tracking-tighter drop-shadow-sm lg:text-5xl">
-                    €{amountFormatted}
+                    €{displayAmount}
                   </p>
                   <div className="opacity-0 transition-opacity duration-300 group-hover/amount:opacity-100">
                     <CopyButton
-                      value={amountFormatted}
+                      value={displayAmount}
                       className="bg-secondary/80 hover:bg-secondary h-8 w-8 [&>svg]:h-4 [&>svg]:w-4"
                     />
                   </div>
                 </div>
+                {session.status === "PARTIAL" && (
+                  <p className="text-muted-foreground mt-2 text-[10px] font-bold tracking-widest uppercase">
+                    Remaining of €{amountFormatted} Total
+                  </p>
+                )}
               </div>
 
               {/* QR Code */}
@@ -452,8 +451,8 @@ export function UnifiedPaymentWidget({
             <div className="flex flex-col space-y-2">
               <ManualDetailRow
                 label={tDetails("amount")}
-                value={`€${amountFormatted}`}
-                copyValue={amountFormatted}
+                value={`€${displayAmount}`}
+                copyValue={displayAmount}
               />
               {session.bankAccount?.iban && (
                 <ManualDetailRow
@@ -492,10 +491,12 @@ export function UnifiedPaymentWidget({
                   <span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-bold tracking-[0.1em] text-amber-600 uppercase dark:text-amber-400">
                     Expires{" "}
                     <span suppressHydrationWarning>
-                      {new Date(session.expiresAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {mounted
+                        ? new Date(session.expiresAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
                     </span>
                   </span>
                 </div>

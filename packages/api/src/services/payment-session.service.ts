@@ -240,10 +240,14 @@ export class PaymentSessionService implements IPaymentSessionService {
     const walletAddressEvm = "random-wallet-address";
 
     if (iban) {
+      const remainingCents = Math.max(
+        0,
+        session.amountCents - session.amountPaidCents,
+      );
       sepaQrString = generateSepaQrString({
         name: session.organization.name,
         iban: iban,
-        amount: centsToEuros(session.amountCents),
+        amount: centsToEuros(remainingCents),
         reference: session.referenceId,
         currency: "EUR",
       });
@@ -263,6 +267,7 @@ export class PaymentSessionService implements IPaymentSessionService {
       sessionId: session.id,
       referenceId: session.referenceId,
       amountCents: session.amountCents,
+      amountPaidCents: session.amountPaidCents,
       currency: session.currency,
       status: session.status,
       expiresAt: session.expiresAt?.toISOString() ?? null,

@@ -24,6 +24,7 @@ export interface SessionDetailsResult {
   sessionId: string;
   referenceId: string;
   amountCents: number;
+  amountPaidCents: number;
   currency: Currency;
   status: PaymentStatus;
   expiresAt: string | null; // Nullable for non-expiring payments

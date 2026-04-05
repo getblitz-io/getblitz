@@ -464,6 +464,7 @@ export class InvoiceService implements IInvoiceService {
       sessionId: "Draft-Session-Id",
       referenceId: invoice.referenceId,
       amountCents: invoice.totalCents,
+      amountPaidCents: 0,
       currency: invoice.currency,
       status: PaymentStatus.PENDING,
       expiresAt: invoice.expiresAt ? invoice.expiresAt.toISOString() : null,
