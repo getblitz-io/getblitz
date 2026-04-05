@@ -20,7 +20,11 @@ Popular icon and component libraries can have **up to 10,000 re-exports** in the
 // Runtime cost: 200-800ms on every cold start
 
 import { Button, TextField } from "@mui/material";
-import { Check, Menu, X } from "lucide-react";
+import {
+  CheckIcon,
+  Cross1Icon,
+  HamburgerMenuIcon,
+} from "@radix-ui/react-icons";
 
 // Loads 2,225 modules, takes ~4.2s extra in dev
 ```
@@ -32,9 +36,9 @@ import { Check, Menu, X } from "lucide-react";
 
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import Check from "lucide-react/dist/esm/icons/check";
-import Menu from "lucide-react/dist/esm/icons/menu";
-import X from "lucide-react/dist/esm/icons/x";
+import CheckIcon from "@radix-ui/react-icons/dist/CheckIcon";
+import Cross1Icon from "@radix-ui/react-icons/dist/Cross1Icon";
+import HamburgerMenuIcon from "@radix-ui/react-icons/dist/HamburgerMenuIcon";
 
 // Loads only what you use
 ```
@@ -43,12 +47,16 @@ import X from "lucide-react/dist/esm/icons/x";
 
 ```js
 // Then you can keep the ergonomic barrel imports:
-import { Check, Menu, X } from "lucide-react";
+import {
+  CheckIcon,
+  Cross1Icon,
+  HamburgerMenuIcon,
+} from "@radix-ui/react-icons";
 
 // next.config.js - use optimizePackageImports
 module.exports = {
   experimental: {
-    optimizePackageImports: ["lucide-react", "@mui/material"],
+    optimizePackageImports: ["@radix-ui/react-icons", "@mui/material"],
   },
 };
 
@@ -57,6 +65,6 @@ module.exports = {
 
 Direct imports provide 15-70% faster dev boot, 28% faster builds, 40% faster cold starts, and significantly faster HMR.
 
-Libraries commonly affected: `lucide-react`, `@mui/material`, `@mui/icons-material`, `@tabler/icons-react`, `react-icons`, `@headlessui/react`, `@radix-ui/react-*`, `lodash`, `ramda`, `date-fns`, `rxjs`, `react-use`.
+Libraries commonly affected: `@radix-ui/react-icons`, `@mui/material`, `@mui/icons-material`, `@tabler/icons-react`, `react-icons`, `@headlessui/react`, `@radix-ui/react-*`, `lodash`, `ramda`, `date-fns`, `rxjs`, `react-use`.
 
 Reference: [How we optimized package imports in Next.js](https://vercel.com/blog/how-we-optimized-package-imports-in-next-js)

@@ -656,6 +656,14 @@ export function GET() {
                 description:
                   "Expiration time in minutes. Null means no expiration. Defaults to 15.",
               },
+              redirectUrl: {
+                type: "string",
+                format: "uri",
+                example:
+                  "https://example.com/redirect?success=true&sessionId=...",
+                description:
+                  "URL to redirect to after payment. If not provided, the user will be redirected to the default success page.",
+              },
             },
           },
 

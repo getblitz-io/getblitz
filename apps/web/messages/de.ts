@@ -785,6 +785,12 @@ const messages = {
       viewSetupGuide: "Einrichtungsanleitung anzeigen",
     },
   },
+  NotFoundPage: {
+    title: "Link ungültig oder abgelaufen",
+    description:
+      "Wir konnten die gesuchte Zahlungssitzung nicht finden. Der Link ist möglicherweise abgelaufen oder die URL ist falsch.",
+    returnToHomepage: "Zurück zur Startseite",
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));
