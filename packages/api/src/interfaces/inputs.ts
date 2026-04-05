@@ -17,6 +17,7 @@ export interface CreatePaymentSessionInput {
   amountCents: number;
   currency: Currency;
   expiresAt: Date | null; // Nullable for non-expiring payments
+  redirectUrl?: string | null; // Optional redirect URL after success
   metadata?: Record<string, string>;
 }
 
@@ -63,6 +64,7 @@ export interface CreateChallengeInput {
   merchantReferenceId?: string;
   metadata?: Record<string, string>;
   expiresInMinutes?: number | null;
+  redirectUrl?: string; // Optional redirect URL after success
 }
 
 export interface SettlementInput {

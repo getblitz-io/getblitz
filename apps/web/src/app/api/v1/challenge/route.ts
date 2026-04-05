@@ -74,6 +74,7 @@ export const POST = withApiAuth(
       merchantReferenceId,
       metadata,
       expiresInMinutes,
+      redirectUrl,
     } = parseResult.data;
 
     if (bankAccountId && typeof bankAccountId !== "string") {
@@ -93,6 +94,7 @@ export const POST = withApiAuth(
           merchantReferenceId,
           metadata,
           expiresInMinutes,
+          redirectUrl,
         },
         baseUrl: env.NEXT_PUBLIC_APP_URL,
       });

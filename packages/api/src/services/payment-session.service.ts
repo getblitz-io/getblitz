@@ -71,6 +71,7 @@ export class PaymentSessionService implements IPaymentSessionService {
       merchantReferenceId,
       metadata,
       expiresInMinutes,
+      redirectUrl,
     } = input;
 
     // Validate merchantReferenceId uniqueness per organization if provided
@@ -132,6 +133,7 @@ export class PaymentSessionService implements IPaymentSessionService {
           currency,
           expiresAt,
           metadata,
+          redirectUrl,
         },
       },
       tx,
@@ -211,16 +213,18 @@ export class PaymentSessionService implements IPaymentSessionService {
 
     // Generate SEPA QR string if EUR payment
     let sepaQrString: string | null = null;
-    const iban: string = session.bankAccount.accountIban;
-    const walletAddressEvm: string = "random-wallet-address" as const;
+    const iban = session.bankAccount.accountIban;
+    const walletAddressEvm = "random-wallet-address";
 
-    sepaQrString = generateSepaQrString({
-      name: session.organization.name,
-      iban: iban,
-      amount: centsToEuros(session.amountCents),
-      reference: session.referenceId,
-      currency: "EUR",
-    });
+    if (iban) {
+      sepaQrString = generateSepaQrString({
+        name: session.organization.name,
+        iban: iban,
+        amount: centsToEuros(session.amountCents),
+        reference: session.referenceId,
+        currency: "EUR",
+      });
+    }
 
     // Get provider metadata from registry
     const providerId =
@@ -232,15 +236,17 @@ export class PaymentSessionService implements IPaymentSessionService {
       session.organizationId,
     );
 
-    return {
+    const result: SessionDetailsResult = {
       sessionId: session.id,
       referenceId: session.referenceId,
       amountCents: session.amountCents,
       currency: session.currency,
       status: session.status,
       expiresAt: session.expiresAt?.toISOString() ?? null,
+      redirectUrl: session.redirectUrl,
       organization: {
         name: session.organization.name,
+        logo: session.organization.logo,
       },
       bankAccount: {
         organizationBankConnection: {
@@ -248,7 +254,7 @@ export class PaymentSessionService implements IPaymentSessionService {
           providerId,
         },
         accountName: session.bankAccount.accountName,
-        iban,
+        iban: session.bankAccount.accountIban,
         walletAddressEvm,
       },
       provider: providerMeta
@@ -261,6 +267,8 @@ export class PaymentSessionService implements IPaymentSessionService {
       sepaQrString,
       clientToken,
     };
+
+    return result;
   }
 
   /**
@@ -301,6 +309,9 @@ export class PaymentSessionService implements IPaymentSessionService {
       if (provider.supportsSandboxSimulation()) {
         // Use the external account ID from the bank account
         const accountId = session.bankAccount.externalAccountId;
+        if (!accountId) {
+          return { success: false, error: "External account ID not found" };
+        }
         const amount = session.amountCents / 100; // Convert cents to major units
 
         const sandboxResult = await provider.simulateSandboxPayment({
@@ -449,7 +460,7 @@ export class PaymentSessionService implements IPaymentSessionService {
         // For now, let's assume if the list is empty, we ONLY allow the app URL.
         throw new Error(`Origin ${origin} is not allowed`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         throw new Error(`Session verification failed: ${error.message}`);
       }

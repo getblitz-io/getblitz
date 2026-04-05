@@ -93,6 +93,7 @@ export class PaymentSessionRepository
         currency: data.currency,
         expiresAt: data.expiresAt,
         status: "PENDING",
+        redirectUrl: data.redirectUrl,
         metadata: data.metadata,
       },
     });

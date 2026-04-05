@@ -34,6 +34,7 @@ export const CreateChallengeRequestSchema = z.object({
     .describe(
       "Expiration time in minutes. Null means no expiration. Defaults to 15.",
     ),
+  redirectUrl: z.url().optional().describe("URL to redirect to after payment"),
 });
 export type CreateChallengeRequest = z.infer<
   typeof CreateChallengeRequestSchema
