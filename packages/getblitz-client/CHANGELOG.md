@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.6...getblitz-client-v0.0.7) (2026-04-05)
+
+
+### Features
+
+* add copy-to-clipboard functionality to SEPA payment details ([#32](https://github.com/getblitz-io/getblitz/issues/32)) ([6c4a421](https://github.com/getblitz-io/getblitz/commit/6c4a4218f4764ac4bc56c17c19695cd44ed13680))
+
 ## [0.0.6](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.5...getblitz-client-v0.0.6) (2026-03-28)
 
 
