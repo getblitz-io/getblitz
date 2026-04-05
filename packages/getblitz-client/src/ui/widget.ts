@@ -1,6 +1,7 @@
 import type { GetBlitzClientConfig, PaymentSessionDetails } from "../types";
 import styles from "../styles/widget.css?inline";
 import { initSepaTab, renderSepaTab } from "./sepa-tab";
+import { escapeHtml } from "../utils";
 
 export class GetBlitzWidget {
   private root: HTMLElement | null = null;
@@ -38,7 +39,7 @@ export class GetBlitzWidget {
     return `
       <div class="getblitz-card">
         <div class="getblitz-header">
-          <span class="getblitz-org">${this.escapeHtml(this.session.organization.name)}</span>
+          <span class="getblitz-org">${escapeHtml(this.session.organization.name)}</span>
           <span class="getblitz-amount">${currency}${amount}</span>
         </div>
         <div class="getblitz-content" data-content></div>
@@ -73,12 +74,6 @@ export class GetBlitzWidget {
       default:
         return "";
     }
-  }
-
-  private escapeHtml(text: string): string {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   updateStatus(status: string): void {
