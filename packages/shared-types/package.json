@@ -1,6 +1,6 @@
 {
   "name": "@getblitz/shared-types",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Shared TypeScript types for GetBlitz Payment Gateway",
   "author": "GetBlitz <hello@getblitz.io>",
   "license": "MIT",
