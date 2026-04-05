@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.6...shared-types-v0.0.7) (2026-04-05)
+
+
+### Features
+
+* add default options for getblitz shared lib ([#28](https://github.com/getblitz-io/getblitz/issues/28)) ([c133fcc](https://github.com/getblitz-io/getblitz/commit/c133fcc6de41a2934c3f69f203002a27eb54ace9))
+
 ## [0.0.6](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.5...shared-types-v0.0.6) (2026-03-28)
 
 
