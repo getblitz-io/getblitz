@@ -142,6 +142,7 @@ export class PaymentSettlementService implements IPaymentSettlementService {
               status: newStatus,
               timestamp: new Date().toISOString(),
               clientToken: session.clientToken ?? undefined,
+              amountPaidCents: totalPaidCents,
             };
             await publishPaymentEvent(event);
           }

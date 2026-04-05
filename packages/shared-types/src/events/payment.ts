@@ -20,5 +20,6 @@ export const PaymentEventSchema = z.object({
   status: z.enum(["PENDING", "PARTIAL", "PAID", "FAILED", "EXPIRED"]),
   clientToken: z.string().optional(), // Proof of payment for the buyer
   timestamp: z.string(), // ISO timestamp string for JSON serialization
+  amountPaidCents: z.number().optional(), // Optional amount paid
 });
 export type PaymentEvent = z.infer<typeof PaymentEventSchema>;

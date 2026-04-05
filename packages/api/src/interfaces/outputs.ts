@@ -24,11 +24,14 @@ export interface SessionDetailsResult {
   sessionId: string;
   referenceId: string;
   amountCents: number;
+  amountPaidCents: number;
   currency: Currency;
   status: PaymentStatus;
   expiresAt: string | null; // Nullable for non-expiring payments
+  redirectUrl: string | null; // Optional redirect URL after success
   organization: {
     name: string;
+    logo: string | null;
   };
   bankAccount: {
     organizationBankConnection: {

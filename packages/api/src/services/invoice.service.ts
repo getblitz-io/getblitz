@@ -464,11 +464,13 @@ export class InvoiceService implements IInvoiceService {
       sessionId: "Draft-Session-Id",
       referenceId: invoice.referenceId,
       amountCents: invoice.totalCents,
+      amountPaidCents: 0,
       currency: invoice.currency,
       status: PaymentStatus.PENDING,
       expiresAt: invoice.expiresAt ? invoice.expiresAt.toISOString() : null,
       organization: {
         name: invoice.organization.name,
+        logo: invoice.organization.logo,
       },
       bankAccount: {
         organizationBankConnection:
@@ -494,6 +496,7 @@ export class InvoiceService implements IInvoiceService {
         currency: "EUR",
       }),
       clientToken: "temporary-token",
+      redirectUrl: "",
     };
   }
 

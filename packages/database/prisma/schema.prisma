@@ -259,6 +259,7 @@ model PaymentSession {
   updatedAt           DateTime      @updatedAt
   bankAccountId       String        @db.VarChar(36)
   bankAccount         BankAccount   @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  redirectUrl         String?       @db.Text
   metadata            Json?
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)

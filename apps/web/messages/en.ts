@@ -761,6 +761,12 @@ const messages = {
       viewSetupGuide: "View Setup Guide",
     },
   },
+  NotFoundPage: {
+    title: "Link Invalid or Expired",
+    description:
+      "We couldn't find the payment session you're looking for. The link may have expired, or the URL might be incorrect.",
+    returnToHomepage: "Return to Homepage",
+  },
 };
 
 export default JSON.parse(JSON.stringify(messages));
