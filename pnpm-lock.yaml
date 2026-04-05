@@ -780,8 +780,8 @@ importers:
   packages/getblitz-client:
     dependencies:
       '@getblitz/shared-types':
-        specifier: ^0.0.6
-        version: 0.0.6(zod@4.3.6)
+        specifier: ^0.0.7
+        version: link:../shared-types
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -1970,11 +1970,6 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
-
-  '@getblitz/shared-types@0.0.6':
-    resolution: {integrity: sha512-4BkE+Qvd9Ksr6PREjqvvHPDDPVDN7C1R1T+abZar8oLJfqR+/DPqUIrsvsn4Pj0qRjdWLU6lBU/zCM43Fd3fOQ==}
-    peerDependencies:
-      zod: ^3.24.0
 
   '@hono/node-server@1.19.9':
     resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
@@ -8148,10 +8143,6 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.2':
     dependencies:
       tslib: 2.8.1
-
-  '@getblitz/shared-types@0.0.6(zod@4.3.6)':
-    dependencies:
-      zod: 4.3.6
 
   '@hono/node-server@1.19.9(hono@4.11.4)':
     dependencies:
