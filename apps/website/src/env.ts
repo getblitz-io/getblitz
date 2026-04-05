@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   client: {
-    NEXT_PUBLIC_APP_URL: z.url().optional(),
+    NEXT_PUBLIC_APP_URL: z.url().default("https://app.getblitz.io"),
   },
   server: {},
   runtimeEnv: {

@@ -28,10 +28,22 @@ interface Params {
  *     responses:
  *       200:
  *         description: The invoice details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Invoice'
  *       404:
  *         description: Invoice not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const GET = withApiAuth<Params>(
   async (
@@ -82,16 +94,32 @@ export const GET = withApiAuth<Params>(
  *       content:
  *         application/json:
  *           schema:
- *             type: object
+ *             $ref: '#/components/schemas/UpdateInvoiceInput'
  *     responses:
  *       200:
  *         description: Invoice updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Invoice'
  *       400:
  *         description: Invalid request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Invoice not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const PATCH = withApiAuth<Params>(
   async (
@@ -157,11 +185,19 @@ export const PATCH = withApiAuth<Params>(
  *         description: The invoice ID
  *     responses:
  *       204:
- *         description: Invoice deleted successfully
+ *         description: Invoice deleted successfully (no content)
  *       404:
  *         description: Invoice not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const DELETE = withApiAuth<Params>(
   async (

@@ -14,7 +14,7 @@ interface Params {
  * /invoices/{id}/finalize:
  *   post:
  *     summary: Finalize an invoice
- *     description: Mark a specific invoice as finalized.
+ *     description: Mark a specific invoice as finalized. Once finalized, a payment session is created and the invoice can be paid.
  *     tags:
  *       - Invoices
  *     parameters:
@@ -27,10 +27,28 @@ interface Params {
  *     responses:
  *       200:
  *         description: Invoice finalized successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Invoice'
  *       400:
- *         description: Bad request (e.g. invalid state)
+ *         description: Bad request (e.g. invalid state or already finalized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const POST = withApiAuth<Params>(
   async (

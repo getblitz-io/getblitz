@@ -14,7 +14,7 @@ interface Params {
  * /sessions/{sessionId}:
  *   get:
  *     summary: Get session details
- *     description: Retrieve details of a specific payment session by ID or reference ID.
+ *     description: Retrieve details of a specific payment session by ID or merchant reference ID. Accepts both `sessionId` (UUID) and `merchantReferenceId`.
  *     tags:
  *       - Sessions
  *     parameters:
@@ -23,16 +23,32 @@ interface Params {
  *         required: true
  *         schema:
  *           type: string
- *         description: The session ID or reference ID
+ *         description: The session UUID or merchant reference ID
  *     responses:
  *       200:
  *         description: Session details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaymentSessionDetails'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const GET = withApiAuth<Params>(
   async (

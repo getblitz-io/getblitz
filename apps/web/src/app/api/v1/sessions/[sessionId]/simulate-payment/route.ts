@@ -15,7 +15,7 @@ interface Params {
  * /sessions/{sessionId}/simulate-payment:
  *   post:
  *     summary: Simulate a payment (Dev only)
- *     description: Simulate a successful payment for a session. Only available in development environment.
+ *     description: Simulate a successful payment for a session. **Only available in development environment.** This endpoint is not available in production.
  *     tags:
  *       - Sessions
  *     parameters:
@@ -24,18 +24,38 @@ interface Params {
  *         required: true
  *         schema:
  *           type: string
- *         description: The session ID
+ *         description: The session UUID or merchant reference ID
  *     responses:
  *       200:
  *         description: Payment simulation successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SimulatePaymentResponse'
  *       400:
  *         description: Simulation failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       403:
- *         description: Forbidden (Not in development mode)
+ *         description: Forbidden (not in development mode)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const POST = withApiAuth<Params>(
   async (

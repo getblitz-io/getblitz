@@ -12,7 +12,7 @@ import { withApiAuth } from "../with-api-auth";
  * /challenge:
  *   post:
  *     summary: Create a payment challenge
- *     description: Create a payment challenge for a bank account.
+ *     description: Create a payment challenge (payment session) for a bank account. Returns a payment URL and session details for directing customers to pay.
  *     tags:
  *       - Challenge
  *     requestBody:
@@ -20,29 +20,32 @@ import { withApiAuth } from "../with-api-auth";
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               amount:
- *                 type: number
- *               currency:
- *                 type: string
- *               bankAccountId:
- *                 type: string
- *               merchantReferenceId:
- *                 type: string
- *               metadata:
- *                 type: object
- *               expiresInMinutes:
- *                 type: number
+ *             $ref: '#/components/schemas/CreateChallengeInput'
  *     responses:
  *       200:
  *         description: Payment challenge created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateChallengeResponse'
  *       400:
  *         description: Invalid request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const POST = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {

@@ -10,16 +10,28 @@ import { withApiAuth } from "../with-api-auth";
  * /me:
  *   get:
  *     summary: Get current organization
- *     description: Retrieve details about the authenticated organization.
+ *     description: Retrieve details about the authenticated organization, including name, slug, and configuration.
  *     tags:
  *       - Me
  *     responses:
  *       200:
  *         description: Organization details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Organization'
  *       404:
  *         description: Organization not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const GET = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {

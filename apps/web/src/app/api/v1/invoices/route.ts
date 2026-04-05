@@ -35,12 +35,30 @@ const querySchema = z.object({
  *     responses:
  *       200:
  *         description: A list of invoices
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Invoice'
  *       400:
  *         description: Invalid query parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const GET = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
@@ -76,6 +94,46 @@ export const GET = withApiAuth(
   },
 );
 
+/**
+ * @swagger
+ * /invoices:
+ *   post:
+ *     summary: Create an invoice
+ *     description: Create a new invoice for the authenticated organization.
+ *     tags:
+ *       - Invoices
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateInvoiceInput'
+ *     responses:
+ *       201:
+ *         description: Invoice created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Invoice'
+ *       400:
+ *         description: Invalid request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export const POST = withApiAuth(
   async (request: NextRequest, { organizationId, rateLimitHeaders }) => {
     const container = getContainer();

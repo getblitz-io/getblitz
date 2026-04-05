@@ -14,7 +14,7 @@ interface Params {
  * /sessions/{sessionId}/qr-code:
  *   get:
  *     summary: Get session QR code
- *     description: Retrieve the base64 encoded QR code for a specific payment session.
+ *     description: Retrieve the base64 encoded QR code image for a specific payment session. The QR code encodes the payment URL for easy scanning.
  *     tags:
  *       - Sessions
  *     parameters:
@@ -23,16 +23,32 @@ interface Params {
  *         required: true
  *         schema:
  *           type: string
- *         description: The session ID
+ *         description: The session UUID or merchant reference ID
  *     responses:
  *       200:
- *         description: Base64 encoded QR code
+ *         description: Base64 encoded QR code image
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/QrCodeResponse'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: QR code not found
+ *         description: Session or QR code not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 export const GET = withApiAuth<Params>(
   async (
