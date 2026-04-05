@@ -1,60 +1,84 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 
 import { env } from "~/env";
+import { ApiResponse } from "../../../api-response";
+import { withApiAuth } from "../../../with-api-auth";
 
-// CORS headers for cross-origin requests from demo app
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-export function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+interface Params {
+  sessionId: string;
 }
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> },
-) {
-  try {
+export const POST = withApiAuth<Params>(
+  async (
+    request: NextRequest,
+    { organizationId, rateLimitHeaders, authType },
+    params,
+  ) => {
     if (env.NODE_ENV !== "development") {
-      return NextResponse.json(
-        { error: "This endpoint is only available in development mode" },
-        { status: 403, headers: corsHeaders },
+      return ApiResponse.forbidden(
+        "This endpoint is only available in development mode",
+        rateLimitHeaders,
       );
     }
-
-    const { sessionId } = await params;
 
     const container = getContainer();
     const { paymentSessionService } = container;
+    const { sessionId: idOrRef } = params;
 
-    const result = await paymentSessionService.simulatePayment({ sessionId });
+    try {
+      // Find session ID first
+      let sessionId = idOrRef;
+      if (authType === "ApiKey") {
+        const session = await paymentSessionService.getSessionDetails({
+          sessionId: idOrRef,
+        });
+        if (!session) {
+          const byRef =
+            await paymentSessionService.getSessionDetailsByReference({
+              referenceId: idOrRef,
+            });
+          if (byRef) sessionId = byRef.sessionId;
+        }
+      }
 
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400, headers: corsHeaders },
+      const result = await paymentSessionService.simulatePayment({ sessionId });
+
+      if (!result.success) {
+        return ApiResponse.error(result.error ?? "Simulation failed", {
+          status: 400,
+          headers: rateLimitHeaders,
+        });
+      }
+
+      // Verify ownership
+      const rawSession = await container.paymentSessionRepository.findById({
+        id: sessionId,
+      });
+
+      if (!rawSession || rawSession.organizationId !== organizationId) {
+        return ApiResponse.unauthorized(
+          "Unauthorized access",
+          rateLimitHeaders,
+        );
+      }
+
+      return ApiResponse.success(
+        {
+          success: true,
+          message: result.message,
+          sessionId: result.sessionId,
+        },
+        rateLimitHeaders,
+      );
+    } catch (error) {
+      console.error("Simulate payment error:", error);
+      return ApiResponse.internalError(
+        "Internal server error",
+        rateLimitHeaders,
       );
     }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: result.message,
-        sessionId: result.sessionId,
-      },
-      { headers: corsHeaders },
-    );
-  } catch (error) {
-    console.error("Simulate payment error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500, headers: corsHeaders },
-    );
-  }
-}
+  },
+  { allowedAuthTypes: ["ApiKey", "ClientToken"] },
+);

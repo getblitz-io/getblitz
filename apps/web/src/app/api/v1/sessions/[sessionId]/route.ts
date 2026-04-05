@@ -1,87 +1,64 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 
-// CORS headers for cross-origin requests from SDK
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+import { ApiResponse } from "../../api-response";
+import { withApiAuth } from "../../with-api-auth";
 
-export function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+interface Params {
+  sessionId: string;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> },
-) {
-  try {
-    const authorizationHeader = request.headers.get("Authorization");
-
-    if (!authorizationHeader) {
-      return NextResponse.json(
-        { error: "Authorization header is required" },
-        { status: 401, headers: corsHeaders },
-      );
-    }
-    const clientToken = authorizationHeader.replace("Bearer ", "");
-    if (!clientToken) {
-      return NextResponse.json(
-        { error: "Client token is required" },
-        { status: 401, headers: corsHeaders },
-      );
-    }
-
-    const origin = request.headers.get("Origin");
-    if (!origin) {
-      return NextResponse.json(
-        { error: "Origin header is required" },
-        { status: 401, headers: corsHeaders },
-      );
-    }
-
-    // Verify session access
-    const { sessionId } = await params;
+export const GET = withApiAuth<Params>(
+  async (
+    request: NextRequest,
+    { organizationId, rateLimitHeaders, authType },
+    params,
+  ) => {
     const container = getContainer();
     const { paymentSessionService } = container;
+    const { sessionId: idOrRef } = params;
 
     try {
-      await paymentSessionService.verifySessionAccess({
-        sessionId,
-        clientToken,
-        origin,
+      let sessionDetails = await paymentSessionService.getSessionDetails({
+        sessionId: idOrRef,
       });
+
+      // If not found by ID and it's an ApiKey request, try by referenceId
+      if (!sessionDetails && authType === "ApiKey") {
+        sessionDetails =
+          await paymentSessionService.getSessionDetailsByReference({
+            referenceId: idOrRef,
+          });
+      }
+
+      if (!sessionDetails) {
+        return ApiResponse.notFound(
+          "Payment session not found",
+          rateLimitHeaders,
+        );
+      }
+
+      // Verify ownership
+      const rawSession = await container.paymentSessionRepository.findById({
+        id: sessionDetails.sessionId,
+      });
+
+      if (!rawSession || rawSession.organizationId !== organizationId) {
+        return ApiResponse.unauthorized(
+          "Unauthorized access",
+          rateLimitHeaders,
+        );
+      }
+
+      return ApiResponse.success(sessionDetails, rateLimitHeaders);
     } catch (error) {
-      console.warn(
-        "Session access verification failed:",
-        error instanceof Error ? error.message : error,
-      );
-      return NextResponse.json(
-        { error: "Unauthorized access" },
-        { status: 401, headers: corsHeaders },
+      console.error("Session Details API Error:", error);
+      return ApiResponse.internalError(
+        "Internal server error",
+        rateLimitHeaders,
       );
     }
-
-    const sessionDetails = await paymentSessionService.getSessionDetails({
-      sessionId,
-    });
-
-    if (!sessionDetails) {
-      return NextResponse.json(
-        { error: "Payment session not found" },
-        { status: 404, headers: corsHeaders },
-      );
-    }
-
-    return NextResponse.json(sessionDetails, { headers: corsHeaders });
-  } catch (error) {
-    console.error("Session Details API Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500, headers: corsHeaders },
-    );
-  }
-}
+  },
+  { allowedAuthTypes: ["ApiKey", "ClientToken"] },
+);

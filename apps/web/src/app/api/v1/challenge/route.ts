@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 import { CreateChallengeRequestSchema } from "@getblitz/shared-types";
 
 import { env } from "~/env";
+import { ApiResponse } from "../api-response";
 import { withApiAuth } from "../with-api-auth";
 
 export const POST = withApiAuth(
@@ -17,10 +17,10 @@ export const POST = withApiAuth(
     const parseResult = CreateChallengeRequestSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json(
-        { error: "Invalid request body", details: parseResult.error.flatten() },
-        { status: 400 },
-      );
+      return ApiResponse.error("Invalid request body", {
+        details: parseResult.error.flatten(),
+        headers: rateLimitHeaders,
+      });
     }
 
     const {
@@ -33,10 +33,9 @@ export const POST = withApiAuth(
     } = parseResult.data;
 
     if (bankAccountId && typeof bankAccountId !== "string") {
-      return NextResponse.json(
-        { error: "Bank account ID is required" },
-        { status: 400 },
-      );
+      return ApiResponse.error("Bank account ID is required", {
+        headers: rateLimitHeaders,
+      });
     }
 
     // 2. Create payment challenge via service
@@ -54,13 +53,10 @@ export const POST = withApiAuth(
         baseUrl: env.NEXT_PUBLIC_APP_URL,
       });
 
-      return NextResponse.json(result, { headers: rateLimitHeaders });
+      return ApiResponse.success(result, rateLimitHeaders);
     } catch (error) {
       if (error instanceof Error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400, headers: rateLimitHeaders },
-        );
+        return ApiResponse.error(error.message, { headers: rateLimitHeaders });
       }
       throw error;
     }

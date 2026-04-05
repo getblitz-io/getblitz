@@ -1,46 +1,71 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 
 import { getContainer } from "@getblitz/api";
 
-// CORS headers for cross-origin requests from SDK
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+import { ApiResponse } from "../../../api-response";
+import { withApiAuth } from "../../../with-api-auth";
 
-export function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+interface Params {
+  sessionId: string;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> },
-) {
-  try {
-    const { sessionId } = await params;
-
+export const GET = withApiAuth<Params>(
+  async (
+    request: NextRequest,
+    { organizationId, rateLimitHeaders, authType },
+    params,
+  ) => {
     const container = getContainer();
     const { paymentSessionService } = container;
+    const { sessionId: idOrRef } = params;
 
-    const result = await paymentSessionService.getQrCodeBase64({
-      sessionId,
-    });
+    try {
+      // Find session ID first
+      let sessionId = idOrRef;
+      if (authType === "ApiKey") {
+        const session = await paymentSessionService.getSessionDetails({
+          sessionId: idOrRef,
+        });
+        if (!session) {
+          const byRef =
+            await paymentSessionService.getSessionDetailsByReference({
+              referenceId: idOrRef,
+            });
+          if (byRef) sessionId = byRef.sessionId;
+        }
+      }
 
-    if (!result) {
-      return NextResponse.json(
-        { error: "Payment session not found or QR code generation failed" },
-        { status: 404, headers: corsHeaders },
+      const result = await paymentSessionService.getQrCodeBase64({
+        sessionId,
+      });
+
+      if (!result) {
+        return ApiResponse.notFound(
+          "Payment session not found or QR code generation failed",
+          rateLimitHeaders,
+        );
+      }
+
+      // Verify ownership
+      const rawSession = await container.paymentSessionRepository.findById({
+        id: sessionId,
+      });
+
+      if (!rawSession || rawSession.organizationId !== organizationId) {
+        return ApiResponse.unauthorized(
+          "Unauthorized access",
+          rateLimitHeaders,
+        );
+      }
+
+      return ApiResponse.success(result, rateLimitHeaders);
+    } catch (error) {
+      console.error("QR Code API Error:", error);
+      return ApiResponse.internalError(
+        "Internal server error",
+        rateLimitHeaders,
       );
     }
-
-    return NextResponse.json(result, { headers: corsHeaders });
-  } catch (error) {
-    console.error("QR Code API Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500, headers: corsHeaders },
-    );
-  }
-}
+  },
+  { allowedAuthTypes: ["ApiKey", "ClientToken"] },
+);
