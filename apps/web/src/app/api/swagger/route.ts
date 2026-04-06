@@ -549,6 +549,38 @@ export function GET() {
               "updatedAt",
             ],
           },
+          Transaction: {
+            type: "object",
+            properties: {
+              id: { type: "string", format: "uuid" },
+              txHash: { type: "string", example: "0x123..." },
+              amountCents: { type: "integer", example: 5000 },
+              currency: { type: "string", enum: ["EUR"], example: "EUR" },
+              status: {
+                type: "string",
+                enum: ["PENDING", "COMPLETED", "FAILED", "EXPIRED"],
+                example: "COMPLETED",
+              },
+              customerName: {
+                type: "string",
+                nullable: true,
+                example: "John Doe",
+              },
+              createdAt: {
+                type: "string",
+                format: "date-time",
+                example: "2024-01-15T10:30:00Z",
+              },
+            },
+            required: [
+              "id",
+              "txHash",
+              "amountCents",
+              "currency",
+              "status",
+              "createdAt",
+            ],
+          },
 
           PaymentSessionDetails: {
             type: "object",
@@ -591,6 +623,31 @@ export function GET() {
                 },
                 required: ["providerId", "accountName", "iban"],
               },
+              amountPaidCents: { type: "integer", example: 0 },
+              merchantReferenceId: {
+                type: "string",
+                nullable: true,
+                example: "order-123",
+              },
+              metadata: {
+                type: "object",
+                additionalProperties: true,
+                nullable: true,
+              },
+              createdAt: {
+                type: "string",
+                format: "date-time",
+                example: "2024-01-15T10:30:00Z",
+              },
+              updatedAt: {
+                type: "string",
+                format: "date-time",
+                example: "2024-01-15T10:30:00Z",
+              },
+              transactions: {
+                type: "array",
+                items: { $ref: "#/components/schemas/Transaction" },
+              },
             },
             required: [
               "sessionId",
@@ -600,6 +657,10 @@ export function GET() {
               "status",
               "organization",
               "bankAccount",
+              "amountPaidCents",
+              "createdAt",
+              "updatedAt",
+              "transactions",
             ],
           },
 

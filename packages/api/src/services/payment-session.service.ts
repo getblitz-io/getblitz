@@ -294,6 +294,19 @@ export class PaymentSessionService implements IPaymentSessionService {
         : null,
       sepaQrString,
       clientToken,
+      merchantReferenceId: session.merchantReferenceId,
+      metadata: session.metadata,
+      createdAt: session.createdAt.toISOString(),
+      updatedAt: session.updatedAt.toISOString(),
+      transactions: session.transactions.map((tx) => ({
+        id: tx.id,
+        txHash: tx.txHash,
+        amountCents: tx.amountCents,
+        currency: tx.currency,
+        status: tx.status,
+        customerName: tx.customerName,
+        createdAt: tx.createdAt.toISOString(),
+      })),
     };
 
     return result;

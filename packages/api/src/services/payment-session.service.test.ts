@@ -1,3 +1,4 @@
+import assert from "assert";
 import type { Mock, Mocked } from "vitest";
 import { jwtVerify } from "jose";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -270,18 +271,34 @@ describe("PaymentSessionService", () => {
     const session = {
       id: "session-1",
       referenceId: "ref-1",
+      merchantReferenceId: "order-123",
       amountCents: 1000,
+      amountPaidCents: 0,
+      amountPaidCurrency: Currency.EUR,
       currency: Currency.EUR,
       status: "PENDING",
       expiresAt: new Date(Date.now() - 1000), // Expired
       organizationId: "org-1",
-      organization: { name: "Test Org" },
+      organization: { name: "Test Org", logo: "logo.png" },
       bankAccount: {
         accountIban: "FR123",
         accountName: "Test Account",
         organizationBankConnection: { id: "conn-1", providerId: "qonto" },
       },
-      paymentSession: { id: "session-1" },
+      metadata: { key: "value" },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      transactions: [
+        {
+          id: "tx-1",
+          txHash: "hash-1",
+          amountCents: 500,
+          currency: Currency.EUR,
+          status: "COMPLETED",
+          customerName: "John Doe",
+          createdAt: new Date(),
+        },
+      ],
     };
     mockSessionRepo.findById.mockResolvedValue(session);
     mockedRegistry.getProvider.mockReturnValue({
@@ -289,16 +306,15 @@ describe("PaymentSessionService", () => {
       displayName: "Qonto",
       domain: "qonto.com",
     } as unknown as BankProvider);
-    // Needed for generateClientToken
-    // But getSessionDetails calls generateClientToken which is private.
-    // Assuming signatures don't fail in tests easily without mocking jose.
-    // Mock jose sign returned "mock-token"
-
-    // We mocked SignJWT so it should work.
 
     const result = await service.getSessionDetails({ sessionId: "session-1" });
 
     expect(result?.status).toBe("EXPIRED");
+    expect(result?.merchantReferenceId).toBe("order-123");
+    expect(result?.metadata).toEqual({ key: "value" });
+    expect(result?.transactions).toHaveLength(1);
+    assert(result?.transactions[0]);
+    expect(result.transactions[0].txHash).toBe("hash-1");
     expect(mockSessionRepo.updateStatus).toHaveBeenCalledWith({
       id: "session-1",
       status: "EXPIRED",

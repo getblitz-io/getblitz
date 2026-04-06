@@ -40,6 +40,7 @@ export class PaymentSessionRepository
             organizationBankConnection: true,
           },
         },
+        transactions: true,
       },
     });
   }

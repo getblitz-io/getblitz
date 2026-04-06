@@ -16,6 +16,7 @@ export type PaymentSessionWithRelations = Prisma.PaymentSessionGetPayload<{
         organizationBankConnection: true;
       };
     };
+    transactions: true;
   };
 }>;
 
