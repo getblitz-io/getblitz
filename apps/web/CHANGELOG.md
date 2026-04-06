@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.9](https://github.com/getblitz-io/getblitz/compare/web-v0.0.8...web-v0.0.9) (2026-04-05)
+
+
+### Features
+
+* add redirectUrl support to payment sessions and widget redirection logic ([#35](https://github.com/getblitz-io/getblitz/issues/35)) ([8922fc7](https://github.com/getblitz-io/getblitz/commit/8922fc7960c82f7d4f84e248360e55f99b32b3dd))
+* implement api endpoints documentation for public use ([#33](https://github.com/getblitz-io/getblitz/issues/33)) ([9e25f0a](https://github.com/getblitz-io/getblitz/commit/9e25f0af9d7605ae0f6d6fae681fb910b5565e77))
+
 ## [0.0.8](https://github.com/getblitz-io/getblitz/compare/web-v0.0.7...web-v0.0.8) (2026-03-28)
 
 
