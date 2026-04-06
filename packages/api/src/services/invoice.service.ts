@@ -498,7 +498,7 @@ export class InvoiceService implements IInvoiceService {
       clientToken: "temporary-token",
       redirectUrl: "",
       merchantReferenceId: null,
-      metadata: [],
+      metadata: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       transactions: [],
