@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/getblitz-io/getblitz/compare/web-v0.0.9...web-v0.0.10) (2026-04-06)
+
+
+### Features
+
+* include merchant reference, metadata, timestamps, and transaction history in payment session details ([#36](https://github.com/getblitz-io/getblitz/issues/36)) ([e6df04a](https://github.com/getblitz-io/getblitz/commit/e6df04a5a7701f2a16b5b36eafe042721a63b62a))
+
 ## [0.0.9](https://github.com/getblitz-io/getblitz/compare/web-v0.0.8...web-v0.0.9) (2026-04-05)
 
 
