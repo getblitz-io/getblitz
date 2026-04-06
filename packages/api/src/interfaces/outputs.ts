@@ -6,6 +6,7 @@ import type {
   Currency,
   InvoiceStatus,
   PaymentStatus,
+  TransactionStatus,
 } from "@getblitz/database";
 
 import type { InvoiceLineItem } from "./inputs";
@@ -18,6 +19,16 @@ export interface CreateChallengeResult {
   expiresAt: string | null; // Nullable for non-expiring payments
   connectionId: string;
   clientToken: string;
+}
+
+export interface TransactionDetails {
+  id: string;
+  txHash: string;
+  amountCents: number;
+  currency: Currency;
+  status: TransactionStatus;
+  customerName: string | null;
+  createdAt: string;
 }
 
 export interface SessionDetailsResult {
@@ -51,6 +62,11 @@ export interface SessionDetailsResult {
   } | null;
   sepaQrString: string | null;
   clientToken: string;
+  merchantReferenceId: string | null;
+  metadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  transactions: TransactionDetails[];
 }
 
 export interface SimulatePaymentResult {

@@ -179,11 +179,26 @@ describe("InvoiceService", () => {
       });
 
       mockPaymentSessionService.getSessionDetails.mockResolvedValue({
-        id: "sess-1",
+        sessionId: "sess-1",
         referenceId: "ref-1",
         amountCents: 1000,
-        currency: "EUR",
+        amountPaidCents: 0,
+        currency: Currency.EUR,
         status: "PENDING",
+        organization: { name: "Test Org", logo: null },
+        bankAccount: {
+          organizationBankConnection: { id: "conn-1", providerId: "prov-1" },
+          accountName: "Test Account",
+          iban: "DE123",
+        },
+        provider: null,
+        sepaQrString: null,
+        clientToken: "mock-token",
+        merchantReferenceId: null,
+        metadata: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        transactions: [],
       });
 
       // Mock rate limiter to allow
