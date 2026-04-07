@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.11](https://github.com/getblitz-io/getblitz/compare/web-v0.0.10...web-v0.0.11) (2026-04-07)
+
+
+### Features
+
+* add API reference page to portal and website navigation with localized support ([#38](https://github.com/getblitz-io/getblitz/issues/38)) ([c08b84f](https://github.com/getblitz-io/getblitz/commit/c08b84fde5c120ff7960eb06cdb0e73c004b3b8e))
+
 ## [0.0.10](https://github.com/getblitz-io/getblitz/compare/web-v0.0.9...web-v0.0.10) (2026-04-06)
 
 
