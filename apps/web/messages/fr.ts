@@ -123,6 +123,7 @@ const messages = {
     myAccount: "Mon compte",
     customers: "Clients",
     invoices: "Factures",
+    apiReference: "Référence API",
   },
   OrgSwitcher: {
     switchOrganization: "Changer d'organisation",

@@ -1,5 +1,6 @@
 "use client";
 
+import BaseLink from "next/link";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
@@ -28,7 +29,7 @@ export function Footer() {
           {/* Links */}
           <div>
             <h4 className="text-foreground mb-4 text-sm font-semibold tracking-wider uppercase">
-              Resources
+              {t("resources")}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -47,6 +48,14 @@ export function Footer() {
                   </svg>
                   {t("links.github")}
                 </a>
+              </li>
+              <li>
+                <BaseLink
+                  href="/api-reference"
+                  className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                >
+                  {t("links.apiReference")}
+                </BaseLink>
               </li>
               <li>
                 <a
@@ -92,7 +101,7 @@ export function Footer() {
           {/* Product */}
           <div>
             <h4 className="text-foreground mb-4 text-sm font-semibold tracking-wider uppercase">
-              Product
+              {t("product")}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -100,7 +109,7 @@ export function Footer() {
                   href="#features"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                 >
-                  Features
+                  {t("links.features")}
                 </Link>
               </li>
               <li>
@@ -108,7 +117,7 @@ export function Footer() {
                   href="#how-it-works"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                 >
-                  How It Works
+                  {t("links.howItWorks")}
                 </Link>
               </li>
               <li>
@@ -116,7 +125,7 @@ export function Footer() {
                   href="#banks"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                 >
-                  Supported Banks
+                  {t("links.banks")}
                 </Link>
               </li>
               <li>
@@ -124,7 +133,7 @@ export function Footer() {
                   href="#privacy"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                 >
-                  Privacy & GDPR
+                  {t("links.privacyGdpr")}
                 </Link>
               </li>
             </ul>
@@ -155,7 +164,7 @@ export function Footer() {
             <span>{t("legal")}</span>
           </div>
           <p className="text-muted-foreground text-xs">
-            © {new Date().getFullYear()} GetBlitz. All rights reserved.
+            © {new Date().getFullYear()} GetBlitz. {t("copyright")}
           </p>
         </div>
       </div>

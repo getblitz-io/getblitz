@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { GearIcon, HamburgerMenuIcon, HomeIcon } from "@radix-ui/react-icons";
+import {
+  CodeIcon,
+  GearIcon,
+  HamburgerMenuIcon,
+  HomeIcon,
+} from "@radix-ui/react-icons";
 import { useTranslations } from "next-intl";
 
 import type { Session } from "@getblitz/auth";
@@ -42,6 +47,12 @@ const navItems = [
   { path: "/payments", labelKey: "payments", icon: "credit-card" },
   { path: "/customers", labelKey: "customers", icon: "users" },
   { path: "/invoices", labelKey: "invoices", icon: "receipt" },
+  {
+    path: "/api-reference",
+    labelKey: "apiReference",
+    icon: "code",
+    absolute: true,
+  },
   { path: "/settings", labelKey: "settings", icon: "settings" },
 ] as const;
 
@@ -76,7 +87,8 @@ export function MobileNav({
             {t("menu")}
           </p>
           {navItems.map((item) => {
-            const href = `/${slug}${item.path}`;
+            const href =
+              "absolute" in item ? item.path : `/${slug}${item.path}`;
             const isActive =
               item.path === ""
                 ? pathname === `/${slug}`
@@ -115,7 +127,14 @@ function MenuIcon({ className }: { className?: string }) {
 function NavIcon({
   name,
 }: {
-  name: "home" | "building" | "credit-card" | "users" | "receipt" | "settings";
+  name:
+    | "home"
+    | "building"
+    | "credit-card"
+    | "users"
+    | "receipt"
+    | "settings"
+    | "code";
 }) {
   const icons = {
     home: <HomeIcon className="h-4 w-4" />,
@@ -124,6 +143,7 @@ function NavIcon({
     users: <CustomerIcon className="h-4 w-4" />,
     receipt: <InvoiceIcon className="h-4 w-4" />,
     settings: <GearIcon className="h-4 w-4" />,
+    code: <CodeIcon className="h-4 w-4" />,
   };
   return icons[name];
 }
