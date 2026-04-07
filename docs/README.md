@@ -24,7 +24,8 @@ Documentation for setting up and configuring bank providers:
 
 - [Main README](../README.md) - Project overview and quick start
 - [Deployment Guide](../DEPLOYMENT.md) - Production deployment instructions
-- [API Reference](../README.md#api-reference) - REST API documentation
+- [API Reference (Interactive Documentation)](https://app.getblitz.io/api-reference) - Full REST API reference
+- [API Reference (Quick Setup)](../README.md#api-reference) - Quick API reference
 
 ## Getting Started
 

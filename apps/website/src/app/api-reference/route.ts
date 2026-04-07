@@ -8,15 +8,7 @@ const config = {
     : "http://localhost:3000/api/swagger",
   servers: [
     {
-      url: "https://local.getblitz.io/api/v1",
-      name: "Local Proxy",
-    },
-    {
-      url: "http://localhost:3000/api/v1",
-      name: "Local",
-    },
-    {
-      url: "https://app.getblitz.io/api/v1",
+      url: `${env.NEXT_PUBLIC_APP_URL}/api/v1`,
       name: "Production",
     },
   ],

@@ -122,8 +122,9 @@ const messages = {
     payments: "Zahlungen",
     settings: "Einstellungen",
     myAccount: "Mein Konto",
-    customers: "Meine Kunden",
-    invoices: "Meine Rechnungen",
+    customers: "Kunden",
+    invoices: "Rechnungen",
+    apiReference: "API-Referenz",
   },
   OrgSwitcher: {
     switchOrganization: "Organisation wechseln",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BaseLink from "next/link";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
@@ -71,6 +72,12 @@ export function Navbar() {
             </svg>
             {t("github")}
           </a>
+          <BaseLink
+            href="/api-reference"
+            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+          >
+            {t("apiReference")}
+          </BaseLink>
         </nav>
 
         {/* Right side */}
@@ -134,6 +141,13 @@ export function Navbar() {
           >
             {t("github")}
           </a>
+          <BaseLink
+            href="/api-reference"
+            className="text-foreground text-sm"
+            onClick={() => setMenuOpen(false)}
+          >
+            {t("apiReference")}
+          </BaseLink>
           <a
             href="https://app.getblitz.io"
             className="bg-primary text-primary-foreground inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium"

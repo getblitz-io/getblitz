@@ -5,6 +5,7 @@
     "pricing": "Preise",
     "docs": "Dokumentation",
     "github": "GitHub",
+    "apiReference": "API-Referenz",
     "getStarted": "Jetzt starten"
   },
   "hero": {
@@ -305,14 +306,22 @@
     "links": {
       "github": "GitHub",
       "docs": "Dokumentation",
+      "apiReference": "API-Referenz",
       "pricing": "Preise",
       "selfHost": "Self-Host-Anleitung",
       "changelog": "Changelog",
       "impressum": "Impressum",
       "privacy": "Datenschutzerklärung",
-      "terms": "Nutzungsbedingungen"
+      "terms": "Nutzungsbedingungen",
+      "features": "Funktionen",
+      "howItWorks": "So funktioniert es",
+      "banks": "Unterstützte Banken",
+      "privacyGdpr": "Datenschutz & DSGVO"
     },
-    "legal": "MIT lizenziert · Made in Europe 🇪🇺"
+    "legal": "MIT lizenziert · Made in Europe 🇪🇺",
+    "resources": "Ressourcen",
+    "product": "Produkt",
+    "copyright": "Alle Rechte vorbehalten."
   },
   "cookieBanner": {
     "message": "Wir verwenden nur essenzielle Cookies, um unsere Dienste bereitzustellen und vor Betrug zu schützen. Kein Tracking, keine Analysen.",

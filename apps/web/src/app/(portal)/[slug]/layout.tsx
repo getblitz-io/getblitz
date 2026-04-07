@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { GearIcon, HomeIcon } from "@radix-ui/react-icons";
+import { CodeIcon, GearIcon, HomeIcon } from "@radix-ui/react-icons";
 import { getTranslations } from "next-intl/server";
 
 import {
@@ -53,6 +53,7 @@ export default async function OrgLayout({
     { href: `/${slug}/payments`, labelKey: "payments", icon: "credit-card" },
     { href: `/${slug}/customers`, labelKey: "customers", icon: "users" },
     { href: `/${slug}/invoices`, labelKey: "invoices", icon: "receipt" },
+    { href: "/api-reference", labelKey: "apiReference", icon: "code" },
     { href: `/${slug}/settings`, labelKey: "settings", icon: "settings" },
   ] as const;
 
@@ -143,7 +144,14 @@ export default async function OrgLayout({
 function NavIcon({
   name,
 }: {
-  name: "home" | "building" | "credit-card" | "users" | "receipt" | "settings";
+  name:
+    | "home"
+    | "building"
+    | "credit-card"
+    | "users"
+    | "receipt"
+    | "settings"
+    | "code";
 }) {
   const icons = {
     home: <HomeIcon className="h-4 w-4" />,
@@ -152,6 +160,7 @@ function NavIcon({
     users: <CustomerIcon className="h-4 w-4" />,
     receipt: <InvoiceIcon className="h-4 w-4" />,
     settings: <GearIcon className="h-4 w-4" />,
+    code: <CodeIcon className="h-4 w-4" />,
   };
   return icons[name];
 }

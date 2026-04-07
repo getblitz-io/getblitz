@@ -125,6 +125,8 @@ getblitz/
 
 ## API Reference
 
+Interactive API documentation is available at [https://app.getblitz.io/api-reference](https://app.getblitz.io/api-reference) or at your own deployment's `/api-reference` path.
+
 ### Create Payment Challenge
 
 ```bash
