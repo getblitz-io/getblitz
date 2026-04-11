@@ -40,6 +40,7 @@ Whether you are extending the core GetBlitz platform, or simply integrating it i
 
 Learn how to implement GetBlitz into your frontend application with our official SDK and securely receive real-time webhook events on your backend.
 
+- [WooCommerce Integration](/woocommerce)
 - [SDK Integration Guide](/integration-guide)
 - [Webhook Events & Verification](/webhooks)
 

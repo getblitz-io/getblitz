@@ -58,6 +58,14 @@ export function Navbar() {
             {t("pricing")}
           </Link>
           <a
+            href="https://docs.getblitz.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+          >
+            {t("docs")}
+          </a>
+          <a
             href="https://github.com/getblitz-io/getblitz"
             target="_blank"
             rel="noopener noreferrer"
@@ -133,6 +141,15 @@ export function Navbar() {
           >
             {t("pricing")}
           </Link>
+          <a
+            href="https://docs.getblitz.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground text-sm"
+            onClick={() => setMenuOpen(false)}
+          >
+            {t("docs")}
+          </a>
           <a
             href="https://github.com/getblitz-io/getblitz"
             target="_blank"
