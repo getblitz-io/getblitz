@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Integrating GetBlitz
 
-GetBlitz provides a lightweight JavaScript SDK string designed to make adding SEPA payment to your frontend effortless.
+GetBlitz provides a lightweight JavaScript SDK designed to make adding SEPA payment to your frontend effortless.
 
 ## 1. Create a Payment Challenge
 
