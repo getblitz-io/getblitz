@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 import { useScrollReveal } from "../ScrollReveal";
@@ -10,6 +11,11 @@ interface BankProvider {
   bestFor: string;
   flag: string;
 }
+
+const logoMap: Record<string, string> = {
+  Qonto: "/logos/qonto.svg",
+  "Revolut Business": "/logos/revolut.svg",
+};
 
 export function BanksSection() {
   const t = useTranslations("banks");
@@ -43,6 +49,7 @@ export function BanksSection() {
         <div className="mb-16 grid grid-cols-1 gap-6 md:grid-cols-3">
           {providers.map((provider, i) => {
             const isComingSoon = i === providers.length - 1;
+            const logo = logoMap[provider.name];
 
             return (
               <div
@@ -67,7 +74,17 @@ export function BanksSection() {
                         : "border border-white/10 bg-white/5"
                     }`}
                   >
-                    {provider.flag}
+                    {logo ? (
+                      <Image
+                        src={logo}
+                        alt={provider.name}
+                        width={28}
+                        height={28}
+                        className={isComingSoon ? "opacity-50" : "opacity-90"}
+                      />
+                    ) : (
+                      provider.flag
+                    )}
                   </div>
 
                   {isComingSoon ? (

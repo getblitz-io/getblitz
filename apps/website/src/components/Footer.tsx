@@ -59,7 +59,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/getblitz-io/getblitz/blob/main/README.md"
+                  href="https://docs.getblitz.io"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"

@@ -54,6 +54,7 @@ export default async function OrgLayout({
     { href: `/${slug}/customers`, labelKey: "customers", icon: "users" },
     { href: `/${slug}/invoices`, labelKey: "invoices", icon: "receipt" },
     { href: "/api-reference", labelKey: "apiReference", icon: "code" },
+    { href: "https://docs.getblitz.io", labelKey: "docs", icon: "code" },
     { href: `/${slug}/settings`, labelKey: "settings", icon: "settings" },
   ] as const;
 

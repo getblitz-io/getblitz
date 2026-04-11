@@ -10,9 +10,9 @@
   },
   "hero": {
     "badge": "Open Source · MIT Licensed · Made in Europe 🇪🇺",
-    "headline": "Your Payment Gateway.",
-    "headlineAccent": "Your Data. Your Rules.",
-    "subheadline": "GetBlitz is an open-source SEPA Instant Transfer gateway that runs on your infrastructure — zero middlemen, zero tracking, zero lock-in. Built for European businesses that value sovereignty.",
+    "headline": "Save on Processing Fees.",
+    "headlineAccent": "Instant Settlement.",
+    "subheadline": "GetBlitz is an open-source SEPA Instant Transfer gateway that runs on your infrastructure — zero middlemen, zero transaction fees, zero lock-in. Funds arrive in under 10 seconds.",
     "ctaPrimary": "Get Started — €10/month",
     "ctaSecondary": "Self-Host for Free",
     "trustBar": {
