@@ -1,6 +1,19 @@
 # GetBlitz Payment Gateway
 
-A self-hosted payment gateway for **SEPA Instant Transfers** with real-time WebSocket notifications. Built for businesses accepting online and offline EUR payments across Europe.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/getblitz-io/getblitz/actions/workflows/ci.yml/badge.svg)](https://github.com/getblitz-io/getblitz/actions)
+[![npm version](https://badge.fury.io/js/%40getblitz%2Fclient.svg)](https://badge.fury.io/js/%40getblitz%2Fclient)
+
+**What is it?**  
+A self-hosted payment gateway for **SEPA Instant Transfers** with real-time WebSocket notifications.
+
+**Who is it for?**  
+Built for businesses accepting online and offline EUR payments across Europe that demand full data sovereignty.
+
+**Why use it over Stripe or PayPal?**  
+Save on processing fees with direct bank-to-bank transfers, achieve _instant_ settlements (funds arrive in seconds, not days), and completely own your payment infrastructure without vendor lock-in.
+
+[**Interactive Demo 🚀**](https://app.getblitz.io/demo) - Try the "sandbox" payment flow right now without installing anything!
 
 ## Features
 
@@ -13,6 +26,22 @@ A self-hosted payment gateway for **SEPA Instant Transfers** with real-time WebS
 - 📱 **Embeddable SDK** - Lightweight JavaScript widget for merchant integration
 - 🔒 **Secure** - HMAC webhook verification, rate limiting, and structured logging
 - 🧪 **Test Mode** - Built-in test bank simulator for development
+
+## How it Works
+
+1. **Customer Checkout:** Your customer selects GetBlitz at checkout.
+2. **Scan & Pay:** They are presented with a SEPA QR code, which they scan with their mobile banking app.
+3. **Instant Settlement:** The bank instantly transfers the EUR amount to your connected business bank account.
+4. **Real-Time Notification:** GetBlitz detects the incoming bank transaction and instantly notifies your backend via secure WebSockets and Webhooks.
+
+## Comparison
+
+| Feature              | GetBlitz                                         | Stripe / traditional gateways |
+| :------------------- | :----------------------------------------------- | :---------------------------- |
+| **Transaction Fees** | **0%** (you only pay your bank's fixed SEPA fee) | 1.5% + €0.25 (varies)         |
+| **Settlement Time**  | **Instant (10 seconds)**                         | 3 - 7 Business Days           |
+| **Data Ownership**   | **100% Yours** (Self-Hosted)                     | Held by third party           |
+| **Chargebacks**      | **Irreversible SEPA transfers**                  | High risk and fees            |
 
 ## Quick Start
 
@@ -123,117 +152,21 @@ getblitz/
 └── tooling/                 # Configs (ESLint, Prettier, TS, Vitest)
 ```
 
-## API Reference
+## Documentation
 
-Interactive API documentation is available at [https://app.getblitz.io/api-reference](https://app.getblitz.io/api-reference) or at your own deployment's `/api-reference` path.
+Comprehensive documentation for GetBlitz, including API references, SDK setup instructions, webhook schemas, and bank provider integrations, is available at our official documentation portal:
 
-### Create Payment Challenge
+**👉 [https://docs.getblitz.io](https://docs.getblitz.io)**
 
-```bash
-POST /api/v1/challenge
-Authorization: Bearer <API_KEY>
-Content-Type: application/json
+### What you'll find there:
 
-{
-  "amount": 500,           # Amount in cents (€5.00)
-  "currency": "EUR",       # EUR only
-  "bankAccountId": "uuid"  # Optional: specific bank account
-}
-```
+- **API Reference**: Detailed endpoints for payment challenges and sessions.
+- **Webhook Events**: Payload schemas and signature verification guides.
+- **SDK Integration**: How to use the `@getblitz/client` library.
+- **Bank Providers**: Setup guides for Qonto, Revolut, and the mock Test Bank.
+- **Custom Providers**: Instructions on how to build and register your own bank integration adapter.
 
-**Response:**
-
-```json
-{
-  "sessionId": "uuid",
-  "clientToken": "ey...",  # Token for SDK authentication
-  "referenceId": "GB-A9F3B2C1",
-  "paymentUrl": "https://pay.example.com/pay/uuid",
-  "expiresAt": "2024-01-01T12:15:00.000Z"
-}
-```
-
-### Get Session Details
-
-Retrieve payment session status and details.
-
-```bash
-GET /api/v1/sessions/:sessionId
-Authorization: Bearer <clientToken>
-Origin: https://your-merchant-site.com
-```
-
-### Webhook Events
-
-The gateway sends webhooks to merchants for payment events:
-
-| Event             | Description                                   |
-| ----------------- | --------------------------------------------- |
-| `payment.success` | Payment completed (full amount received)      |
-| `payment.partial` | Partial payment received (for split payments) |
-| `payment.failed`  | Payment failed                                |
-| `payment.expired` | Payment session expired                       |
-
-📚 **See [docs/webhooks.md](./docs/webhooks.md) for payload schema and signature verification.**
-
-### SDK Integration
-
-We provide a specialized library [`@getblitz/client`](./packages/getblitz-client/README.md) for easy integration.
-
-1. Install the SDK:
-
-   ```bash
-   pnpm add @getblitz/client
-   ```
-
-2. Initialize and mount:
-
-   ```typescript
-   import { GetBlitz } from "@getblitz/client";
-
-   const payment = new GetBlitz({
-     sessionId: "sess_123",
-     clientToken: "ey...", // From Create Challenge response
-     apiUrl: "https://pay.yourdomain.com",
-     wssUrl: "wss://wss.yourdomain.com",
-   });
-
-   await payment.mount("#payment-container");
-
-   payment.on("onSuccess", (token) => {
-     console.log("Payment successful:", token);
-   });
-   ```
-
-## Bank Provider Integration
-
-GetBlitz supports multiple bank providers through a pluggable adapter system.
-
-📚 **See [docs/banks/](./docs/banks/) for detailed setup guides.**
-
-### Supported Providers
-
-| Provider      | Auth Type   | Description                   | Setup Guide                       |
-| ------------- | ----------- | ----------------------------- | --------------------------------- |
-| **Qonto**     | OAuth2      | Business banking for SMEs     | [View](./docs/banks/qonto.md)     |
-| **Revolut**   | Certificate | Business banking for SMEs     | [View](./docs/banks/revolut.md)   |
-| **Test Bank** | None        | Mock provider for development | [View](./docs/banks/test-bank.md) |
-
-> **Note**: Test Bank is automatically hidden in production environments.
-
-### Adding a Custom Provider
-
-Bank providers implement a standard interface in `packages/bank-providers`:
-
-```typescript
-import { MyNewProvider } from "./providers/my-new-provider";
-
-ProviderRegistry.register(MyNewProvider);
-```
-
-4. Define Zod schemas for configuration and credentials.
-
-📚 **See [docs/banks/](./docs/banks/) for detailed setup guides.**
+_(The documentation site is built with Docusaurus and its source code can be found in the [`apps/docs`](./apps/docs) directory of this repository.)_
 
 ## Security
 

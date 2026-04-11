@@ -1,0 +1,24 @@
+name: Test Docs Deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/docs/**"
+      - ".github/workflows/test-docs.yml"
+
+jobs:
+  test-deploy:
+    name: Test deployment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Test build website
+        run: pnpm --filter docs build

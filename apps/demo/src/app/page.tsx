@@ -5,7 +5,7 @@ const products = [
     id: "premium-access",
     name: "Premium Access",
     description: "Unlock all features for 30 days",
-    price: 999, // cents
+    price: 500, // cents
     icon: "🚀",
     gradient: "from-cyan-500 to-blue-600",
   },
@@ -13,7 +13,7 @@ const products = [
     id: "api-credits",
     name: "API Credits Pack",
     description: "10,000 API calls for your apps",
-    price: 2500,
+    price: 1500,
     icon: "⚡",
     gradient: "from-violet-500 to-purple-600",
   },
@@ -21,7 +21,7 @@ const products = [
     id: "enterprise-license",
     name: "Enterprise License",
     description: "Unlimited usage for your team",
-    price: 9900,
+    price: 5000,
     icon: "🏢",
     gradient: "from-amber-500 to-orange-600",
   },

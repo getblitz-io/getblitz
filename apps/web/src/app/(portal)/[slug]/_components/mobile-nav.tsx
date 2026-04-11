@@ -53,6 +53,12 @@ const navItems = [
     icon: "code",
     absolute: true,
   },
+  {
+    path: "https://docs.getblitz.io",
+    labelKey: "docs",
+    icon: "code",
+    absolute: true,
+  },
   { path: "/settings", labelKey: "settings", icon: "settings" },
 ] as const;
 

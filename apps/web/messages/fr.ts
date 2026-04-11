@@ -124,6 +124,7 @@ const messages = {
     customers: "Clients",
     invoices: "Factures",
     apiReference: "Référence API",
+    docs: "Documentation",
   },
   OrgSwitcher: {
     switchOrganization: "Changer d'organisation",
