@@ -57,6 +57,7 @@ const config = {
       },
     ];
   },
+  allowedDevOrigins: ["local.getblitz.io"],
 };
 
 export default withNextIntl(config);

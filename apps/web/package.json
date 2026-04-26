@@ -42,7 +42,7 @@
     "better-auth": "catalog:",
     "ioredis": "catalog:",
     "jose": "catalog:",
-    "next": "16.1.6",
+    "next": "16.2.3",
     "next-intl": "catalog:",
     "next-swagger-doc": "catalog:",
     "qrcode": "catalog:",
