@@ -5,7 +5,6 @@ import type { Currency } from "@getblitz/database";
 import { prisma } from "@getblitz/database";
 import { publishPaymentEvent } from "@getblitz/redis";
 
-import type { IWebhookService } from "../interfaces";
 import { PaymentSettlementService } from "./payment-settlement.service";
 
 // Mocking @getblitz/database
@@ -36,9 +35,7 @@ describe("PaymentSettlementService", () => {
   };
 
   beforeAll(() => {
-    service = new PaymentSettlementService(
-      mockWebhookService as unknown as IWebhookService,
-    );
+    service = new PaymentSettlementService(mockWebhookService);
   });
 
   beforeEach(() => {

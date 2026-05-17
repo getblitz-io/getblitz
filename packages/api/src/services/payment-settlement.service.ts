@@ -9,11 +9,6 @@ import type {
   SettlementResult,
 } from "../interfaces";
 
-interface SuccessfulSettlement extends SettlementResult {
-  success: true;
-  txHash: string;
-}
-
 export class PaymentSettlementService implements IPaymentSettlementService {
   constructor(private readonly webhookService: IWebhookService) {}
 
@@ -155,7 +150,7 @@ export class PaymentSettlementService implements IPaymentSettlementService {
             webhookEvent: isPaymentComplete
               ? "payment.success"
               : "payment.partial",
-          } as SuccessfulSettlement & { webhookEvent: WebhookEventType };
+          };
         });
 
       // Notify merchant via webhook if successful and not already processed

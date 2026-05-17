@@ -1,5 +1,8 @@
 {
   "extends": "@getblitz/tsconfig/compiled-package.json",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
   "include": ["src"],
   "exclude": ["node_modules"]
 }

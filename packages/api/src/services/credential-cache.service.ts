@@ -36,7 +36,7 @@ export class CredentialCacheService {
       if (typeof data === "string") {
         return JSON.parse(data) as BankCredentials;
       }
-      return data as BankCredentials;
+      return data;
     } catch {
       return null;
     }

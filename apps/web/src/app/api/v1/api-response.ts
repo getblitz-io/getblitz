@@ -71,7 +71,7 @@ export class ApiResponse {
         status: options.status ?? 400,
         headers: options.headers,
       },
-    ) as NextResponse<{ error: string; details?: unknown }>;
+    );
   }
 
   /**

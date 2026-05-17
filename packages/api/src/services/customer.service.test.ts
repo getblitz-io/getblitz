@@ -3,7 +3,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Customer } from "@getblitz/database";
 
-import type { ICustomerRepository } from "../interfaces/repositories/ICustomerRepository.interface";
 import type { CreateCustomerInput } from "../interfaces/services/ICustomerService.interface";
 import { CustomerService } from "./customer.service";
 
@@ -32,9 +31,7 @@ describe("CustomerService", () => {
   };
 
   beforeAll(() => {
-    service = new CustomerService(
-      mockCustomerRepo as unknown as ICustomerRepository,
-    );
+    service = new CustomerService(mockCustomerRepo);
   });
 
   beforeEach(() => {

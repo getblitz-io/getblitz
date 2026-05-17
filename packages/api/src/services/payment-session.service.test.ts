@@ -3,10 +3,7 @@ import type { Mock, Mocked } from "vitest";
 import { jwtVerify } from "jose";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  AuthenticatedProvider,
-  BankProvider,
-} from "@getblitz/bank-providers";
+import type { BankProvider } from "@getblitz/bank-providers";
 import { ProviderRegistry } from "@getblitz/bank-providers";
 import { Currency } from "@getblitz/database";
 
@@ -14,9 +11,6 @@ import type {
   CreateChallengeInput,
   IBankAccountRepository,
   ICredentialManagerService,
-  IOrganizationRepository,
-  IPaymentSessionRepository,
-  IPaymentSettlementService,
 } from "../interfaces";
 import { PaymentSessionService } from "./payment-session.service";
 
@@ -114,11 +108,11 @@ describe("PaymentSessionService", () => {
 
   beforeAll(() => {
     service = new PaymentSessionService(
-      mockSessionRepo as unknown as IPaymentSessionRepository,
+      mockSessionRepo,
       mockBankRepo as unknown as IBankAccountRepository,
-      mockSettlement as unknown as IPaymentSettlementService,
+      mockSettlement,
       mockCredentialManager as unknown as ICredentialManagerService,
-      mockOrganizationRepo as unknown as IOrganizationRepository,
+      mockOrganizationRepo,
     );
   });
 
@@ -377,7 +371,7 @@ describe("PaymentSessionService", () => {
       simulateSandboxPayment: vi.fn().mockResolvedValue({ success: true }),
     };
     mockCredentialManager.createAuthenticatedProvider.mockResolvedValue(
-      mockProvider as unknown as AuthenticatedProvider,
+      mockProvider,
     );
 
     const result = await service.simulatePayment({ sessionId: "session-1" });

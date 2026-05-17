@@ -1,7 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AuthenticatedProvider } from "@getblitz/bank-providers";
-
 import type {
   ICredentialManagerService,
   IOrganizationBankConnectionRepository,
@@ -71,9 +69,7 @@ describe("BankConnectionService", () => {
     const mockProvider = {
       createWebhook: vi.fn().mockResolvedValue({ secret: "webhook-secret" }),
     };
-    mockCredManager.createAuthenticatedProvider.mockResolvedValue(
-      mockProvider as unknown as AuthenticatedProvider,
-    );
+    mockCredManager.createAuthenticatedProvider.mockResolvedValue(mockProvider);
 
     const result = await service.setupWebhook({
       connectionId: "conn-123",

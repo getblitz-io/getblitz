@@ -1,6 +1,7 @@
 {
   "extends": "@getblitz/tsconfig/compiled-package.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "lib": ["ES2022"],
     "types": ["node"]
   },

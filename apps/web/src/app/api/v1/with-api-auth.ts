@@ -159,13 +159,7 @@ export function withApiAuth<TParams = void>(
     // 5. Resolve route params (if any) and call the inner handler
     if (routeContext?.params) {
       const params = await routeContext.params;
-      return (
-        handler as (
-          req: NextRequest,
-          ctx: ApiAuthContext,
-          p: TParams,
-        ) => Promise<NextResponse>
-      )(request, apiContext, params as TParams);
+      return handler(request, apiContext, params);
     }
 
     return (

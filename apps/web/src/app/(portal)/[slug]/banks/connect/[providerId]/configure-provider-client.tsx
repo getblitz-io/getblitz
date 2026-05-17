@@ -145,7 +145,7 @@ export function ConfigureProviderClient({
         await updateConnectionConfig.mutateAsync({
           slug,
           connectionId,
-          providerConfig: providerConfig as Record<string, unknown>,
+          providerConfig: providerConfig,
           name: typeof name === "string" ? name.trim() || undefined : undefined,
         });
       } else {
@@ -153,7 +153,7 @@ export function ConfigureProviderClient({
         await saveBankConfig.mutateAsync({
           slug,
           connectionId,
-          providerConfig: providerConfig as Record<string, unknown>,
+          providerConfig: providerConfig,
           connectionName:
             typeof name === "string" ? name.trim() || undefined : undefined,
         });
