@@ -1,5 +1,10 @@
 {
   "extends": "@getblitz/tsconfig/base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"]
+  },
   "include": ["."],
   "exclude": ["node_modules"]
 }

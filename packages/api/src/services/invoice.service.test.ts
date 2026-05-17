@@ -62,7 +62,7 @@ describe("InvoiceService", () => {
     // Mock the $transaction to pass through the callback with a mock tx client
     mockPrisma.$transaction.mockImplementation(
       async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
-        callback(mockPrisma as unknown as Prisma.TransactionClient),
+        callback(mockPrisma),
     );
 
     service = new InvoiceService(
@@ -78,7 +78,7 @@ describe("InvoiceService", () => {
     // Reset transaction mock after clearAllMocks
     mockPrisma.$transaction.mockImplementation(
       async (callback: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
-        callback(mockPrisma as unknown as Prisma.TransactionClient),
+        callback(mockPrisma),
     );
   });
 

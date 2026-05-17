@@ -240,7 +240,7 @@ export const organizationRouter = createTRPCRouter({
       // Encrypt the provider config
       const encryptedConfig =
         ctx.services.credentialManager.encryptProviderConfig(
-          input.providerConfig as ProviderConfig,
+          input.providerConfig,
         );
 
       await ctx.prisma.organizationBankConnection.update({
@@ -770,7 +770,7 @@ export const organizationRouter = createTRPCRouter({
       // Encrypt provider config
       const encryptedConfig =
         ctx.services.credentialManager.encryptProviderConfig(
-          input.providerConfig as ProviderConfig,
+          input.providerConfig,
         );
 
       // Update connection with config and advance status

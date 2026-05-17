@@ -1,13 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BankProvider } from "@getblitz/bank-providers";
 import { WebhookVerificationStatus } from "@getblitz/bank-providers";
 import { BankConnectionStatus } from "@getblitz/database";
 
 import type {
   ICredentialManagerService,
   IOrganizationBankConnectionRepository,
-  IPaymentSettlementService,
 } from "../interfaces";
 import { BankWebhookService } from "./bank-webhook.service";
 
@@ -54,7 +52,7 @@ describe("BankWebhookService", () => {
   beforeAll(() => {
     service = new BankWebhookService(
       mockConnRepo as unknown as IOrganizationBankConnectionRepository,
-      mockSettlement as unknown as IPaymentSettlementService,
+      mockSettlement,
       mockCredentialManager as unknown as ICredentialManagerService,
     );
   });
@@ -83,7 +81,7 @@ describe("BankWebhookService", () => {
       }),
     };
     mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+      mockProvider,
     );
 
     mockSettlement.settle.mockResolvedValue({ success: true });
@@ -125,7 +123,7 @@ describe("BankWebhookService", () => {
       }),
     };
     mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+      mockProvider,
     );
 
     mockSettlement.settle.mockResolvedValue({ success: true });
@@ -187,7 +185,7 @@ describe("BankWebhookService", () => {
       }),
     };
     mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+      mockProvider,
     );
 
     const result = await service.processWebhookByConnectionId({
@@ -213,7 +211,7 @@ describe("BankWebhookService", () => {
       }),
     };
     mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
-      mockProvider as unknown as BankProvider,
+      mockProvider,
     );
 
     const result = await service.processWebhookByConnectionId({

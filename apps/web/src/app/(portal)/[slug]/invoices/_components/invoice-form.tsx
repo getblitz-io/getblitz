@@ -39,13 +39,35 @@ function getErrorMessages(errors: unknown[] | undefined): string {
     .map((e) => {
       if (typeof e === "string") return e;
       if (e && typeof e === "object" && "message" in e) {
-        return String((e as { message: unknown }).message);
+        return String(e.message);
       }
       return "";
     })
     .filter(Boolean)
     .join(", ");
 }
+
+const emptyInvoiceFormValues: InvoiceFormValues = {
+  showNewCustomerForm: false,
+  customerId: undefined,
+  customerEmail: "",
+  customerName: undefined,
+  customerAddress: undefined,
+  customerTaxId: undefined,
+  currency: "EUR",
+  description: undefined,
+  notes: undefined,
+  invoiceNumber: undefined,
+  lineItems: [],
+  password: undefined,
+  passwordConfirm: undefined,
+  removePassword: false,
+  amount: undefined,
+  bankAccountId: "",
+  taxRatePercent: undefined,
+  discountAmount: undefined,
+  expiresAt: undefined,
+};
 
 // Types for bank accounts and customers passed from server
 interface BankAccountWithBank {
@@ -155,36 +177,10 @@ export function InvoiceForm({
 
   // Form with TanStack React Form
   const form = useForm({
+    defaultValues: emptyInvoiceFormValues,
     validators: {
       onChange: InvoiceFormSchema,
     },
-    defaultValues: {
-      // Customer fields (create mode with selection)
-      showNewCustomerForm: false,
-      customerId: "",
-      // Customer fields (shared)
-      customerEmail: "",
-      customerName: "",
-      customerAddress: "",
-      customerTaxId: "",
-      // Invoice content fields
-      currency: "EUR",
-      description: "",
-      notes: "",
-      invoiceNumber: "",
-      // Line items
-      lineItems: [] as LineItem[],
-      // Password fields
-      password: "",
-      passwordConfirm: "",
-      removePassword: false,
-      // Create-only fields
-      amount: "",
-      bankAccountId: "",
-      taxRatePercent: "",
-      discountAmount: "",
-      expiresAt: "",
-    } as InvoiceFormValues,
     onSubmit: ({ value }) => {
       // Manual check for amount/line items since it involves calculation
       if (mode === "create") {
@@ -394,7 +390,7 @@ export function InvoiceForm({
   }) => {
     if (customer.isNew) {
       form.setFieldValue("showNewCustomerForm", true);
-      form.setFieldValue("customerId", "");
+      form.setFieldValue("customerId", undefined);
       form.setFieldValue("customerEmail", customer.email ?? "");
       form.setFieldValue("customerName", "");
       form.setFieldValue("customerAddress", "");

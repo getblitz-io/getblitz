@@ -85,7 +85,7 @@ export const GET = withApiAuth<Params>(
         id: sessionDetails.sessionId,
       });
 
-      if (!rawSession || rawSession.organizationId !== organizationId) {
+      if (rawSession?.organizationId !== organizationId) {
         return ApiResponse.unauthorized(
           "Unauthorized access",
           rateLimitHeaders,

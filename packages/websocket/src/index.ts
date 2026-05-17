@@ -2,7 +2,10 @@ import type { Server as HttpServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 
 import type {
-  TypedSocketIOServer,
+  ClientToServerEvents,
+  InterServerEvents,
+  ServerToClientEvents,
+  SocketData,
   WebSocketConfig,
   WebSocketResult,
 } from "./types";
@@ -20,13 +23,18 @@ export function attachSocketIO(
   httpServer: HttpServer,
   config: WebSocketConfig,
 ): WebSocketResult {
-  const io = new SocketIOServer(httpServer, {
+  const io = new SocketIOServer<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >(httpServer, {
     cors: {
       methods: ["GET", "POST"],
       credentials: true,
     },
     transports: ["websocket", "polling"],
-  }) as TypedSocketIOServer;
+  });
 
   // Setup socket handlers
   setupSocketHandlers({ io, encryptionKey: config.encryptionKey });

@@ -26,7 +26,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   error: 40,
 };
 
-const currentLogLevel = (env.LOG_LEVEL as LogLevel | undefined) ?? "info";
+const currentLogLevel = env.LOG_LEVEL ?? "info";
 const isProduction = env.NODE_ENV === "production";
 
 function shouldLog(level: LogLevel): boolean {
