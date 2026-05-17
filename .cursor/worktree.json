@@ -1,0 +1,11 @@
+{
+  "setup-worktree": [
+    "pnpm i",
+    "cp $ROOT_WORKTREE_PATH/.env .env",
+    "cp $ROOT_WORKTREE_PATH/app/demo/.env ./apps/demo/.env",
+    "cp $ROOT_WORKTREE_PATH/app/web/.env ./apps/web/.env",
+    "cp $ROOT_WORKTREE_PATH/app/wss/.env ./apps/wss/.env",
+    "cp $ROOT_WORKTREE_PATH/app/database/.env ./apps/database/.env",
+    "pnpm db:migrate"
+  ]
+}
