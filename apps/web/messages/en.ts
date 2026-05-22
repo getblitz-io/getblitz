@@ -33,6 +33,7 @@ const messages = {
       hide: "Hide",
       failedToCopy: "Failed to copy",
       copiedToClipboard: "Copied to clipboard",
+      retry: "Retry",
     },
     status: {
       pending: "Pending",
@@ -363,6 +364,23 @@ const messages = {
     youWillBeRedirected:
       "You will be automatically redirected back here after authorization",
     yourCallbackUrl: "Your registered callback URL:",
+    wiseProfileSelector: {
+      title: "Select Your Wise Profile",
+      subtitle: "Choose which profile should receive incoming payments",
+      loadPrompt:
+        "Paste your API token in the fields above, then load profiles here. Nothing is sent to Wise until you click the button.",
+      loadProfiles: "Load profiles",
+      fetching: "Fetching your Wise profiles…",
+      loadErrorTitle: "Could not load profiles",
+      useDifferentToken: "Use different token",
+      noProfiles: "No profiles found for this API token.",
+      profileTypeBusiness: "Business",
+      profileTypePersonal: "Personal",
+      profileIdLabel: "Profile ID: {id}",
+      footerSelected: "Profile selected — click Continue to proceed",
+      footerSelectPrompt: "Select a profile to continue",
+      continueWithProfile: "Continue with this profile",
+    },
   },
   BankAccountsPage: {
     backToBanks: "← Back to Banks",

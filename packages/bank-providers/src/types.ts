@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { QontoBankCredentials } from "./providers/qonto/types";
 import type { RevolutBankCredentials } from "./providers/revolut/types";
 import type { TestBankCredentials } from "./providers/test-bank/adapter";
+import type { WiseBankCredentials } from "./providers/wise/types";
 
 export enum WebhookVerificationStatus {
   Error = "error",
@@ -28,7 +29,8 @@ export interface BaseBankCredentials {}
 export type BankCredentials =
   | TestBankCredentials
   | RevolutBankCredentials
-  | QontoBankCredentials;
+  | QontoBankCredentials
+  | WiseBankCredentials;
 
 export interface AccountConfig {
   iban?: string;
@@ -65,6 +67,7 @@ export interface ProviderMetadata {
   oauthFlowType: OAuthFlowType;
   setupGuideUrl: string | null;
   isTestProvider: boolean;
+  customConfigComponentId: string | null;
 }
 
 /**
@@ -79,6 +82,8 @@ export interface ProviderConfigField {
   secret?: boolean; // For password-style inputs
   defaultValue?: string | boolean | number;
   dependsOn?: { field: string; value: unknown }; // Conditional visibility
+  /** Injected or system-owned — omit from the generic form UI */
+  hidden?: boolean;
 }
 
 export interface ProviderConfigSchema {
@@ -86,6 +91,17 @@ export interface ProviderConfigSchema {
 }
 
 export type OAuthFlowType = "redirect" | "manual-consent" | "none";
+
+/** Input passed to {@link BankProvider.preSaveConfigHook} before persisting config. */
+export interface ProviderConfigPreSaveContext {
+  config: ProviderConfig;
+  credentials: BankCredentials | null;
+}
+
+/** Input passed to {@link BankProvider.postSaveConfigHook} after config is persisted. */
+export interface ProviderConfigPostSaveContext extends ProviderConfigPreSaveContext {
+  connectionId: string;
+}
 
 /**
  * Phase 1: Template / Metadata provider (no config, no credentials).
@@ -104,6 +120,39 @@ export interface BankProvider {
 
   // Documentation
   getSetupGuide(): string | null;
+
+  /**
+   * Return a custom UI component identifier for provider-specific setup steps.
+   * Returns null for providers that work with the default generic config form.
+   * The frontend maps this ID to a lazy-loaded React component.
+   */
+  getCustomConfigComponentId(): string | null;
+
+  /**
+   * Field names that must be collected before the custom config step can run
+   * (e.g. Wise: API token before profile picker). Empty if custom step is first or N/A.
+   */
+  getFieldNamesBeforeCustomStep(): string[];
+
+  /**
+   * For providers without OAuth (no exchangeCode), derive credentials to store
+   * when saving provider config. OAuth providers return null.
+   */
+  getCredentialsFromSavedConfig(config: ProviderConfig): BankCredentials | null;
+
+  /**
+   * Runs before provider config (and derived credentials) are written to the DB.
+   * Use to validate config against external APIs, reject invalid combinations, etc.
+   * Default implementation is a no-op.
+   */
+  preSaveConfigHook(context: ProviderConfigPreSaveContext): Promise<void>;
+
+  /**
+   * Runs after provider config is persisted. Receives the saved connection id.
+   * Use for provider-specific side effects that must happen only once config is stored.
+   * Default implementation is a no-op.
+   */
+  postSaveConfigHook(context: ProviderConfigPostSaveContext): Promise<void>;
 
   // Provider configuration schema for dynamic form
   getProviderConfigSchema(): ProviderConfigSchema;

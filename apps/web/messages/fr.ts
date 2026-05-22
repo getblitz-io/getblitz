@@ -33,6 +33,7 @@ const messages = {
       hide: "Masquer",
       failedToCopy: "Échec de la copie",
       copiedToClipboard: "Copié dans le presse-papiers",
+      retry: "Réessayer",
     },
     status: {
       pending: "En attente",
@@ -368,6 +369,24 @@ const messages = {
     youWillBeRedirected:
       "Vous serez automatiquement redirigé ici après l'autorisation",
     yourCallbackUrl: "Votre URL de rappel enregistrée :",
+    wiseProfileSelector: {
+      title: "Sélectionnez votre profil Wise",
+      subtitle: "Choisissez le profil qui recevra les paiements entrants",
+      loadPrompt:
+        "Collez votre jeton API dans les champs ci-dessus, puis chargez les profils ici. Rien n'est envoyé à Wise tant que vous n'avez pas cliqué sur le bouton.",
+      loadProfiles: "Charger les profils",
+      fetching: "Récupération de vos profils Wise…",
+      loadErrorTitle: "Impossible de charger les profils",
+      useDifferentToken: "Utiliser un autre jeton",
+      noProfiles: "Aucun profil trouvé pour ce jeton API.",
+      profileTypeBusiness: "Professionnel",
+      profileTypePersonal: "Personnel",
+      profileIdLabel: "ID du profil : {id}",
+      footerSelected:
+        "Profil sélectionné — cliquez sur Continuer pour poursuivre",
+      footerSelectPrompt: "Sélectionnez un profil pour continuer",
+      continueWithProfile: "Continuer avec ce profil",
+    },
   },
   BankAccountsPage: {
     backToBanks: "← Retour aux banques",

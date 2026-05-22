@@ -3,6 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import type {
+  BankCredentials,
+  BankProvider,
   ProviderConfig,
   ProviderConfigSchema,
 } from "@getblitz/bank-providers";
@@ -22,6 +24,66 @@ import {
   organizationProcedure,
   protectedProcedure,
 } from "../trpc";
+
+async function runPreSaveConfigHook({
+  provider,
+  config,
+  credentials,
+}: {
+  provider: BankProvider;
+  config: ProviderConfig;
+  credentials: BankCredentials | null;
+}): Promise<void> {
+  try {
+    await provider.preSaveConfigHook({ config, credentials });
+  } catch (error) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Invalid provider configuration",
+    });
+  }
+}
+
+/**
+ * Post-save hooks run after config is persisted. Failures must not roll back the
+ * save or fail the request — hooks are best-effort side effects only.
+ */
+async function runPostSaveConfigHook({
+  provider,
+  connectionId,
+  config,
+  credentials,
+}: {
+  provider: BankProvider;
+  connectionId: string;
+  config: ProviderConfig;
+  credentials: BankCredentials | null;
+}): Promise<void> {
+  try {
+    await provider.postSaveConfigHook({ connectionId, config, credentials });
+  } catch {
+    // Intentionally swallowed: post-save hooks must not throw to callers.
+  }
+}
+
+function assertDerivedCredentialsForNoOAuthProvider({
+  provider,
+  derivedCredentials,
+}: {
+  provider: BankProvider;
+  derivedCredentials: BankCredentials | null;
+}): void {
+  if (provider.oauthFlowType === "none" && derivedCredentials === null) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "Provider configuration is incomplete (could not derive credentials for this provider)",
+    });
+  }
+}
 
 /**
  * Helper to convert service errors to TRPC errors
@@ -170,6 +232,7 @@ export const organizationRouter = createTRPCRouter({
         schema: ProviderConfigSchema;
         defaultConfig: ProviderConfig;
         setupGuideUrl: string | null;
+        fieldNamesBeforeCustomStep: string[];
       }> => {
         const provider = ProviderRegistry.getProvider(input.providerId);
         if (!provider) {
@@ -209,6 +272,7 @@ export const organizationRouter = createTRPCRouter({
           schema: provider.getProviderConfigSchema(),
           defaultConfig,
           setupGuideUrl: provider.getSetupGuide(),
+          fieldNamesBeforeCustomStep: provider.getFieldNamesBeforeCustomStep(),
         };
       },
     ),
@@ -237,19 +301,72 @@ export const organizationRouter = createTRPCRouter({
         });
       }
 
-      // Encrypt the provider config
-      const encryptedConfig =
-        ctx.services.credentialManager.encryptProviderConfig(
-          input.providerConfig,
+      const providerTemplate = ProviderRegistry.getProvider(
+        connection.providerId,
+      );
+      if (!providerTemplate) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unknown bank provider",
+        });
+      }
+
+      // Merge with existing config so hidden fields (e.g. Wise profileId) survive
+      // reconfigure when the generic form omits them.
+      let parsedConfig = input.providerConfig as ProviderConfig;
+      if (connection.providerConfig) {
+        const existing = ctx.services.credentialManager.decryptProviderConfig(
+          connection.providerConfig,
         );
+        parsedConfig = {
+          ...existing,
+          ...input.providerConfig,
+        } as ProviderConfig;
+      }
+
+      const derivedCredentials =
+        providerTemplate.getCredentialsFromSavedConfig(parsedConfig);
+
+      assertDerivedCredentialsForNoOAuthProvider({
+        provider: providerTemplate,
+        derivedCredentials,
+      });
+
+      await runPreSaveConfigHook({
+        provider: providerTemplate,
+        config: parsedConfig,
+        credentials: derivedCredentials,
+      });
+
+      const encryptedConfig =
+        ctx.services.credentialManager.encryptProviderConfig(parsedConfig);
 
       await ctx.prisma.organizationBankConnection.update({
         where: { id: connection.id },
         data: {
           providerConfig: encryptedConfig,
           ...(input.name !== undefined && { name: input.name }),
+          ...(derivedCredentials !== null && {
+            credentials:
+              ctx.services.credentialManager.encryptCredentials(
+                derivedCredentials,
+              ),
+          }),
         },
       });
+
+      await runPostSaveConfigHook({
+        provider: providerTemplate,
+        connectionId: connection.id,
+        config: parsedConfig,
+        credentials: derivedCredentials,
+      });
+
+      if (derivedCredentials !== null && !connection.webhookUrl) {
+        await ctx.services.bankConnection.setupWebhook({
+          connectionId: connection.id,
+        });
+      }
 
       return { connectionId: connection.id };
     }),
@@ -773,15 +890,66 @@ export const organizationRouter = createTRPCRouter({
           input.providerConfig,
         );
 
+      const providerTemplate = ProviderRegistry.getProvider(
+        connection.providerId,
+      );
+      if (!providerTemplate) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unknown bank provider",
+        });
+      }
+
+      const parsedConfig = input.providerConfig as ProviderConfig;
+      const derivedCredentials =
+        providerTemplate.getCredentialsFromSavedConfig(parsedConfig);
+
+      assertDerivedCredentialsForNoOAuthProvider({
+        provider: providerTemplate,
+        derivedCredentials,
+      });
+
+      await runPreSaveConfigHook({
+        provider: providerTemplate,
+        config: parsedConfig,
+        credentials: derivedCredentials,
+      });
+
+      const encryptedCredentials = derivedCredentials
+        ? ctx.services.credentialManager.encryptCredentials(derivedCredentials)
+        : undefined;
+
+      const nextStatus =
+        derivedCredentials !== null
+          ? BankConnectionStatus.CONNECTED
+          : BankConnectionStatus.PENDING_OAUTH;
+
       // Update connection with config and advance status
       await ctx.prisma.organizationBankConnection.update({
         where: { id: connection.id },
         data: {
           providerConfig: encryptedConfig,
           name: input.connectionName ?? connection.name,
-          status: BankConnectionStatus.PENDING_OAUTH,
+          status: nextStatus,
+          ...(encryptedCredentials !== undefined && {
+            credentials: encryptedCredentials,
+          }),
         },
       });
+
+      await runPostSaveConfigHook({
+        provider: providerTemplate,
+        connectionId: connection.id,
+        config: parsedConfig,
+        credentials: derivedCredentials,
+      });
+
+      // API-key / no-OAuth providers: register webhook once credentials exist (same as OAuth complete)
+      if (derivedCredentials !== null && !connection.webhookUrl) {
+        await ctx.services.bankConnection.setupWebhook({
+          connectionId: connection.id,
+        });
+      }
 
       return { success: true };
     }),
