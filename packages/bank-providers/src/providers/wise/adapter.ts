@@ -21,6 +21,15 @@ import {
   WiseWebhookPayloadSchema,
 } from "./types";
 
+const WISE_FETCH_TIMEOUT_MS = 15_000;
+
+function wiseFetch(input: string | URL, init?: RequestInit): Promise<Response> {
+  return fetch(input, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(WISE_FETCH_TIMEOUT_MS),
+  });
+}
+
 /** Receiving info merged from inline balance.bankDetails and/or GET /v1/.../account-details */
 interface WiseReceivingInfo {
   iban: string;
@@ -360,17 +369,10 @@ export class WiseProvider extends BaseBankProvider {
   }
 
   // -------------------------------------------------------------------
-  // Profile listing (public — used by tRPC endpoint before credentials set)
+  // Profile listing (organizationProcedure — setup wizard + pre-save hook)
   // -------------------------------------------------------------------
 
-  /**
-   * Lists Wise profiles for the given API token.
-   * Called by the WiseProfileSelector UI component before a profile is chosen.
-   * Can also be called as a static-style call without a configured instance.
-   */
-  /**
-   * Verify the profile id is returned by Wise for this API token.
-   */
+  /** Verify the profile id is returned by Wise for this API token. */
   async assertProfileBelongsToToken({
     apiToken,
     profileId,
@@ -389,6 +391,7 @@ export class WiseProvider extends BaseBankProvider {
     }
   }
 
+  /** Lists Wise profiles for the given API token (WiseProfileSelector UI). */
   async listProfiles({
     apiToken,
     sandboxMode,
@@ -407,7 +410,7 @@ export class WiseProvider extends BaseBankProvider {
       ? "https://api.wise-sandbox.com"
       : "https://api.wise.com";
 
-    const response = await fetch(`${base}/v2/profiles`, {
+    const response = await wiseFetch(`${base}/v2/profiles`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -458,7 +461,7 @@ export class WiseProvider extends BaseBankProvider {
   private async fetchReceivingDetailsByCurrency(): Promise<
     Map<string, WiseReceivingInfo>
   > {
-    const response = await fetch(
+    const response = await wiseFetch(
       `${this.baseUrl}/v1/profiles/${this.profileId}/account-details`,
       {
         headers: this.authHeaders,
@@ -475,7 +478,7 @@ export class WiseProvider extends BaseBankProvider {
   }
 
   async listAccounts(): Promise<BankProviderBankAccount[]> {
-    const response = await fetch(
+    const response = await wiseFetch(
       `${this.baseUrl}/v4/profiles/${this.profileId}/balances?types=STANDARD`,
       {
         headers: this.authHeaders,
@@ -515,10 +518,8 @@ export class WiseProvider extends BaseBankProvider {
 
       const ibanFromInline = inline?.iban?.replace(/\s/g, "").trim();
       const ibanFromDetails = fromDetails?.iban;
-      const iban =
-        ibanFromInline ??
-        ibanFromDetails ??
-        `WISE-${balance.id}-${balance.currency.toUpperCase()}`;
+      const iban = ibanFromInline ?? ibanFromDetails;
+      if (!iban) continue;
 
       const bic = (inline?.bic ?? fromDetails?.bic ?? "").replace(/\s/g, "");
 
@@ -552,22 +553,25 @@ export class WiseProvider extends BaseBankProvider {
   }: {
     webhookUrl: string;
   }): Promise<{ id: string; secret: string }> {
-    const response = await fetch(`${this.baseUrl}/v1/webhook-subscriptions`, {
-      method: "POST",
-      headers: this.authHeaders,
-      body: JSON.stringify({
-        name: "GetBlitz Payment Notifications",
-        trigger_on: "balances#credit",
-        scope: {
-          domain: "profile",
-          id: this.profileId,
-        },
-        delivery: {
-          version: "2.0.0",
-          url: webhookUrl,
-        },
-      }),
-    });
+    const response = await wiseFetch(
+      `${this.baseUrl}/v1/webhook-subscriptions`,
+      {
+        method: "POST",
+        headers: this.authHeaders,
+        body: JSON.stringify({
+          name: "GetBlitz Payment Notifications",
+          trigger_on: "balances#credit",
+          scope: {
+            domain: "profile",
+            id: this.profileId,
+          },
+          delivery: {
+            version: "2.0.0",
+            url: webhookUrl,
+          },
+        }),
+      },
+    );
 
     if (!response.ok) {
       const error = await response.text();
@@ -753,7 +757,7 @@ export class WiseProvider extends BaseBankProvider {
     }
 
     try {
-      const response = await fetch(
+      const response = await wiseFetch(
         `${this.baseUrl}/v1/simulation/balance/topup`,
         {
           method: "POST",
@@ -807,7 +811,7 @@ export class WiseProvider extends BaseBankProvider {
       return cached;
     }
 
-    const response = await fetch(
+    const response = await wiseFetch(
       `${this.baseUrl}/v1/subscription-types/webhook/public-key`,
     );
 
@@ -838,7 +842,7 @@ export class WiseProvider extends BaseBankProvider {
     }
 
     try {
-      const response = await fetch(
+      const response = await wiseFetch(
         `${this.baseUrl}/v4/profiles/${this._profileId}/activities?size=20`,
         { headers: this.authHeaders },
       );

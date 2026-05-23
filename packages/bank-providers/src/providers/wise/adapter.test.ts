@@ -394,7 +394,7 @@ describe("WiseProvider", () => {
       );
     });
 
-    it("should use a stable synthetic IBAN when neither balances nor account-details have IBAN", async () => {
+    it("should omit balances without a valid IBAN", async () => {
       const mockBalances = [
         {
           id: 999,
@@ -426,8 +426,7 @@ describe("WiseProvider", () => {
       });
 
       const accounts = await authenticatedProvider.listAccounts();
-      expect(accounts).toHaveLength(1);
-      expect(accounts[0]?.iban).toBe("WISE-999-CHF");
+      expect(accounts).toHaveLength(0);
     });
 
     it("should throw on API error", async () => {

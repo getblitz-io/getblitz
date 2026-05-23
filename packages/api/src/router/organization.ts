@@ -313,7 +313,7 @@ export const organizationRouter = createTRPCRouter({
 
       // Merge with existing config so hidden fields (e.g. Wise profileId) survive
       // reconfigure when the generic form omits them.
-      let parsedConfig = input.providerConfig as ProviderConfig;
+      let parsedConfig: ProviderConfig = input.providerConfig;
       if (connection.providerConfig) {
         const existing = ctx.services.credentialManager.decryptProviderConfig(
           connection.providerConfig,
@@ -321,7 +321,7 @@ export const organizationRouter = createTRPCRouter({
         parsedConfig = {
           ...existing,
           ...input.providerConfig,
-        } as ProviderConfig;
+        };
       }
 
       const derivedCredentials =
