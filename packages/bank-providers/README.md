@@ -129,7 +129,7 @@ We picked (b) because numeric profile IDs aren't shown in the Wise UI in a way u
 
 ### 3. RSA-SHA256 webhook verification, no per-merchant secret
 
-Wise signs **all** webhooks with their platform-wide RSA private key and publishes the public key at `GET /v1/subscription-types/webhook/public-key`. Verification is asymmetric:
+Wise signs **all** webhooks with their platform-wide RSA private key. GetBlitz verifies with the sandbox/production keys from [Wise's event-handling guide](https://docs.wise.com/guides/developer/webhooks/event-handling) (`wise-webhook-public-keys.ts`). Verification is asymmetric:
 
 ```ts
 const verifier = createVerify("RSA-SHA256");
@@ -140,22 +140,21 @@ verifier.verify(publicKey, Buffer.from(signatureHeader, "base64"));
 Consequences:
 
 - `createWebhook()` returns `{ id, secret: "" }`. The empty secret is intentional — the webhook handler doesn't need a merchant-specific secret to verify Wise payloads.
-- The public key is fetched once and cached in a `static` class field for the process lifetime. If Wise rotates their key, restart the process.
+- The public key is selected by `sandboxMode` from `wise-webhook-public-keys.ts`. If Wise rotates their key, update that file and redeploy.
 - The `verifyAndParseWebhook` body **must** be read as raw text before `JSON.parse` — re-serializing the JSON would change byte ordering and break the signature.
 
-### 4. Reference extraction with an activities-API fallback
+### 4. Reference extraction
 
-Wise webhooks for `balances#credit` may or may not include a `reference` field, depending on how the sender filled in the payment text. The handler tries, in order:
+`account-details-payment#state-change` when `current_state === COMPLETED`:
 
-1. `data.reference` from the payload.
-2. `data.occurrence_id` from the payload.
-3. `GET /v4/profiles/{profileId}/activities?size=20` — match by `(amount, currency)` and pull the reference from the activity title/description.
+1. `data.transfer.id` from the webhook.
+2. `GET /v1/transfers/{transferId}` → `reference` / `details.reference` → `GB-XXXXXXXX`.
 
-If none of those produce a `GB-XXXXXXXX` reference, the webhook is `Ignore`d (not `Error`ed) — Wise also fires `balances#credit` for internal transfers between balances and we don't want noisy error logs.
+`createWebhook()` registers only that subscription. Existing Wise connections may need webhook re-setup if they still have legacy `balances#credit` subscriptions.
 
 ### 5. Sandbox simulation
 
-`supportsSandboxSimulation()` returns `true` only when the connection's config has `sandboxMode: true`. The simulated topup hits `POST /v1/simulation/balance/topup` on `api.wise-sandbox.com`; Wise then delivers a real webhook back to GetBlitz a few seconds later, exercising the full credit → reference-match → invoice-resolve path end-to-end.
+Wise does **not** implement `supportsSandboxSimulation()`. Sandbox connections use the generic **Simulate payment** path in `payment-session.service.ts` (direct `paymentSettlementService.settle()` with a `sim_*` tx hash). Revolut still uses provider sandbox simulation (topup + webhook).
 
 ---
 
@@ -196,4 +195,4 @@ If none of those produce a `GB-XXXXXXXX` reference, the webhook is `Ignore`d (no
 
 7. **Write the user-facing setup guide** at `apps/docs/docs/banks/<name>.md`, link it from `apps/docs/docs/index.md`, and point `getSetupGuide()` at `https://github.com/getblitz-io/getblitz/blob/main/apps/docs/docs/banks/<name>.md`.
 
-8. **Tests**: copy the structure from `providers/wise/adapter.test.ts` — at minimum cover metadata, base URL switching, signature verification (happy path + tampered body + missing header), and the credit/non-credit webhook branches.
+8. **Tests**: copy the structure from `providers/wise/adapter.test.ts` — at minimum cover metadata, base URL switching, signature verification (happy path + tampered body + missing header), and supported/ignored webhook event types.

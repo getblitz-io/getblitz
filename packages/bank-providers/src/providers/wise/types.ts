@@ -88,13 +88,12 @@ export const WiseBalancesResponseSchema = z.array(WiseBalanceSchema);
 export type WiseBalance = z.infer<typeof WiseBalanceSchema>;
 
 // ---------------------------------------------------------------------------
-// Webhook payload  (incoming balances#credit / balances#debit events)
+// Webhook payload  (account-details-payment#state-change)
 // ---------------------------------------------------------------------------
 
 export const WiseWebhookPayloadSchema = z.object({
   subscription_id: z.string(),
-  profile_id: z.number(),
-  event_type: z.string(), // "balances#credit" | "balances#debit" | etc.
+  event_type: z.string(),
   schema_version: z.string().optional(),
   sent_at: z.string().optional(),
   data: z.object({
@@ -106,20 +105,41 @@ export const WiseWebhookPayloadSchema = z.object({
         changed_fields: z.array(z.string()).optional(),
       })
       .optional(),
-    amount: z.number().optional(),
-    currency: z.string().optional(),
-    transaction_type: z.string().optional(),
-    post_transaction_balance_amount: z.number().optional(),
-    occurrence_id: z.string().optional(),
-    reference: z.string().optional(),
-    details: z.record(z.string(), z.unknown()).optional(),
+    occurred_at: z.string().optional(),
+    transfer: z
+      .object({
+        id: z.coerce.number(),
+        amount: z.number().optional(),
+        currency: z.string().optional(),
+        type: z.string().optional(),
+      })
+      .optional(),
+    current_state: z.string().optional(),
+    previous_state: z.string().optional(),
   }),
 });
 
 export type WiseWebhookPayload = z.infer<typeof WiseWebhookPayloadSchema>;
 
 // ---------------------------------------------------------------------------
-// Webhook subscription  (POST /v1/webhook-subscriptions)
+// Transfer API  (GET /v1/transfers/{transferId})
+// ---------------------------------------------------------------------------
+
+export const WiseTransferResponseSchema = z.object({
+  id: z.coerce.number().optional(),
+  reference: z.string().optional(),
+  details: z
+    .object({
+      reference: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
+});
+
+export type WiseTransferResponse = z.infer<typeof WiseTransferResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Webhook subscription  (POST /v3/profiles/{profileId}/subscriptions)
 // ---------------------------------------------------------------------------
 
 export const WiseCreateWebhookResponseSchema = z.object({
@@ -143,32 +163,3 @@ export const WiseCreateWebhookResponseSchema = z.object({
 export type WiseCreateWebhookResponse = z.infer<
   typeof WiseCreateWebhookResponseSchema
 >;
-
-// ---------------------------------------------------------------------------
-// Statement / activity (GET /v4/profiles/{profileId}/activities) — for reference lookup
-// ---------------------------------------------------------------------------
-
-export const WiseActivityItemSchema = z.object({
-  id: z.number().optional(),
-  type: z.string().optional(),
-  status: z.string().optional(),
-  primaryAmount: z
-    .object({
-      value: z.number(),
-      currency: z.string(),
-    })
-    .optional(),
-  secondaryAmount: z
-    .object({
-      value: z.number(),
-      currency: z.string(),
-    })
-    .optional(),
-  title: z.string().optional(),
-  description: z.string().optional(),
-  category: z.string().optional(),
-});
-
-export const WiseActivitiesResponseSchema = z.object({
-  activities: z.array(WiseActivityItemSchema).optional(),
-});

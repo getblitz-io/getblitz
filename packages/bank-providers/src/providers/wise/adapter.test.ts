@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthenticatedProvider, ConfiguredProvider } from "../../types";
 import { WebhookVerificationStatus } from "../../types";
 import { WiseProvider } from "./adapter";
+import * as wiseWebhookPublicKeys from "./wise-webhook-public-keys";
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -48,9 +49,9 @@ describe("WiseProvider", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset the static public key cache between tests
-    // @ts-expect-error - accessing private static
-    WiseProvider._cachedPublicKeyBySandbox.clear();
+    vi.spyOn(wiseWebhookPublicKeys, "getWiseWebhookPublicKey").mockReturnValue(
+      PUBLIC_KEY_PEM,
+    );
 
     configuredProvider = template.withProviderConfig(providerConfig);
     authenticatedProvider = template.withCredentials(
@@ -96,15 +97,12 @@ describe("WiseProvider", () => {
       expect(template.supportsTokenRefresh()).toBe(false);
     });
 
-    it("should support sandbox simulation in sandbox mode", () => {
+    it("should not support provider sandbox simulation (uses generic settle)", () => {
       const sandbox = template.withCredentials(
         sandboxProviderConfig,
         credentials,
       );
-      expect(sandbox.supportsSandboxSimulation()).toBe(true);
-    });
-
-    it("should not support sandbox simulation in production mode", () => {
+      expect(sandbox.supportsSandboxSimulation()).toBe(false);
       expect(authenticatedProvider.supportsSandboxSimulation()).toBe(false);
     });
 
@@ -446,34 +444,33 @@ describe("WiseProvider", () => {
   // -------------------------------------------------------------------------
 
   describe("createWebhook", () => {
-    it("should call the correct endpoint and return the subscription ID", async () => {
-      const mockResponse = {
-        id: "sub-abc-123",
-        name: "GetBlitz Payment Notifications",
-        trigger_on: "balances#credit",
-      };
-
-      vi.mocked(global.fetch).mockResolvedValue({
+    it("should register account-details-payment subscription", async () => {
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockResponse,
+        json: async () => ({
+          id: "sub-payment-123",
+          trigger_on: "account-details-payment#state-change",
+        }),
       } as unknown as Response);
 
       const result = await authenticatedProvider.createWebhook({
         webhookUrl: "https://example.com/webhook",
       });
 
-      expect(result.id).toBe("sub-abc-123");
-      // Wise uses RSA public key — no per-merchant secret
+      expect(result.id).toBe("sub-payment-123");
       expect(result.secret).toBe("");
+      expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/v1/webhook-subscriptions"),
-        expect.objectContaining({
-          method: "POST",
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          body: expect.stringContaining("balances#credit"),
-        }),
-      );
+      const body = JSON.parse(
+        String(vi.mocked(global.fetch).mock.calls[0]?.[1]?.body),
+      ) as {
+        trigger_on: string;
+        delivery: { version: string };
+        scope?: unknown;
+      };
+      expect(body.trigger_on).toBe("account-details-payment#state-change");
+      expect(body.delivery.version).toBe("4.0.0");
+      expect(body.scope).toBeUndefined();
     });
 
     it("should throw on API error", async () => {
@@ -515,21 +512,17 @@ describe("WiseProvider", () => {
   // -------------------------------------------------------------------------
 
   describe("verifyAndParseWebhook", () => {
-    const reference = "GB-TESTREF1";
-
-    const creditPayload = {
-      subscription_id: "sub-123",
-      profile_id: 12345678,
-      event_type: "balances#credit",
-      schema_version: "2.0.0",
+    const paymentPayload = {
+      subscription_id: "sub-456",
+      event_type: "account-details-payment#state-change",
+      schema_version: "4.0.0",
+      sent_at: "2026-05-23T14:00:00Z",
       data: {
-        resource: { id: 1, profile_id: 12345678, type: "balance" },
-        amount: 42.5,
-        currency: "EUR",
-        transaction_type: "CREDIT",
-        post_transaction_balance_amount: 542.5,
-        occurrence_id: "occ-xyz",
-        reference,
+        resource: { id: 111, profile_id: 12345678, type: "balance-account" },
+        transfer: { id: 36454, amount: 120, currency: "EUR", type: "credit" },
+        current_state: "COMPLETED",
+        previous_state: "PROCESSING",
+        occurred_at: "2026-05-23T14:00:00Z",
       },
     };
 
@@ -544,31 +537,47 @@ describe("WiseProvider", () => {
       });
     }
 
-    it("should successfully verify a valid balances#credit webhook", async () => {
-      const body = JSON.stringify(creditPayload);
+    it("should select webhook public key from sandboxMode", async () => {
+      const body = JSON.stringify(paymentPayload);
       const sig = signBody(body);
 
-      // Mock public key fetch
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        text: async () => PUBLIC_KEY_PEM,
-      } as unknown as Response);
-
-      const result = await configuredProvider.verifyAndParseWebhook({
+      await configuredProvider.verifyAndParseWebhook({
         request: makeRequest(body, sig),
       });
 
-      expect(result.status).toBe(WebhookVerificationStatus.Success);
-      if (result.status === WebhookVerificationStatus.Success) {
-        expect(result.referenceId).toBe(reference);
-        expect(result.amountCents).toBe(4250);
-        expect(result.currency).toBe("EUR");
-        expect(result.txHash).toBe("occ-xyz");
+      expect(
+        wiseWebhookPublicKeys.getWiseWebhookPublicKey,
+      ).toHaveBeenCalledWith(false);
+
+      const sandbox = template.withProviderConfig(sandboxProviderConfig);
+      await sandbox.verifyAndParseWebhook({
+        request: makeRequest(body, sig),
+      });
+
+      expect(
+        wiseWebhookPublicKeys.getWiseWebhookPublicKey,
+      ).toHaveBeenCalledWith(true);
+    });
+
+    it("should return Ignore for Wise test notification header", async () => {
+      const request = new Request("https://webhook.example.com", {
+        method: "POST",
+        headers: { "x-test-notification": "true" },
+        body: "{}",
+      });
+
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+      });
+
+      expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+      if (result.status === WebhookVerificationStatus.Ignore) {
+        expect(result.reason).toBe("Wise test notification");
       }
     });
 
     it("should return Error when x-wise-signature header is missing", async () => {
-      const body = JSON.stringify(creditPayload);
+      const body = JSON.stringify(paymentPayload);
       const request = new Request("https://webhook.example.com", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -580,17 +589,12 @@ describe("WiseProvider", () => {
       });
       expect(result.status).toBe(WebhookVerificationStatus.Error);
       if (result.status === WebhookVerificationStatus.Error) {
-        expect(result.error).toContain("x-wise-signature");
+        expect(result.error).toContain("X-Signature-SHA256");
       }
     });
 
     it("should return Error for an invalid RSA signature", async () => {
-      const body = JSON.stringify(creditPayload);
-
-      vi.mocked(global.fetch).mockResolvedValueOnce({
-        ok: true,
-        text: async () => PUBLIC_KEY_PEM,
-      } as unknown as Response);
+      const body = JSON.stringify(paymentPayload);
 
       const result = await configuredProvider.verifyAndParseWebhook({
         request: makeRequest(body, "bm90YXJlYWxzaWduYXR1cmU="), // not a real sig
@@ -601,15 +605,78 @@ describe("WiseProvider", () => {
       }
     });
 
-    it("should return Ignore for non-credit event types", async () => {
-      const debitPayload = { ...creditPayload, event_type: "balances#debit" };
-      const body = JSON.stringify(debitPayload);
+    it("should resolve reference via transfer GET for account-details-payment", async () => {
+      const body = JSON.stringify(paymentPayload);
       const sig = signBody(body);
 
       vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: true,
-        text: async () => PUBLIC_KEY_PEM,
+        json: async () => ({
+          id: 36454,
+          reference: "SEPA payment GB-PAYREF01",
+          details: { reference: "SEPA payment GB-PAYREF01" },
+        }),
       } as unknown as Response);
+
+      const result = await authenticatedProvider.verifyAndParseWebhook({
+        request: makeRequest(body, sig),
+      });
+
+      expect(result.status).toBe(WebhookVerificationStatus.Success);
+      if (result.status === WebhookVerificationStatus.Success) {
+        expect(result.referenceId).toBe("GB-PAYREF01");
+        expect(result.amountCents).toBe(12000);
+        expect(result.currency).toBe("EUR");
+      }
+
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining("/v1/transfers/36454"),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: "Bearer test-wise-api-token",
+          }) as unknown,
+        }),
+      );
+    });
+
+    it("should return Ignore for non-COMPLETED account-details-payment state", async () => {
+      const processingPayload = {
+        ...paymentPayload,
+        data: { ...paymentPayload.data, current_state: "PROCESSING" },
+      };
+      const body = JSON.stringify(processingPayload);
+      const sig = signBody(body);
+
+      const result = await authenticatedProvider.verifyAndParseWebhook({
+        request: makeRequest(body, sig),
+      });
+      expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+    });
+
+    it("should return Ignore when account-details-payment omits data.transfer.id", async () => {
+      const { transfer: _transfer, ...dataWithoutTransfer } =
+        paymentPayload.data;
+      const noTransferIdPayload = {
+        ...paymentPayload,
+        data: dataWithoutTransfer,
+      };
+      const body = JSON.stringify(noTransferIdPayload);
+      const sig = signBody(body);
+
+      const result = await authenticatedProvider.verifyAndParseWebhook({
+        request: makeRequest(body, sig),
+      });
+      expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+    });
+
+    it("should return Ignore for unsupported event types", async () => {
+      const otherPayload = {
+        ...paymentPayload,
+        event_type: "balances#credit",
+      };
+      const body = JSON.stringify(otherPayload);
+      const sig = signBody(body);
 
       const result = await configuredProvider.verifyAndParseWebhook({
         request: makeRequest(body, sig),
@@ -617,76 +684,19 @@ describe("WiseProvider", () => {
       expect(result.status).toBe(WebhookVerificationStatus.Ignore);
     });
 
-    it("should return Ignore when no reference ID is found", async () => {
-      const noRefPayload = {
-        ...creditPayload,
-        data: {
-          ...creditPayload.data,
-          reference: undefined,
-          occurrence_id: undefined,
-        },
-      };
-      const body = JSON.stringify(noRefPayload);
+    it("should return Ignore when transfer GET has no reference", async () => {
+      const body = JSON.stringify(paymentPayload);
       const sig = signBody(body);
 
-      vi.mocked(global.fetch)
-        .mockResolvedValueOnce({
-          ok: true,
-          text: async () => PUBLIC_KEY_PEM,
-        } as unknown as Response)
-        // Fallback activities API call — returns no matching reference
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ activities: [] }),
-        } as unknown as Response);
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 36454, reference: "no getblitz ref" }),
+      } as unknown as Response);
 
       const result = await authenticatedProvider.verifyAndParseWebhook({
         request: makeRequest(body, sig),
       });
       expect(result.status).toBe(WebhookVerificationStatus.Ignore);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // simulateSandboxPayment
-  // -------------------------------------------------------------------------
-
-  describe("simulateSandboxPayment", () => {
-    it("should call the topup simulation endpoint in sandbox mode", async () => {
-      const sandboxAuth = template.withCredentials(
-        sandboxProviderConfig,
-        credentials,
-      );
-
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as unknown as Response);
-
-      const result = await sandboxAuth.simulateSandboxPayment({
-        accountId: "111",
-        amount: 25.0,
-        currency: "EUR",
-        reference: "GB-SIM00001",
-      });
-
-      expect(result.success).toBe(true);
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/v1/simulation/balance/topup"),
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
-
-    it("should fail when not in sandbox mode", async () => {
-      const result = await authenticatedProvider.simulateSandboxPayment({
-        accountId: "111",
-        amount: 25.0,
-        currency: "EUR",
-        reference: "GB-SIM00001",
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("sandbox mode");
     });
   });
 

@@ -22,6 +22,11 @@ export async function POST(
 
     // Map service result to HTTP responses
     if (result.success) {
+      // Wise (and similar) probe callbacks during subscription create.
+      if (result.errorCode === "IGNORE") {
+        return NextResponse.json({ status: "ok" });
+      }
+
       return NextResponse.json({
         received: true,
         processed: true,

@@ -75,7 +75,7 @@ GetBlitz will:
 
 - Encrypt and persist the API token + profile ID as connection credentials.
 - Call `GET /v4/profiles/{profileId}/balances?types=STANDARD` to list available balance accounts (one per currency).
-- Register a webhook subscription via `POST /v1/webhook-subscriptions` for the `balances#credit` event, scoped to your profile.
+- Register a webhook subscription via `POST /v3/profiles/{profileId}/subscriptions` for `account-details-payment#state-change` (IBAN pay-ins).
 
 ## Step 5: Select Bank Accounts
 
@@ -83,11 +83,13 @@ Each Wise balance with bank details (IBAN + BIC) becomes a selectable account. P
 
 ## Webhooks
 
-GetBlitz subscribes to **`balances#credit`** events on the selected profile. When a customer pays, Wise calls the GetBlitz webhook URL with a JSON payload describing the credit.
+GetBlitz registers one subscription on the selected profile:
+
+- **`account-details-payment#state-change`** — IBAN pay-ins (includes `data.transfer.id` when the payment completes).
 
 ### Signature Verification
 
-Wise signs every webhook payload with **RSA-SHA256** using their platform-wide private key. GetBlitz verifies the `X-Wise-Signature` header against Wise's public key, which is fetched once from `GET /v1/subscription-types/webhook/public-key` and cached in memory for the lifetime of the process.
+Wise signs every webhook payload with **RSA-SHA256** using their platform-wide private key. GetBlitz verifies the `X-Signature-SHA256` header (legacy: `X-Wise-Signature`) against Wise's documented sandbox or production public key, cached in memory for the process lifetime.
 
 This is different from Qonto/Revolut, which use HMAC-SHA256 with a per-merchant shared secret. For Wise:
 
@@ -96,32 +98,23 @@ This is different from Qonto/Revolut, which use HMAC-SHA256 with a per-merchant 
 
 ### Reference Matching
 
-GetBlitz attaches a reference of the form `GB-XXXXXXXX` to every payment QR code. The webhook handler extracts this reference from:
+GetBlitz attaches a reference of the form `GB-XXXXXXXX` to every payment QR code.
 
-1. The webhook payload's `data.reference` field, if present.
-2. The webhook payload's `data.occurrence_id` field, as a fallback.
-3. The Wise activities API (`GET /v4/profiles/{profileId}/activities`) — last 20 activities are scanned for an amount + currency match, and the reference is pulled from the activity title/description.
+For **`account-details-payment#state-change`**:
 
-If no reference matches, the webhook is ignored (status `Ignore`) rather than treated as an error — Wise also delivers credits unrelated to GetBlitz (e.g. internal transfers between balances), and we don't want noise in the error logs.
+1. Only events with `data.current_state === "COMPLETED"` are settled.
+2. Read `data.transfer.id` and call `GET /v1/transfers/{transferId}`.
+3. Extract `GB-XXXXXXXX` from the transfer's `reference` or `details.reference` fields.
+
+If no reference matches, the webhook is ignored (`Ignore`) rather than treated as an error.
+
+**Existing connections:** reconnect Wise or re-run webhook setup so the `account-details-payment#state-change` subscription is registered.
 
 ## Sandbox Simulation
 
-When **Sandbox Mode** is enabled, you can trigger a fake incoming credit via the Wise Sandbox topup endpoint without actually moving money. GetBlitz exposes this through the standard "Simulate payment" button on a sandbox connection's detail page.
+When **Sandbox Mode** is enabled, the standard **Simulate payment** button on a connection's detail page marks the payment session as paid immediately via GetBlitz's generic settlement path (no Wise API call, no webhook). Use this to test checkout and invoice flows without a real sandbox pay-in.
 
-Under the hood it calls:
-
-```
-POST https://api.wise-sandbox.com/v1/simulation/balance/topup
-{
-  "profileId": <selected profile>,
-  "balanceId": <selected balance>,
-  "currency":  "EUR",
-  "amount":    25.00,
-  "details":   { "reference": "GB-XXXXXXXX" }
-}
-```
-
-Within a few seconds Wise will deliver a `balances#credit` webhook back to GetBlitz, which will then resolve the matching invoice/payment.
+For end-to-end webhook testing in sandbox, send a real pay-in to your sandbox IBAN with a `GB-XXXXXXXX` reference; Wise will deliver `account-details-payment#state-change` like production.
 
 ## API Endpoints
 
@@ -130,14 +123,13 @@ Within a few seconds Wise will deliver a `balances#credit` webhook back to GetBl
 | Sandbox     | `https://api.wise-sandbox.com` |
 | Production  | `https://api.wise.com`         |
 
-| Endpoint                                               | Used for                       |
-| ------------------------------------------------------ | ------------------------------ |
-| `GET /v2/profiles`                                     | Profile selector step          |
-| `GET /v4/profiles/{profileId}/balances?types=STANDARD` | Listing receivable accounts    |
-| `POST /v1/webhook-subscriptions`                       | Registering the credit webhook |
-| `GET /v1/subscription-types/webhook/public-key`        | Webhook signature verification |
-| `GET /v4/profiles/{profileId}/activities`              | Reference fallback lookup      |
-| `POST /v1/simulation/balance/topup` _(sandbox only)_   | Manual payment simulation      |
+| Endpoint                                               | Used for                                       |
+| ------------------------------------------------------ | ---------------------------------------------- |
+| `GET /v2/profiles`                                     | Profile selector step                          |
+| `GET /v4/profiles/{profileId}/balances?types=STANDARD` | Listing receivable accounts                    |
+| `POST /v3/profiles/{profileId}/subscriptions`          | Registering pay-in webhook                     |
+| `GET /v1/transfers/{transferId}`                       | Reference lookup (from `data.transfer.id`)     |
+| Wise docs (event-handling guide)                       | Webhook RSA public keys (sandbox + production) |
 
 ## Troubleshooting
 
@@ -161,12 +153,13 @@ The token works for `/v2/profiles` but not for `/v4/profiles/{id}/balances`. Pos
 
 ### Reference is not detected on real payments
 
-- Confirm the customer used the GetBlitz QR code (which embeds the `GB-XXXXXXXX` reference in the SEPA payment text). Manual transfers without a reference will fall back to amount+currency matching against the last 20 activities — collisions or older payments will be missed.
+- Confirm the Wise connection has an `account-details-payment#state-change` subscription (reconnect if the connection predates this change).
+- Confirm the customer used the GetBlitz QR code so the SEPA reference appears on the Wise transfer (`GET /v1/transfers/{id}` → `reference` / `details.reference`).
 
-### Sandbox topup returns 200 but no webhook arrives
+### Simulate payment does not trigger a Wise webhook
 
-- Wise sandbox webhooks can lag by 30–60 seconds.
-- Verify the webhook URL registered in `POST /v1/webhook-subscriptions` is publicly reachable. Sandbox webhooks won't reach `localhost`; use a tunnel (e.g. ngrok, Cloudflare Tunnel).
+- Expected: sandbox **Simulate payment** uses direct settlement in GetBlitz, not Wise's topup API.
+- To test webhooks in sandbox, use a real sandbox pay-in with a `GB-XXXXXXXX` reference.
 
 ## Limitations
 

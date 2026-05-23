@@ -10,7 +10,11 @@ import type {
   ProviderConfigSchema,
   WebhookVerificationResult,
 } from "../../types";
-import type { WiseBankCredentials, WiseProviderConfig } from "./types";
+import type {
+  WiseBankCredentials,
+  WiseProviderConfig,
+  WiseWebhookPayload,
+} from "./types";
 import { BaseBankProvider } from "../../base-provider";
 import { WebhookVerificationStatus } from "../../types";
 import {
@@ -18,8 +22,14 @@ import {
   WiseCreateWebhookResponseSchema,
   WiseProfilesResponseSchema,
   WiseProviderConfigSchema,
+  WiseTransferResponseSchema,
   WiseWebhookPayloadSchema,
 } from "./types";
+import { getWiseWebhookPublicKey } from "./wise-webhook-public-keys";
+
+const WISE_EVENT_ACCOUNT_DETAILS_PAYMENT_STATE_CHANGE =
+  "account-details-payment#state-change";
+const WISE_PAYMENT_STATE_COMPLETED = "COMPLETED";
 
 const WISE_FETCH_TIMEOUT_MS = 15_000;
 
@@ -140,9 +150,6 @@ export class WiseProvider extends BaseBankProvider {
   private _apiToken?: string;
   private _profileId?: string;
   private _sandboxMode?: boolean;
-
-  // In-memory cache for Wise's RSA public key keyed by sandbox mode
-  private static _cachedPublicKeyBySandbox = new Map<boolean, string>();
 
   // -------------------------------------------------------------------
   // Phase transition implementation
@@ -364,10 +371,6 @@ export class WiseProvider extends BaseBankProvider {
     return false;
   }
 
-  override supportsSandboxSimulation(): boolean {
-    return this.sandboxMode;
-  }
-
   // -------------------------------------------------------------------
   // Profile listing (organizationProcedure — setup wizard + pre-save hook)
   // -------------------------------------------------------------------
@@ -553,20 +556,39 @@ export class WiseProvider extends BaseBankProvider {
   }: {
     webhookUrl: string;
   }): Promise<{ id: string; secret: string }> {
+    const subscription = await this.createWebhookSubscription({
+      webhookUrl,
+      name: "GetBlitz Payment Notifications",
+      triggerOn: WISE_EVENT_ACCOUNT_DETAILS_PAYMENT_STATE_CHANGE,
+      deliveryVersion: "4.0.0",
+    });
+
+    return { id: subscription.id, secret: "" };
+  }
+
+  private async createWebhookSubscription({
+    webhookUrl,
+    name,
+    triggerOn,
+    deliveryVersion,
+  }: {
+    webhookUrl: string;
+    name: string;
+    triggerOn: string;
+    deliveryVersion: string;
+  }): Promise<{ id: string }> {
+    // v1 webhook-subscriptions returns 404; profile subscriptions use v3 API.
+    // @see https://docs.wise.com/api-reference/webhook/webhookprofilesubscriptioncreate
     const response = await wiseFetch(
-      `${this.baseUrl}/v1/webhook-subscriptions`,
+      `${this.baseUrl}/v3/profiles/${this.profileId}/subscriptions`,
       {
         method: "POST",
         headers: this.authHeaders,
         body: JSON.stringify({
-          name: "GetBlitz Payment Notifications",
-          trigger_on: "balances#credit",
-          scope: {
-            domain: "profile",
-            id: this.profileId,
-          },
+          name,
+          trigger_on: triggerOn,
           delivery: {
-            version: "2.0.0",
+            version: deliveryVersion,
             url: webhookUrl,
           },
         }),
@@ -575,7 +597,7 @@ export class WiseProvider extends BaseBankProvider {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Failed to create Wise webhook: ${error}`);
+      throw new Error(`Failed to create Wise webhook (${triggerOn}): ${error}`);
     }
 
     const data = await response.json();
@@ -587,9 +609,7 @@ export class WiseProvider extends BaseBankProvider {
       );
     }
 
-    // Wise uses RSA-based asymmetric signatures — there is no per-merchant
-    // webhook secret. Return an empty secret; verification uses Wise's public key.
-    return { id: parsed.data.id, secret: "" };
+    return { id: parsed.data.id };
   }
 
   // -------------------------------------------------------------------
@@ -615,19 +635,29 @@ export class WiseProvider extends BaseBankProvider {
     request: Request;
     secret?: string;
   }): Promise<WebhookVerificationResult> {
+    const testFlag = request.headers.get("x-test-notification");
+    if (testFlag === "true" || testFlag === "1") {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: "Wise test notification",
+      };
+    }
+
     const rawBody = await request.text();
 
     // --- 1. Verify RSA-SHA256 signature ---
-    const signatureHeader = request.headers.get("x-wise-signature");
+    const signatureHeader =
+      request.headers.get("x-signature-sha256") ??
+      request.headers.get("x-wise-signature");
     if (!signatureHeader) {
       return {
         status: WebhookVerificationStatus.Error,
-        error: "Missing x-wise-signature header",
+        error: "Missing webhook signature header (X-Signature-SHA256)",
       };
     }
 
     try {
-      const publicKey = await this.fetchPublicKey();
+      const publicKey = getWiseWebhookPublicKey(this.sandboxMode);
       const verifier = createVerify("RSA-SHA256");
       verifier.update(rawBody);
       const signatureBuffer = Buffer.from(signatureHeader, "base64");
@@ -667,131 +697,96 @@ export class WiseProvider extends BaseBankProvider {
 
     const webhookData = parsed.data;
 
-    // --- 3. Only process credit events ---
-    if (webhookData.event_type !== "balances#credit") {
-      return {
-        status: WebhookVerificationStatus.Ignore,
-        reason: `Ignoring Wise event type: ${webhookData.event_type}`,
-      };
-    }
-
-    // --- 4. Extract amount / currency ---
-    const amount = webhookData.data.amount;
-    const currency = webhookData.data.currency;
-
-    if (!amount || !currency) {
-      return {
-        status: WebhookVerificationStatus.Error,
-        error: "Wise balances#credit payload missing amount or currency",
-      };
-    }
-
-    // --- 5. Extract reference ID ---
-    // First check if the reference is embedded in the webhook payload itself
-    const referenceId =
-      this.extractReferenceId(webhookData.data.reference) ??
-      this.extractReferenceId(webhookData.data.occurrence_id);
-
-    if (!referenceId) {
-      // Fallback: try to fetch the transaction reference from the activities API
-      const fetchedReferenceId = await this.fetchReferenceFromActivities({
-        amount,
-        currency,
-      });
-
-      if (!fetchedReferenceId) {
-        return {
-          status: WebhookVerificationStatus.Ignore,
-          reason: "No valid reference ID found in Wise balances#credit event",
-        };
-      }
-
-      const amountCents = Math.round(amount * 100);
-      return {
-        status: WebhookVerificationStatus.Success,
-        referenceId: fetchedReferenceId,
-        txHash: webhookData.data.occurrence_id ?? webhookData.subscription_id,
-        amountCents,
-        currency,
+    if (
+      webhookData.event_type === WISE_EVENT_ACCOUNT_DETAILS_PAYMENT_STATE_CHANGE
+    ) {
+      return this.verifyAccountDetailsPaymentWebhookAsync({
+        webhookData,
         rawPayload: payload,
-      };
+      });
     }
 
-    const amountCents = Math.round(amount * 100);
     return {
-      status: WebhookVerificationStatus.Success,
-      referenceId,
-      txHash: webhookData.data.occurrence_id ?? webhookData.subscription_id,
-      amountCents,
-      currency,
-      rawPayload: payload,
+      status: WebhookVerificationStatus.Ignore,
+      reason: `Ignoring Wise event type: ${webhookData.event_type}`,
     };
   }
 
-  // -------------------------------------------------------------------
-  // Sandbox simulation
-  // -------------------------------------------------------------------
+  private async verifyAccountDetailsPaymentWebhookAsync({
+    webhookData,
+    rawPayload,
+  }: {
+    webhookData: WiseWebhookPayload;
+    rawPayload: unknown;
+  }): Promise<WebhookVerificationResult> {
+    if (webhookData.data.current_state !== WISE_PAYMENT_STATE_COMPLETED) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: `Ignoring Wise payment state: ${webhookData.data.current_state ?? "unknown"}`,
+      };
+    }
 
-  /**
-   * Simulate an incoming payment in Wise sandbox.
-   * Uses the balance topup simulation endpoint.
-   *
-   * @see https://docs.wise.com/api-reference/api/simulations
-   */
-  async simulateSandboxPayment({
-    accountId,
+    const transfer = webhookData.data.transfer;
+    if (transfer?.id == null) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: "Wise account-details-payment event missing data.transfer.id",
+      };
+    }
+
+    const transferId = transfer.id;
+    const amount = transfer.amount;
+    const currency = transfer.currency;
+    if (amount == null || !currency) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error:
+          "Wise account-details-payment payload missing transfer amount or currency",
+      };
+    }
+
+    const referenceId = await this.fetchReferenceFromTransfer(transferId);
+
+    if (!referenceId) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason:
+          "No valid reference ID found for Wise account-details-payment event",
+      };
+    }
+
+    const txHash = webhookData.data.occurred_at ?? String(transferId);
+
+    return this.buildWebhookSuccess({
+      referenceId,
+      amount,
+      currency,
+      txHash,
+      rawPayload,
+    });
+  }
+
+  private buildWebhookSuccess({
+    referenceId,
     amount,
     currency,
-    reference,
+    txHash,
+    rawPayload,
   }: {
-    accountId: string;
+    referenceId: string;
     amount: number;
     currency: string;
-    reference: string;
-  }): Promise<{ success: boolean; error?: string }> {
-    if (!this.sandboxMode) {
-      return {
-        success: false,
-        error: "Sandbox simulation only available in sandbox mode",
-      };
-    }
-
-    try {
-      const response = await wiseFetch(
-        `${this.baseUrl}/v1/simulation/balance/topup`,
-        {
-          method: "POST",
-          headers: this.authHeaders,
-          body: JSON.stringify({
-            profileId: this.profileId,
-            balanceId: accountId,
-            currency,
-            amount,
-            details: {
-              reference,
-            },
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error: `Wise sandbox topup failed: ${errorText}`,
-        };
-      }
-
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Unknown error during Wise sandbox simulation",
-      };
-    }
+    txHash: string;
+    rawPayload: unknown;
+  }): WebhookVerificationResult {
+    return {
+      status: WebhookVerificationStatus.Success,
+      referenceId,
+      txHash,
+      amountCents: Math.round(amount * 100),
+      currency,
+      rawPayload,
+    };
   }
 
   // -------------------------------------------------------------------
@@ -799,85 +794,40 @@ export class WiseProvider extends BaseBankProvider {
   // -------------------------------------------------------------------
 
   /**
-   * Fetch Wise's public RSA key used for webhook signature verification.
-   * Cached in memory for the process lifetime to avoid repeated HTTP calls.
-   *
-   * @see https://docs.wise.com/api-reference/api/webhooks#key-management
+   * Load payment reference from Wise transfer details.
+   * @see https://docs.wise.com/api-reference/transfer/transferget
    */
-  private async fetchPublicKey(): Promise<string> {
-    const sandbox = this.sandboxMode;
-    const cached = WiseProvider._cachedPublicKeyBySandbox.get(sandbox);
-    if (cached) {
-      return cached;
-    }
-
-    const response = await wiseFetch(
-      `${this.baseUrl}/v1/subscription-types/webhook/public-key`,
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch Wise webhook public key: ${response.status}`,
-      );
-    }
-
-    const text = await response.text();
-    WiseProvider._cachedPublicKeyBySandbox.set(sandbox, text);
-    return text;
-  }
-
-  /**
-   * Attempt to find the payment reference in recent activity by matching
-   * amount and currency. Falls back when reference is absent from webhook payload.
-   */
-  private async fetchReferenceFromActivities({
-    amount,
-    currency,
-  }: {
-    amount: number;
-    currency: string;
-  }): Promise<string | null> {
-    if (!this._apiToken || !this._profileId) {
+  private async fetchReferenceFromTransfer(
+    transferId: number,
+  ): Promise<string | null> {
+    if (!this._apiToken) {
       return null;
     }
 
     try {
       const response = await wiseFetch(
-        `${this.baseUrl}/v4/profiles/${this._profileId}/activities?size=20`,
+        `${this.baseUrl}/v1/transfers/${transferId}`,
         { headers: this.authHeaders },
       );
 
-      if (!response.ok) return null;
-
-      const data = (await response.json()) as {
-        activities?: {
-          description?: string;
-          title?: string;
-          primaryAmount?: { value: number; currency: string };
-        }[];
-      };
-
-      const activities = data.activities ?? [];
-      const amountRounded = Math.round(amount * 100);
-
-      for (const activity of activities) {
-        const actAmount = activity.primaryAmount;
-        if (!actAmount) continue;
-        if (
-          actAmount.currency === currency &&
-          Math.round(actAmount.value * 100) === amountRounded
-        ) {
-          const ref =
-            this.extractReferenceId(activity.description) ??
-            this.extractReferenceId(activity.title);
-          if (ref) return ref;
-        }
+      if (!response.ok) {
+        return null;
       }
-    } catch {
-      // Non-fatal — return null to trigger Ignore
-    }
 
-    return null;
+      const parsed = WiseTransferResponseSchema.safeParse(
+        await response.json(),
+      );
+      if (!parsed.success) {
+        return null;
+      }
+
+      return (
+        this.extractReferenceId(parsed.data.reference) ??
+        this.extractReferenceId(parsed.data.details?.reference ?? null)
+      );
+    } catch {
+      return null;
+    }
   }
 
   /**
