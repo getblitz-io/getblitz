@@ -461,9 +461,11 @@ describe("WiseProvider", () => {
       expect(result.secret).toBe("");
       expect(global.fetch).toHaveBeenCalledTimes(1);
 
-      const body = JSON.parse(
-        String(vi.mocked(global.fetch).mock.calls[0]?.[1]?.body),
-      ) as {
+      const rawBody = vi.mocked(global.fetch).mock.calls[0]?.[1]?.body;
+      if (typeof rawBody !== "string") {
+        throw new Error("Expected fetch body to be a JSON string");
+      }
+      const body = JSON.parse(rawBody) as {
         trigger_on: string;
         delivery: { version: string };
         scope?: unknown;
