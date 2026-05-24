@@ -13,7 +13,7 @@ const config = {
   experimental: {
     optimizePackageImports: ["@getblitz/ui", "@radix-ui/react-icons"],
   },
-
+  distDir: process.env.APPLICATION_ENV === "test" ? ".next-test" : ".next",
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
     "@getblitz/api",

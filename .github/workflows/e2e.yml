@@ -1,0 +1,75 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: getblitz_test
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Install Playwright Browsers
+        run: pnpm --filter @getblitz/web exec playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: pnpm --filter @getblitz/web test:e2e
+        env:
+          CI: true
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: 5432
+          DATABASE_USER: app
+          DATABASE_PASSWORD: password
+          DATABASE_NAME: getblitz_test
+          REDIS_URL: redis://localhost:6380
+          AUTH_SECRET: e2e-test-secret-for-deterministic-sessions-must-be-long
+          AUTH_GOOGLE_ID: test_google_client_id
+          AUTH_GOOGLE_SECRET: test_google_client_secret
+          APPLICATION_ENV: test
+          NODE_ENV: development
+          ENABLE_WEBSOCKET: false
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          NEXT_PUBLIC_APP_URL: http://localhost:3005
+          PROJECT_URL: http://localhost:3005
+          NEXT_PUBLIC_WSS_URL: ws://localhost:3005
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30

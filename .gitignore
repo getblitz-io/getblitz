@@ -7,9 +7,12 @@ node_modules
 
 # testing
 coverage
+playwright-report/
+test-results/
 
 # next.js
 .next/
+.next-test/
 out/
 next-env.d.ts
 
