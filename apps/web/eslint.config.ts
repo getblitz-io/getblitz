@@ -12,4 +12,12 @@ export default defineConfig(
   reactConfig,
   nextjsConfig,
   restrictEnvAccess,
+  {
+    files: ["e2e/**/*.ts"],
+    rules: {
+      // Playwright fixture callbacks use `await use(...)` — not React hooks.
+      "react-hooks/rules-of-hooks": "off",
+      "no-empty-pattern": "off",
+    },
+  },
 );

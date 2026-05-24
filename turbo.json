@@ -40,6 +40,10 @@
       "outputs": ["coverage/**"],
       "inputs": ["src/**", "test/**", "vitest.config.ts"]
     },
+    "test:e2e": {
+      "dependsOn": ["^topo", "^build"],
+      "cache": false
+    },
     "clean": {
       "cache": false
     },

@@ -109,6 +109,53 @@ pnpm dev:test-bank  # Mock bank simulator
 
 The dashboard will be available at http://localhost:3000
 
+## Running Tests
+
+GetBlitz includes both unit/integration tests and a robust End-to-End (E2E) testing framework.
+
+### 1. Unit & Integration Tests (Vitest)
+
+Unit and integration tests are powered by Vitest. To run all tests or target a specific package:
+
+```bash
+# Run all vitest tests in the monorepo
+pnpm test
+
+# Run tests for a specific package (e.g. core api logic)
+pnpm --filter @getblitz/api test
+```
+
+### 2. End-to-End Tests (Playwright)
+
+E2E browser, tRPC, and REST API tests are powered by Playwright. They run against a dedicated, isolated test database (`getblitz_test`) and an isolated test server port (`3005`) to prevent port conflicts and database unique constraint collisions.
+
+**Prerequisites** (one-time local setup):
+
+1. Start infrastructure: `docker compose up -d` (Postgres on `:5432`, Valkey on `:6380`)
+2. Create the test database if it does not exist yet:
+   ```bash
+   docker exec getblitz-postgres psql -U app -d postgres -c "CREATE DATABASE getblitz_test;"
+   ```
+3. Playwright downloads Chromium on first run automatically. To install browsers explicitly:
+   ```bash
+   pnpm --filter @getblitz/web test:e2e:install
+   ```
+
+```bash
+# Run all Playwright E2E tests locally
+pnpm --filter @getblitz/web test:e2e
+
+# Run with Playwright UI mode for interactive debugging
+pnpm --filter @getblitz/web test:e2e:ui
+
+# Debug a specific test suite
+pnpm --filter @getblitz/web test:e2e -- e2e/tests/api.spec.ts
+
+# Portal UI tests (dashboard, customers, banks, payments, etc.)
+pnpm --filter @getblitz/web test:e2e -- e2e/tests/portal
+pnpm --filter @getblitz/web test:e2e -- e2e/tests/portal/payments/simulate.spec.ts
+```
+
 ## Architecture
 
 ```

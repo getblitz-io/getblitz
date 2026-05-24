@@ -9,5 +9,12 @@
     "plugins": [{ "name": "next" }]
   },
   "include": ["."],
-  "exclude": ["node_modules", ".next", "dist"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".next-test",
+    "dist",
+    "playwright-report",
+    "test-results"
+  ]
 }
