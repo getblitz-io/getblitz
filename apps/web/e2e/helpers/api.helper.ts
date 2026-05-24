@@ -1,5 +1,6 @@
 import superjson from "superjson";
 
+import { env } from "~/env";
 import { testAuth } from "./auth.helper";
 
 export async function createTestApiKey(
@@ -26,9 +27,7 @@ export async function createTestApiKey(
 export class ApiTestClient {
   private baseUrl: string;
 
-  constructor(
-    baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3005",
-  ) {
+  constructor(baseUrl = env.NEXT_PUBLIC_APP_URL) {
     this.baseUrl = baseUrl;
   }
 

@@ -1,10 +1,10 @@
 import type { Cookie } from "@playwright/test";
 
+import { env } from "~/env";
+
 const SESSION_COOKIE_RE = /^([^=]+)=([^;]+)/;
 
-const e2eAppHostname = new URL(
-  process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3005",
-).hostname;
+const e2eAppHostname = new URL(env.NEXT_PUBLIC_APP_URL).hostname;
 
 function parseCookiePair(pair: string): Pick<Cookie, "name" | "value"> | null {
   const execResult = SESSION_COOKIE_RE.exec(pair.trim());
