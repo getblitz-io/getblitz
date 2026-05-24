@@ -79,12 +79,13 @@ describe("BankConnectionService", () => {
     expect(mockProvider.createWebhook).toHaveBeenCalledWith({
       webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
     });
-    expect(mockRepo.update).toHaveBeenCalledWith({
+    expect(mockRepo.update).toHaveBeenNthCalledWith(1, {
       id: "conn-123",
-      data: {
-        webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
-        webhookSecret: "webhook-secret",
-      },
+      data: { webhookUrl: "https://app.test/api/webhooks/connection/conn-123" },
+    });
+    expect(mockRepo.update).toHaveBeenNthCalledWith(2, {
+      id: "conn-123",
+      data: { webhookSecret: "webhook-secret" },
     });
   });
 });

@@ -27,13 +27,18 @@ function CheckoutContent() {
   const sessionCreatedRef = useRef(false);
 
   const handleSimulatePayment = async () => {
-    if (!sessionId || isSimulating) return;
+    if (!sessionId || !clientToken || isSimulating) return;
 
     setIsSimulating(true);
     try {
       const res = await fetch(
         `${env.NEXT_PUBLIC_GETBLITZ_API_URL}/api/v1/sessions/${sessionId}/simulate-payment`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${clientToken}`,
+          },
+        },
       );
 
       if (!res.ok) {

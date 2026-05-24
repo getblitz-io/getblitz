@@ -60,4 +60,5 @@ GetBlitz supports multiple bank providers through a pluggable adapter system. If
 
 - [Qonto Integration](/banks/qonto) - Best for SMEs & startups in France
 - [Revolut Business Integration](/banks/revolut) - Certificate-based authentication for tech-forward businesses
+- [Wise Integration](/banks/wise) - Personal API token for SMBs already using Wise multi-currency balances
 - [Test Bank](/banks/test-bank) - Built-in mock provider for safe local development

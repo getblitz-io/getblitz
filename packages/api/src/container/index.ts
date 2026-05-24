@@ -6,6 +6,7 @@ import {
   QontoProvider,
   RevolutProvider,
   TestBankProvider,
+  WiseProvider,
 } from "@getblitz/bank-providers";
 import { prisma } from "@getblitz/database";
 import { getRedisClient } from "@getblitz/redis";
@@ -77,6 +78,7 @@ function initProviders() {
   ProviderRegistry.register(QontoProvider);
   ProviderRegistry.register(RevolutProvider);
   ProviderRegistry.register(TestBankProvider);
+  ProviderRegistry.register(WiseProvider);
 }
 
 /**

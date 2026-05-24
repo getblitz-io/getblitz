@@ -10,6 +10,14 @@
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
       "outputs": ["src/generated/**"]
     },
+    "prisma:migrate": {
+      "cache": false,
+      "inputs": [
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "prisma.config.ts"
+      ]
+    },
     "build": {
       "dependsOn": ["^prisma:generate", "^build"],
       "outputs": [".cache/tsbuildinfo.json", "dist/**"]

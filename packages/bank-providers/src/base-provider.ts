@@ -11,6 +11,8 @@ import type {
   ConfiguredProvider,
   OAuthFlowType,
   ProviderConfig,
+  ProviderConfigPostSaveContext,
+  ProviderConfigPreSaveContext,
   ProviderConfigSchema,
   WebhookVerificationResult,
 } from "./types";
@@ -42,6 +44,36 @@ export abstract class BaseBankProvider
 
   // Documentation
   abstract getSetupGuide(): string | null;
+
+  /**
+   * Return null by default — only override when the provider needs
+   * a custom UI step (e.g. Wise profile selection).
+   */
+  getCustomConfigComponentId(): string | null {
+    return null;
+  }
+
+  getFieldNamesBeforeCustomStep(): string[] {
+    return [];
+  }
+
+  getCredentialsFromSavedConfig(
+    _config: ProviderConfig,
+  ): BankCredentials | null {
+    return null;
+  }
+
+  async preSaveConfigHook(
+    _context: ProviderConfigPreSaveContext,
+  ): Promise<void> {
+    /* empty */
+  }
+
+  async postSaveConfigHook(
+    _context: ProviderConfigPostSaveContext,
+  ): Promise<void> {
+    /* empty */
+  }
 
   // Provider configuration for dynamic form
   abstract getProviderConfigSchema(): ProviderConfigSchema;

@@ -99,6 +99,7 @@ export class ProviderRegistry {
       oauthFlowType: provider.oauthFlowType,
       setupGuideUrl: provider.getSetupGuide(),
       isTestProvider: provider.isTestProvider,
+      customConfigComponentId: provider.getCustomConfigComponentId(),
     }));
   }
 }

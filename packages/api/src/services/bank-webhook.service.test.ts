@@ -66,6 +66,7 @@ describe("BankWebhookService", () => {
       id: "conn-123",
       providerId: "test-bank",
       status: BankConnectionStatus.CONNECTED,
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
       webhookSecret: "secret",
       credentials: "encrypted-credentials",
     };
@@ -108,6 +109,7 @@ describe("BankWebhookService", () => {
       id: "conn-123",
       providerId: "test-bank",
       status: BankConnectionStatus.NEEDS_REAUTH,
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
       webhookSecret: "secret",
       credentials: "encrypted-credentials",
     };
@@ -171,10 +173,65 @@ describe("BankWebhookService", () => {
     expect(result.error).toContain("not connected");
   });
 
+  it("should process webhook when merchant secret is empty (RSA providers e.g. Wise)", async () => {
+    mockConnRepo.findById.mockResolvedValue({
+      id: "conn-wise",
+      status: BankConnectionStatus.CONNECTED,
+      providerId: "wise",
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-wise",
+      webhookSecret: "",
+      credentials: "encrypted-credentials",
+    });
+
+    const mockProvider = {
+      verifyAndParseWebhook: vi.fn().mockResolvedValue({
+        status: WebhookVerificationStatus.Success,
+        referenceId: "GB-TESTREF1",
+        txHash: "occ-1",
+        amountCents: 5000,
+        rawPayload: {},
+      }),
+    };
+    mockCredentialManager.createAuthenticatedProvider.mockReturnValue(
+      mockProvider,
+    );
+    mockSettlement.settle.mockResolvedValue({ success: true });
+
+    const result = await service.processWebhookByConnectionId({
+      connectionId: "conn-wise",
+      request: new Request("https://test.com", { method: "POST" }),
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockProvider.verifyAndParseWebhook).toHaveBeenCalledWith({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      request: expect.any(Request),
+      secret: undefined,
+    });
+  });
+
+  it("should fail if webhook URL is not configured", async () => {
+    mockConnRepo.findById.mockResolvedValue({
+      status: BankConnectionStatus.CONNECTED,
+      providerId: "wise",
+      webhookUrl: null,
+      webhookSecret: "",
+    });
+
+    const result = await service.processWebhookByConnectionId({
+      connectionId: "conn-123",
+      request: new Request("https://test.com"),
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("webhook is not configured");
+  });
+
   it("should fail if signature verification fails", async () => {
     mockConnRepo.findById.mockResolvedValue({
       status: BankConnectionStatus.CONNECTED,
       providerId: "test",
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
       webhookSecret: "secret",
     });
 
@@ -201,6 +258,7 @@ describe("BankWebhookService", () => {
     mockConnRepo.findById.mockResolvedValue({
       status: BankConnectionStatus.CONNECTED,
       providerId: "test",
+      webhookUrl: "https://app.test/api/webhooks/connection/conn-123",
       webhookSecret: "secret",
     });
 

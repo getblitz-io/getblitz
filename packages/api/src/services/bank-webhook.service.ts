@@ -64,17 +64,14 @@ export class BankWebhookService implements IBankWebhookService {
         };
       }
 
-      if (!connection.webhookSecret) {
-        webhookLogger.error(
-          `Organization bank connection has no webhook secret`,
-          {
-            connectionId,
-            providerId,
-          },
-        );
+      if (!connection.webhookUrl) {
+        webhookLogger.error(`Organization bank connection has no webhook URL`, {
+          connectionId,
+          providerId,
+        });
         return {
           success: false,
-          error: "Organization bank connection has no webhook secret",
+          error: "Organization bank connection webhook is not configured",
           errorCode: "NOT_FOUND",
         };
       }
@@ -88,7 +85,9 @@ export class BankWebhookService implements IBankWebhookService {
       // 5. Verify webhook signature and parse payload
       const webhookResult = await provider.verifyAndParseWebhook({
         request,
-        secret: connection.webhookSecret,
+        secret: connection.webhookSecret?.trim()
+          ? connection.webhookSecret
+          : undefined,
       });
 
       switch (webhookResult.status) {

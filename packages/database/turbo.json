@@ -4,6 +4,9 @@
   "tasks": {
     "build": {
       "dependsOn": ["prisma:generate"]
+    },
+    "dev": {
+      "dependsOn": ["prisma:migrate"]
     }
   }
 }

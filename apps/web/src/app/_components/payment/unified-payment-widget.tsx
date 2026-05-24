@@ -15,6 +15,7 @@ import { Button } from "@getblitz/ui/button";
 import { toast } from "@getblitz/ui/toast";
 
 import { CopyButton } from "~/app/_components/copy-button";
+import { env } from "~/env";
 import { usePaymentSocket } from "~/hooks/use-payment-socket";
 import { useTRPC } from "~/trpc/react";
 
@@ -214,6 +215,33 @@ export function UnifiedPaymentWidget({
     clientToken: session.clientToken,
     onPaymentUpdate: handlePaymentUpdate,
   });
+
+  const handleSimulatePayment = async () => {
+    try {
+      const res = await fetch(
+        `${env.NEXT_PUBLIC_APP_URL}/api/v1/sessions/${session.sessionId}/simulate-payment`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.clientToken}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? "Simulation failed");
+      }
+
+      toast.success(tToast("paymentSimulated"), {
+        description: tToast("paymentSimulatedDescription"),
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : tToast("simulationFailed"),
+      );
+    }
+  };
 
   // Render QR code when in pending state
   useEffect(() => {
@@ -502,6 +530,21 @@ export function UnifiedPaymentWidget({
                 </div>
               )}
             </div>
+
+            {env.NODE_ENV === "development" && (
+              <div className="w-full border-t border-amber-500/20 pt-4">
+                <p className="mb-2 text-center text-xs text-amber-500">
+                  {t("developmentOnly")}
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                  onClick={() => void handleSimulatePayment()}
+                >
+                  {t("simulatePayment")}
+                </Button>
+              </div>
+            )}
 
             {!isEmbedded && (
               <div className="w-full">

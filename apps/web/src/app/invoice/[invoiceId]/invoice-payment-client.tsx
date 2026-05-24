@@ -174,7 +174,12 @@ export function InvoicePaymentClient({
     try {
       const res = await fetch(
         `${env.NEXT_PUBLIC_APP_URL}/api/v1/sessions/${invoice.paymentSession.sessionId}/simulate-payment`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${invoice.paymentSession.clientToken}`,
+          },
+        },
       );
 
       if (!res.ok) {

@@ -4,6 +4,7 @@ export * from "./registry";
 export * from "./providers/qonto";
 export * from "./providers/revolut";
 export * from "./providers/test-bank";
+export * from "./providers/wise";
 
 // Re-export key types for convenience
 export type {

@@ -114,13 +114,21 @@ export class BankConnectionService implements IBankConnectionService {
       );
 
       const webhookUrl = this.buildWebhookUrl(connectionId);
+
+      // Wise (and others) POST a test notification during subscription create.
+      // Persist the URL first so our webhook route accepts the probe.
+      await this.organizationBankConnectionRepository.update({
+        id: connectionId,
+        data: { webhookUrl },
+      });
+
       const webhookResult = await provider.createWebhook({
         webhookUrl,
       });
 
       await this.organizationBankConnectionRepository.update({
         id: connectionId,
-        data: { webhookUrl, webhookSecret: webhookResult.secret },
+        data: { webhookSecret: webhookResult.secret },
       });
 
       return { success: true };

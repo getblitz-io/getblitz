@@ -87,6 +87,8 @@ export default async function ConfigureProviderPage({
         configSchema={configData.schema}
         defaultConfig={configData.defaultConfig}
         connectionName={connectionData.name}
+        customConfigComponentId={providerMetadata.getCustomConfigComponentId()}
+        fieldNamesBeforeCustomStep={configData.fieldNamesBeforeCustomStep}
       />
     </Suspense>
   );
