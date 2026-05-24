@@ -2,6 +2,10 @@ import type { Cookie } from "@playwright/test";
 
 const SESSION_COOKIE_RE = /^([^=]+)=([^;]+)/;
 
+const e2eAppHostname = new URL(
+  process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3005",
+).hostname;
+
 function parseCookiePair(pair: string): Pick<Cookie, "name" | "value"> | null {
   const execResult = SESSION_COOKIE_RE.exec(pair.trim());
   if (!execResult?.[1] || !execResult[2]) {
@@ -34,7 +38,7 @@ export function sessionCookiesFromHeaders(
     .map(
       (cookie): Cookie => ({
         ...cookie,
-        domain: "localhost",
+        domain: e2eAppHostname,
         path: "/",
         expires: -1,
         httpOnly: true,

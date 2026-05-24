@@ -2,9 +2,9 @@ name: E2E Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -37,59 +37,39 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10.32.1
+      - name: Setup
+        uses: ./tooling/github/setup
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 24
-        cache: 'pnpm'
+      - name: Install Playwright Browsers
+        run: pnpm --filter @getblitz/web exec playwright install --with-deps chromium
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      - name: Run E2E Tests
+        run: pnpm --filter @getblitz/web test:e2e
+        env:
+          CI: true
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: 5432
+          DATABASE_USER: app
+          DATABASE_PASSWORD: password
+          DATABASE_NAME: getblitz_test
+          REDIS_URL: redis://localhost:6380
+          AUTH_SECRET: e2e-test-secret-for-deterministic-sessions-must-be-long
+          AUTH_GOOGLE_ID: test_google_client_id
+          AUTH_GOOGLE_SECRET: test_google_client_secret
+          APPLICATION_ENV: test
+          NODE_ENV: development
+          ENABLE_WEBSOCKET: false
+          ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          NEXT_PUBLIC_APP_URL: http://localhost:3005
+          PROJECT_URL: http://localhost:3005
+          NEXT_PUBLIC_WSS_URL: ws://localhost:3005
 
-    - name: Install Playwright Browsers
-      run: pnpm --filter @getblitz/web exec playwright install --with-deps chromium
-
-    - name: Sync database schema
-      run: pnpm --filter @getblitz/database prisma:push --accept-data-loss
-      env:
-        DATABASE_HOST: 127.0.0.1
-        DATABASE_PORT: 5432
-        DATABASE_USER: app
-        DATABASE_PASSWORD: password
-        DATABASE_NAME: getblitz_test
-
-    - name: Run E2E Tests
-      run: pnpm --filter @getblitz/web test:e2e
-      env:
-        CI: true
-        DATABASE_HOST: 127.0.0.1
-        DATABASE_PORT: 5432
-        DATABASE_USER: app
-        DATABASE_PASSWORD: password
-        DATABASE_NAME: getblitz_test
-        REDIS_URL: redis://localhost:6380
-        AUTH_SECRET: e2e-test-secret-for-deterministic-sessions-must-be-long
-        AUTH_GOOGLE_ID: test_google_client_id
-        AUTH_GOOGLE_SECRET: test_google_client_secret
-        APPLICATION_ENV: test
-        NODE_ENV: development
-        ENABLE_WEBSOCKET: false
-        ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        NEXT_PUBLIC_APP_URL: http://localhost:3005
-        PROJECT_URL: http://localhost:3005
-        NEXT_PUBLIC_WSS_URL: ws://localhost:3005
-
-    - name: Upload Playwright Report
-      uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: apps/web/playwright-report/
-        retention-days: 30
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30

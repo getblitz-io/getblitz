@@ -26,7 +26,9 @@ export async function createTestApiKey(
 export class ApiTestClient {
   private baseUrl: string;
 
-  constructor(baseUrl = "http://localhost:3005") {
+  constructor(
+    baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3005",
+  ) {
     this.baseUrl = baseUrl;
   }
 

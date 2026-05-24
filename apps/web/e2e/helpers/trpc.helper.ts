@@ -1,21 +1,23 @@
 import type { Organization } from "@getblitz/database";
 
-interface TrpcHttpEnvelope {
+interface TrpcHttpEnvelope<T> {
   result: {
-    data: Organization | { json: Organization };
+    data: T | { json: T };
   };
 }
 
-function isSuperjsonWrapped(
-  data: Organization | { json: Organization },
-): data is { json: Organization } {
-  return "json" in data;
+function isSuperjsonWrapped<T>(data: T | { json: T }): data is { json: T } {
+  return data !== null && typeof data === "object" && "json" in data;
+}
+
+export function unwrapTrpcData<T>(response: unknown): T {
+  const envelope = (
+    Array.isArray(response) ? response[0] : response
+  ) as TrpcHttpEnvelope<T>;
+  const data = envelope.result.data;
+  return isSuperjsonWrapped(data) ? data.json : data;
 }
 
 export function unwrapTrpcOrganization(response: unknown): Organization {
-  const envelope = (
-    Array.isArray(response) ? response[0] : response
-  ) as TrpcHttpEnvelope;
-  const data = envelope.result.data;
-  return isSuperjsonWrapped(data) ? data.json : data;
+  return unwrapTrpcData<Organization>(response);
 }

@@ -17,9 +17,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:e2e:install": "playwright install chromium",
-    "test:e2e": "playwright install chromium && pnpm with-env:test playwright test",
-    "test:e2e:ui": "playwright install chromium && pnpm with-env:test playwright test --ui",
-    "test:e2e:debug": "playwright install chromium && pnpm with-env:test playwright test --debug",
+    "test:e2e": "pnpm with-env:test playwright test",
+    "test:e2e:ui": "pnpm with-env:test playwright test --ui",
+    "test:e2e:debug": "pnpm with-env:test playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "with-env": "dotenv -e ./.env --",
     "with-env:test": "dotenv -e ./.env.test --"
