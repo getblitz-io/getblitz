@@ -103,9 +103,17 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const locale = await getLocale();
-  const messages = await getMessages();
+  const messagesUnknown: unknown = await getMessages();
+  if (!isRecord(messagesUnknown)) {
+    throw new Error("Invalid i18n messages payload");
+  }
+  const messages = messagesUnknown;
 
   return (
     <html lang={locale} suppressHydrationWarning>
