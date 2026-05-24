@@ -136,7 +136,7 @@ E2E browser, tRPC, and REST API tests are powered by Playwright. They run agains
    ```bash
    docker exec getblitz-postgres psql -U app -d postgres -c "CREATE DATABASE getblitz_test;"
    ```
-3. Playwright downloads Chromium on first run automatically. To install browsers explicitly:
+3. Install Playwright browsers once (required before the first E2E run):
    ```bash
    pnpm --filter @getblitz/web test:e2e:install
    ```
