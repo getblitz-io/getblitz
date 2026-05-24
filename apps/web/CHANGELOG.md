@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.12](https://github.com/getblitz-io/getblitz/compare/web-v0.0.11...web-v0.0.12) (2026-05-24)
+
+
+### Features
+
+* **banks:** add Wise provider with profile selector and API-token auth ([#45](https://github.com/getblitz-io/getblitz/issues/45)) ([099ef2c](https://github.com/getblitz-io/getblitz/commit/099ef2c203299ee610e0c6fb0956cf4a768bb983))
+* initialize documentation site and update demo page structure ([#40](https://github.com/getblitz-io/getblitz/issues/40)) ([4c4ee0d](https://github.com/getblitz-io/getblitz/commit/4c4ee0d13cf7b867de292304f9b430705363aff8))
+* **web:** Playwright E2E testing framework ([#47](https://github.com/getblitz-io/getblitz/issues/47)) ([bf6f61f](https://github.com/getblitz-io/getblitz/commit/bf6f61fe20eb44534fc33c540b24831dd9e05dd5))
+
+
+### Bug Fixes
+
+* **ui:** restore theme switching after dependency upgrades ([#46](https://github.com/getblitz-io/getblitz/issues/46)) ([5702474](https://github.com/getblitz-io/getblitz/commit/570247446a019ecfa18e311c7f8cc3671e1d3b79))
+
 ## [0.0.11](https://github.com/getblitz-io/getblitz/compare/web-v0.0.10...web-v0.0.11) (2026-04-07)
 
 
