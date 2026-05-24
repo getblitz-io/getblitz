@@ -10,6 +10,10 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import("next").NextConfig} */
 const config = {
+  experimental: {
+    optimizePackageImports: ["@getblitz/ui", "@radix-ui/react-icons"],
+  },
+
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
     "@getblitz/api",

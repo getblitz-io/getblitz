@@ -21,4 +21,12 @@ export {
   DialogDescription,
   DialogFooter,
 } from "./dialog";
-export * from "./theme";
+export {
+  THEME_MODE_STORAGE_KEY,
+  ThemeProvider,
+  ThemeToggle,
+  themeDetectorScript,
+  useTheme,
+  type ResolvedTheme,
+  type ThemeMode,
+} from "./theme";
