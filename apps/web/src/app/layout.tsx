@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 
 import { cn } from "@getblitz/ui";
-import { ThemeProvider, ThemeToggle } from "@getblitz/ui/theme";
-import { Toaster } from "@getblitz/ui/toast";
+import { themeDetectorScript } from "@getblitz/ui/theme-detector";
 
-import { LanguageToggle } from "~/app/_components/language-toggle";
-import { VersionChecker } from "~/app/_components/version-checker";
+import { AppProviders } from "~/app/providers";
 import { env } from "~/env";
-import { TRPCReactProvider } from "~/trpc/react";
 
 import "~/app/styles.css";
 
@@ -107,6 +105,7 @@ const geistMono = Geist_Mono({
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -117,17 +116,14 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           geistMono.variable,
         )}
       >
-        <ThemeProvider>
-          <NextIntlClientProvider>
-            <TRPCReactProvider>{props.children}</TRPCReactProvider>
-            <div className="fixed right-2 bottom-4 z-50 flex touch-manipulation gap-2 sm:right-4 sm:bottom-4">
-              <LanguageToggle />
-              <ThemeToggle />
-            </div>
-            <Toaster />
-            <VersionChecker />
-          </NextIntlClientProvider>
-        </ThemeProvider>
+        <Script
+          id="theme-detector"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeDetectorScript }}
+        />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AppProviders>{props.children}</AppProviders>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

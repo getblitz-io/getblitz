@@ -3,5 +3,15 @@
     {
       "mode": "auto"
     }
-  ]
+  ],
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  }
 }

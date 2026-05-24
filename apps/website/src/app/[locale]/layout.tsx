@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 
-import { ThemeProvider, ThemeToggle } from "@getblitz/ui";
+import { themeDetectorScript } from "@getblitz/ui/theme-detector";
+
+import { AppProviders } from "../providers";
 
 import "../../app/globals.css";
-
-import { CookieBanner } from "../../components/CookieBanner";
-import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,15 +58,13 @@ export default async function LocaleLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>
-            {children}
-            <div className="fixed right-2 bottom-4 z-90 flex touch-manipulation gap-2 sm:right-4 sm:bottom-4">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
-            <CookieBanner />
-          </ThemeProvider>
+        <Script
+          id="theme-detector"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeDetectorScript }}
+        />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AppProviders>{children}</AppProviders>
         </NextIntlClientProvider>
       </body>
     </html>

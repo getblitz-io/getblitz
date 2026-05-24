@@ -12,6 +12,9 @@
     "./separator": "./src/separator.tsx",
     "./sheet": "./src/sheet.tsx",
     "./theme": "./src/theme.tsx",
+    "./theme-detector": "./src/theme-detector.ts",
+    "./theme-provider": "./src/theme-provider.tsx",
+    "./theme-toggle": "./src/theme-toggle.tsx",
     "./toast": "./src/toast.tsx"
   },
   "license": "MIT",
