@@ -9,7 +9,11 @@ export const themeDetectorScript = `(function themeFn() {
   const validThemes = ["light", "dark", "auto"];
   const isValidTheme = (theme) => validThemes.includes(theme);
 
-  const storedTheme = localStorage.getItem("${THEME_MODE_STORAGE_KEY}") ?? "auto";
+  let storedTheme = "auto";
+  try {
+    storedTheme = localStorage.getItem("${THEME_MODE_STORAGE_KEY}") ?? "auto";
+  } catch {}
+
   const validTheme = isValidTheme(storedTheme) ? storedTheme : "auto";
 
   if (validTheme === "auto") {

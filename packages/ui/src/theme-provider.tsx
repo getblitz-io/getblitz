@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as z from "zod/v4";
+import { z } from "zod/v4";
 
 import { THEME_MODE_STORAGE_KEY } from "./theme-detector";
 
