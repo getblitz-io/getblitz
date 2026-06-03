@@ -113,7 +113,7 @@ export class QontoProvider extends BaseBankProvider {
   }
 
   getSetupGuide(): string {
-    return "https://github.com/getblitz-io/getblitz/blob/main/docs/banks/qonto.md";
+    return "https://docs.getblitz.io/banks/qonto";
   }
 
   getProviderConfigSchema(): ProviderConfigSchema {

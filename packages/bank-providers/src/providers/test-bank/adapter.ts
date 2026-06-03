@@ -132,7 +132,7 @@ export class TestBankProvider extends BaseBankProvider {
   }
 
   getSetupGuide(): string {
-    return "https://github.com/getblitz-io/getblitz/blob/main/docs/banks/test-bank.md";
+    return "https://docs.getblitz.io/banks/test-bank";
   }
 
   getProviderConfigSchema(): ProviderConfigSchema {
