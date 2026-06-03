@@ -107,7 +107,9 @@ describe("WiseProvider", () => {
     });
 
     it("should return a setup guide URL", () => {
-      expect(template.getSetupGuide()).toContain("wise.md");
+      expect(template.getSetupGuide()).toBe(
+        "https://docs.getblitz.io/banks/wise",
+      );
     });
   });
 

@@ -17,7 +17,8 @@ Save on processing fees with direct bank-to-bank transfers, achieve _instant_ se
 
 ## Features
 
-- 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, Revolut, custom providers)
+- 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, Revolut, Wise, custom providers)
+- 🔌 **WooCommerce Integration** - WordPress e-commerce plugin ([WordPress.org Directory](https://wordpress.org/plugins/getblitz-payment-gateway) / [GitHub Repository](https://github.com/getblitz-io/wp-getblitz-payment-gateway))
 - 🧾 **Invoicing** - Generate and manage invoices with integrated payment links
 - 👥 **Customer Management** - Maintain customer profiles and payment history
 - 🔐 **Self-Hosted** - Full data sovereignty with your own database and infrastructure
@@ -210,7 +211,8 @@ Comprehensive documentation for GetBlitz, including API references, SDK setup in
 - **API Reference**: Detailed endpoints for payment challenges and sessions.
 - **Webhook Events**: Payload schemas and signature verification guides.
 - **SDK Integration**: How to use the `@getblitz/client` library.
-- **Bank Providers**: Setup guides for Qonto, Revolut, and the mock Test Bank.
+- **WooCommerce Plugin**: How to install and configure the WordPress/WooCommerce plugin.
+- **Bank Providers**: Setup guides for Qonto, Revolut, Wise, and the mock Test Bank.
 - **Custom Providers**: Instructions on how to build and register your own bank integration adapter.
 
 _(The documentation site is built with Docusaurus and its source code can be found in the [`apps/docs`](./apps/docs) directory of this repository.)_

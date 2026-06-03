@@ -87,6 +87,11 @@
         "description": "Fügen Sie ein einziges Script-Tag in jede Website ein. Das leichte GetBlitz-Widget verarbeitet die Zahlungsbenutzeroberfläche automatisch."
       },
       {
+        "icon": "🛍️",
+        "title": "WooCommerce-Integration",
+        "description": "Akzeptieren Sie Zahlungen in Ihrem WordPress-Shop mit unserem offiziellen WooCommerce-Plugin. In Sekunden eingerichtet, ohne Transaktionsgebühren."
+      },
+      {
         "icon": "🧪",
         "title": "Eingebauter Testmodus",
         "description": "Ein Mock-Bank-Simulator ist sofort einsatzbereit, damit Sie ohne echtes Geld entwickeln und testen können."
@@ -216,13 +221,24 @@
         "flag": "🇬🇧"
       },
       {
+        "name": "Wise",
+        "auth": "API-Schlüssel",
+        "bestFor": "Globale Unternehmen & Freelancer",
+        "flag": "🇪🇺"
+      },
+      {
         "name": "Weitere Banken",
         "auth": "Demnächst",
         "bestFor": "Wir erweitern die Abdeckung in Europa",
         "flag": "🇪🇺"
       }
     ],
-    "extensibility": "Ihre Bank nicht dabei? Implementieren Sie unser offenes BankProvider-Interface in TypeScript und stellen Sie einen PR."
+    "extensibility": "Ihre Bank nicht dabei? Implementieren Sie unser offenes BankProvider-Interface in TypeScript und stellen Sie einen PR.",
+    "customProviderTitle": "Benutzerdefinierter Provider",
+    "customProviderCta": "BankProvider-Interface anzeigen",
+    "wordpressTitle": "WordPress & WooCommerce Plugin",
+    "wordpressDescription": "Akzeptieren Sie Zahlungen in Ihrem WordPress-Shop mit unserem offiziellen WooCommerce-Plugin. Installieren Sie es direkt aus dem WordPress-Verzeichnis.",
+    "wordpressCta": "WooCommerce-Plugin herunterladen"
   },
   "privacy": {
     "badge": "Datenschutz & Souveränität",

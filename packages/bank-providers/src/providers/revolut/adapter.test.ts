@@ -445,7 +445,9 @@ VBwPVpQ3EaGthNrBMUZq9dyzSp7xAiAk4SDhlyrJjNGBkJYvBfOOkJB6MztlVYPi
 
   describe("metadata and support", () => {
     it("should return the correct setup guide URL", () => {
-      expect(template.getSetupGuide()).toContain("revolut.md");
+      expect(template.getSetupGuide()).toBe(
+        "https://docs.getblitz.io/banks/revolut",
+      );
     });
 
     it("should return the correct default config", () => {

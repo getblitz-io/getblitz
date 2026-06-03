@@ -87,6 +87,11 @@
         "description": "Drop a single script tag into any website. The lightweight GetBlitz widget handles the payment UI, QR code display, and real-time status updates automatically."
       },
       {
+        "icon": "🛍️",
+        "title": "WooCommerce Integration",
+        "description": "Accept payments on your WordPress store with our official WooCommerce plugin. Set up in seconds with zero transaction fees."
+      },
+      {
         "icon": "🧪",
         "title": "Built-In Test Mode",
         "description": "A mock bank simulator is included out of the box so you can develop and test your integration without touching real money."
@@ -216,13 +221,24 @@
         "flag": "🇬🇧"
       },
       {
+        "name": "Wise",
+        "auth": "API Key",
+        "bestFor": "Global businesses & freelancers",
+        "flag": "🇪🇺"
+      },
+      {
         "name": "More Banks",
         "auth": "Coming Soon",
         "bestFor": "Expanding coverage across Europe",
         "flag": "🇪🇺"
       }
     ],
-    "extensibility": "Don't see your bank? Implement our open BankProvider interface in TypeScript and submit a PR."
+    "extensibility": "Don't see your bank? Implement our open BankProvider interface in TypeScript and submit a PR.",
+    "customProviderTitle": "Custom Provider",
+    "customProviderCta": "View BankProvider interface",
+    "wordpressTitle": "WordPress & WooCommerce Plugin",
+    "wordpressDescription": "Accept payments on your WordPress store with our official WooCommerce plugin. Install it directly from the WordPress directory to get started.",
+    "wordpressCta": "Get WooCommerce Plugin"
   },
   "privacy": {
     "badge": "Privacy & Sovereignty",

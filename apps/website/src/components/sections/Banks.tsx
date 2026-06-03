@@ -15,6 +15,7 @@ interface BankProvider {
 const logoMap: Record<string, string> = {
   Qonto: "/logos/qonto.svg",
   "Revolut Business": "/logos/revolut.svg",
+  Wise: "/logos/wise.png",
 };
 
 export function BanksSection() {
@@ -130,33 +131,75 @@ export function BanksSection() {
           })}
         </div>
 
-        {/* Extensibility callout */}
-        <div className="reveal-up border-border bg-card/40 rounded-2xl border p-8 text-center backdrop-blur-sm">
-          <div className="mb-4 text-3xl">🔌</div>
-          <p className="text-foreground mb-2 font-medium">
-            {t("extensibility")}
-          </p>
-          <a
-            href="https://github.com/getblitz-io/getblitz/blob/main/CONTRIBUTING.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary mt-2 inline-flex items-center gap-2 text-sm hover:underline"
-          >
-            View the BankProvider interface
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        {/* Extensibility & Integration Callouts */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* WooCommerce Callout */}
+          <div className="reveal-up border-border bg-card/40 flex flex-col items-center justify-between rounded-2xl border p-8 text-center backdrop-blur-sm">
+            <div>
+              <div className="mb-4 text-3xl">🛍️</div>
+              <h4 className="text-foreground mb-2 text-lg font-bold">
+                {t("wordpressTitle")}
+              </h4>
+              <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+                {t("wordpressDescription")}
+              </p>
+            </div>
+            <a
+              href="https://wordpress.org/plugins/getblitz-payment-gateway"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02]"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              />
-            </svg>
-          </a>
+              {t("wordpressCta")}
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+          </div>
+
+          {/* Extensibility Callout */}
+          <div className="reveal-up border-border bg-card/40 flex flex-col items-center justify-between rounded-2xl border p-8 text-center backdrop-blur-sm">
+            <div>
+              <div className="mb-4 text-3xl">🔌</div>
+              <h4 className="text-foreground mb-2 text-lg font-bold">
+                {t("customProviderTitle")}
+              </h4>
+              <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+                {t("extensibility")}
+              </p>
+            </div>
+            <a
+              href="https://github.com/getblitz-io/getblitz/blob/main/CONTRIBUTING.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-border text-foreground hover:border-primary/40 hover:bg-primary/5 inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02]"
+            >
+              {t("customProviderCta")}
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </section>

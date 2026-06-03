@@ -105,7 +105,7 @@ export class RevolutProvider extends BaseBankProvider {
   }
 
   getSetupGuide(): string {
-    return "https://github.com/getblitz-io/getblitz/blob/main/docs/banks/revolut.md";
+    return "https://docs.getblitz.io/banks/revolut";
   }
 
   getProviderConfigSchema(): ProviderConfigSchema {

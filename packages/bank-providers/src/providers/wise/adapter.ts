@@ -273,7 +273,7 @@ export class WiseProvider extends BaseBankProvider {
   // -------------------------------------------------------------------
 
   getSetupGuide(): string {
-    return "https://github.com/getblitz-io/getblitz/blob/main/apps/docs/docs/banks/wise.md";
+    return "https://docs.getblitz.io/banks/wise";
   }
 
   getProviderConfigSchema(): ProviderConfigSchema {
