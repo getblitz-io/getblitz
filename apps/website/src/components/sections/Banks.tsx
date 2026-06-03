@@ -172,7 +172,7 @@ export function BanksSection() {
             <div>
               <div className="mb-4 text-3xl">🔌</div>
               <h4 className="text-foreground mb-2 text-lg font-bold">
-                Custom Provider
+                {t("customProviderTitle")}
               </h4>
               <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
                 {t("extensibility")}
@@ -184,7 +184,7 @@ export function BanksSection() {
               rel="noopener noreferrer"
               className="border-border text-foreground hover:border-primary/40 hover:bg-primary/5 inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02]"
             >
-              View BankProvider interface
+              {t("customProviderCta")}
               <svg
                 className="h-4 w-4"
                 fill="none"

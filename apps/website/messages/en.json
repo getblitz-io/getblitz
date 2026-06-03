@@ -234,6 +234,8 @@
       }
     ],
     "extensibility": "Don't see your bank? Implement our open BankProvider interface in TypeScript and submit a PR.",
+    "customProviderTitle": "Custom Provider",
+    "customProviderCta": "View BankProvider interface",
     "wordpressTitle": "WordPress & WooCommerce Plugin",
     "wordpressDescription": "Accept payments on your WordPress store with our official WooCommerce plugin. Install it directly from the WordPress directory to get started.",
     "wordpressCta": "Get WooCommerce Plugin"
