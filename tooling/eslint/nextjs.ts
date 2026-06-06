@@ -4,8 +4,8 @@ import { defineConfig } from "eslint/config";
 export const nextjsConfig = defineConfig({
   files: ["**/*.ts", "**/*.tsx"],
   plugins: {
-    // @ts-expect-error @next/eslint-plugin-next exports
-    "@next/next": nextPlugin,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    "@next/next": nextPlugin as any,
   },
   rules: {
     ...nextPlugin.configs.recommended.rules,
