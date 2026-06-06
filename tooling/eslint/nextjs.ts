@@ -4,7 +4,7 @@ import { defineConfig } from "eslint/config";
 export const nextjsConfig = defineConfig({
   files: ["**/*.ts", "**/*.tsx"],
   plugins: {
-    // @ts-expect-error - The types of `eslint-plugin-next` and `eslint` are slightly mismatched
+    // @ts-expect-error @next/eslint-plugin-next exports
     "@next/next": nextPlugin,
   },
   rules: {
