@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.7...getblitz-client-v0.0.8) (2026-09-23)
+
+
+### Bug Fixes
+
+* security hardening and dependency vulnerability upgrades ([#50](https://github.com/getblitz-io/getblitz/issues/50)) ([9ed001f](https://github.com/getblitz-io/getblitz/commit/9ed001fa01e6414335c5b7ff9f07b824758b868a))
+
 ## [0.0.7](https://github.com/getblitz-io/getblitz/compare/getblitz-client-v0.0.6...getblitz-client-v0.0.7) (2026-04-05)
 
 

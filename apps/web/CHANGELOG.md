@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.13](https://github.com/getblitz-io/getblitz/compare/web-v0.0.12...web-v0.0.13) (2026-09-23)
+
+
+### Bug Fixes
+
+* security hardening and dependency vulnerability upgrades ([#50](https://github.com/getblitz-io/getblitz/issues/50)) ([9ed001f](https://github.com/getblitz-io/getblitz/commit/9ed001fa01e6414335c5b7ff9f07b824758b868a))
+
 ## [0.0.12](https://github.com/getblitz-io/getblitz/compare/web-v0.0.11...web-v0.0.12) (2026-05-24)
 
 
