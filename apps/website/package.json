@@ -13,7 +13,7 @@
     "@radix-ui/react-icons": "catalog:",
     "@scalar/nextjs-api-reference": "catalog:",
     "@t3-oss/env-nextjs": "catalog:",
-    "next": "16.2.6",
+    "next": "16.3.6",
     "next-intl": "catalog:",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
