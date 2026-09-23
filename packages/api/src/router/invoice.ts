@@ -31,6 +31,7 @@ export const invoiceRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       return ctx.services.invoice.getInvoiceById({
         invoiceId: input.invoiceId,
+        organizationId: ctx.organization.id,
       });
     }),
 
@@ -46,6 +47,7 @@ export const invoiceRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       let mode: "public" | "preview" = "public";
+      let previewOrganizationId: string | undefined;
 
       if (input.previewToken) {
         if (!ctx.session?.user) {
@@ -60,30 +62,35 @@ export const invoiceRouter = createTRPCRouter({
             userId: ctx.session.user.id,
           });
 
-        if (!previewResult) {
+        // Token must have been issued for this exact invoice
+        if (previewResult?.resourceId !== input.referenceId) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Invalid preview token",
           });
         }
         mode = "preview";
+        previewOrganizationId = previewResult.organizationId;
       }
 
       return ctx.services.invoice.getInvoiceByReference({
         referenceId: input.referenceId,
         password: input.password,
         mode,
+        previewOrganizationId,
         deviceDetails: ctx.deviceDetails,
       });
     }),
 
   // Verify password for protected invoice
   verifyPassword: publicProcedure
+    .use(deviceMiddleware)
     .input(z.object({ invoiceId: z.string(), password: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const valid = await ctx.services.invoice.verifyPassword({
         invoiceId: input.invoiceId,
         password: input.password,
+        deviceDetails: ctx.deviceDetails,
       });
       return { valid };
     }),

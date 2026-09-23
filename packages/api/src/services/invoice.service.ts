@@ -21,10 +21,19 @@ import type {
   InvoiceWithOrg,
   InvoiceWithRelations,
   IPaymentSessionService,
+  WithoutPasswordHash,
 } from "../interfaces";
 import { env } from "../env";
 import { getRateLimiter } from "../utils";
 import { centsToEuros, generateSepaQrString } from "../utils/sepa-qr";
+
+/** Never return the password hash to clients */
+function withoutPasswordHash<T extends { passwordHash: string | null }>(
+  invoice: T,
+): WithoutPasswordHash<T> {
+  const { passwordHash, ...rest } = invoice;
+  return { ...rest, isPasswordProtected: passwordHash !== null };
+}
 
 export class InvoiceService implements IInvoiceService {
   constructor(
@@ -40,7 +49,7 @@ export class InvoiceService implements IInvoiceService {
   }: {
     organizationId: string;
     invoiceId: string;
-  }): Promise<InvoiceWithRelations> {
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations>> {
     const invoice = await this.invoiceRepository.findById({
       id: invoiceId,
       organizationId,
@@ -75,7 +84,7 @@ export class InvoiceService implements IInvoiceService {
       });
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const paymentSession = await this.paymentSessionService.createChallenge(
         {
           input: {
@@ -105,6 +114,7 @@ export class InvoiceService implements IInvoiceService {
         tx,
       });
     });
+    return withoutPasswordHash(updated);
   }
 
   async createInvoice({
@@ -143,6 +153,11 @@ export class InvoiceService implements IInvoiceService {
         message: "Total does not match the sum of line items",
       });
     }
+
+    await this.assertBankAccountBelongsToOrg({
+      bankAccountId: input.bankAccountId,
+      organizationId,
+    });
 
     return this.prisma.$transaction(async (tx) => {
       const customer = await this.customerService.getOrCreateCustomer(
@@ -208,24 +223,32 @@ export class InvoiceService implements IInvoiceService {
 
   async getInvoiceById({
     invoiceId,
+    organizationId,
   }: {
     invoiceId: string;
-  }): Promise<InvoiceWithRelations | null> {
-    const invoice = await this.invoiceRepository.findById({ id: invoiceId });
+    organizationId: string;
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations> | null> {
+    const invoice = await this.invoiceRepository.findById({
+      id: invoiceId,
+      organizationId,
+    });
     if (!invoice) return null;
 
-    return invoice;
+    return withoutPasswordHash(invoice);
   }
 
   async getInvoiceByReference({
     referenceId,
     password,
     mode,
+    previewOrganizationId,
     deviceDetails,
   }: {
     referenceId: string;
     password?: string;
     mode: "public" | "preview";
+    /** Required in preview mode: the org the preview token was issued for */
+    previewOrganizationId?: string;
     deviceDetails: DeviceDetails;
   }): Promise<InvoiceDetailsResult | null> {
     const invoice = await this.invoiceRepository.findByReferenceId({
@@ -233,6 +256,13 @@ export class InvoiceService implements IInvoiceService {
       type: "id",
     });
     if (!invoice) return null;
+
+    if (
+      mode === "preview" &&
+      invoice.organizationId !== previewOrganizationId
+    ) {
+      return null;
+    }
 
     if (invoice.status === InvoiceStatus.DRAFT && mode === "public") {
       return null;
@@ -305,20 +335,46 @@ export class InvoiceService implements IInvoiceService {
   }: {
     orgIds: string[];
     options?: { take?: number };
-  }): Promise<InvoiceWithOrg[]> {
-    return this.invoiceRepository.findByOrgIds({ orgIds, options });
+  }): Promise<WithoutPasswordHash<InvoiceWithOrg>[]> {
+    const invoices = await this.invoiceRepository.findByOrgIds({
+      orgIds,
+      options,
+    });
+    return invoices.map(withoutPasswordHash);
   }
 
   async verifyPassword({
     invoiceId,
     password,
+    deviceDetails,
   }: {
     invoiceId: string;
     password: string;
+    deviceDetails: DeviceDetails;
   }): Promise<boolean> {
-    const invoice = await this.invoiceRepository.findById({ id: invoiceId });
+    const invoice = await this.invoiceRepository.findByReferenceId({
+      referenceId: invoiceId,
+      type: "id",
+    });
     if (!invoice?.passwordHash) return false;
-    return bcrypt.compare(password, invoice.passwordHash);
+
+    try {
+      // Shares the rate limiter with getInvoiceByReference to prevent brute force
+      return await this.verifyInvoicePassword({
+        password,
+        invoice,
+        deviceDetails,
+      });
+    } catch (e) {
+      if (
+        e instanceof TRPCError &&
+        e.code === "BAD_REQUEST" &&
+        e.message === "Invalid password"
+      ) {
+        return false;
+      }
+      throw e;
+    }
   }
 
   async updateInvoice({
@@ -327,7 +383,7 @@ export class InvoiceService implements IInvoiceService {
   }: {
     input: z.infer<typeof UpdateInvoiceInputSchema>;
     organizationId: string;
-  }): Promise<InvoiceWithRelations> {
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations>> {
     // Hash password if provided
     let passwordHash: string | undefined;
     if (input.password) {
@@ -336,6 +392,7 @@ export class InvoiceService implements IInvoiceService {
 
     const existingInvoice = await this.invoiceRepository.findById({
       id: input.id,
+      organizationId,
     });
     if (!existingInvoice) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Invoice not found" });
@@ -360,11 +417,24 @@ export class InvoiceService implements IInvoiceService {
       discountCents,
     });
 
+    if (input.customerId && input.customerId !== existingInvoice.customerId) {
+      const customer = await this.prisma.customer.findFirst({
+        where: { id: input.customerId, organizationId },
+        select: { id: true },
+      });
+      if (!customer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Customer not found",
+        });
+      }
+    }
+
     const dueDate = input.dueDate
       ? new Date(input.dueDate)
       : (existingInvoice.dueDate ?? null);
 
-    return this.invoiceRepository.update({
+    const updated = await this.invoiceRepository.update({
       id: input.id,
       organizationId,
       data: {
@@ -389,6 +459,7 @@ export class InvoiceService implements IInvoiceService {
           existingInvoice.metadata) as Prisma.InputJsonValue,
       },
     });
+    return withoutPasswordHash(updated);
   }
 
   async deleteInvoice({
@@ -428,6 +499,28 @@ export class InvoiceService implements IInvoiceService {
       code: "BAD_REQUEST",
       message: "Cannot delete paid or cancelled invoice",
     });
+  }
+
+  private async assertBankAccountBelongsToOrg({
+    bankAccountId,
+    organizationId,
+  }: {
+    bankAccountId: string;
+    organizationId: string;
+  }): Promise<void> {
+    const bankAccount = await this.prisma.bankAccount.findFirst({
+      where: {
+        id: bankAccountId,
+        organizationBankConnection: { organizationId },
+      },
+      select: { id: true },
+    });
+    if (!bankAccount) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Bank account not found",
+      });
+    }
   }
 
   private generateInvoiceReferenceId(): string {
@@ -473,8 +566,10 @@ export class InvoiceService implements IInvoiceService {
         logo: invoice.organization.logo,
       },
       bankAccount: {
-        organizationBankConnection:
-          invoice.bankAccount.organizationBankConnection,
+        organizationBankConnection: {
+          id: invoice.bankAccount.organizationBankConnection.id,
+          providerId: invoice.bankAccount.organizationBankConnection.providerId,
+        },
         accountName: invoice.bankAccount.accountName,
         iban: invoice.bankAccount.accountIban,
         bic: invoice.bankAccount.accountBic,
@@ -553,7 +648,15 @@ export class InvoiceService implements IInvoiceService {
       blockDuration: 60,
     });
 
-    if (!rateLimiter)
+    // Per-invoice cap regardless of IP (client IPs can be spoofed/rotated)
+    const invoiceRateLimiter = getRateLimiter({
+      keyPrefix: "invoice-password-global",
+      points: 20,
+      duration: 3600,
+      blockDuration: 3600,
+    });
+
+    if (!rateLimiter || !invoiceRateLimiter)
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Rate limiter not configured",
@@ -563,8 +666,14 @@ export class InvoiceService implements IInvoiceService {
 
     // Check if blocked
     try {
-      const res = await rateLimiter.get(rateLimitKey);
-      if (res && res.remainingPoints <= 0 && res.msBeforeNext > 0) {
+      const [res, invoiceRes] = await Promise.all([
+        rateLimiter.get(rateLimitKey),
+        invoiceRateLimiter.get(invoice.referenceId),
+      ]);
+      const isBlocked = [res, invoiceRes].some(
+        (r) => r && r.remainingPoints <= 0 && r.msBeforeNext > 0,
+      );
+      if (isBlocked) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
           message: "Too many failed attempts. Please try again later.",
@@ -577,7 +686,10 @@ export class InvoiceService implements IInvoiceService {
       if (isPasswordValid) {
         return true;
       }
-      await rateLimiter.consume(rateLimitKey);
+      await Promise.all([
+        rateLimiter.consume(rateLimitKey),
+        invoiceRateLimiter.consume(invoice.referenceId),
+      ]);
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Invalid password",

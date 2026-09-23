@@ -28,8 +28,13 @@ export class CustomerService implements ICustomerService {
     );
   }
 
-  async getCustomer(id: string): Promise<Customer | null> {
-    return this.customerRepo.findById(id);
+  async getCustomer(
+    id: string,
+    organizationId: string,
+  ): Promise<Customer | null> {
+    const customer = await this.customerRepo.findById(id);
+    if (customer?.organizationId !== organizationId) return null;
+    return customer;
   }
 
   async listCustomers(

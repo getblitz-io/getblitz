@@ -9,6 +9,35 @@ import type {
   InvoiceWithRelations,
 } from "../interfaces";
 
+/**
+ * Only non-sensitive connection fields. Never expose webhookSecret,
+ * credentials or providerConfig through invoice queries.
+ */
+export const safeBankConnectionSelect = {
+  id: true,
+  organizationId: true,
+  providerId: true,
+  name: true,
+} satisfies Prisma.OrganizationBankConnectionSelect;
+
+export const invoiceWithRelationsInclude = {
+  organization: true,
+  paymentSession: {
+    include: {
+      bankAccount: {
+        include: {
+          organizationBankConnection: { select: safeBankConnectionSelect },
+        },
+      },
+    },
+  },
+  bankAccount: {
+    include: {
+      organizationBankConnection: { select: safeBankConnectionSelect },
+    },
+  },
+} satisfies Prisma.InvoiceInclude;
+
 export class InvoiceRepository implements IInvoiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -21,23 +50,7 @@ export class InvoiceRepository implements IInvoiceRepository {
   }): Promise<Invoice> {
     return (tx ?? this.prisma).invoice.create({
       data,
-      include: {
-        organization: true,
-        paymentSession: {
-          include: {
-            bankAccount: {
-              include: {
-                organizationBankConnection: true,
-              },
-            },
-          },
-        },
-        bankAccount: {
-          include: {
-            organizationBankConnection: true,
-          },
-        },
-      },
+      include: invoiceWithRelationsInclude,
     });
   }
 
@@ -46,28 +59,11 @@ export class InvoiceRepository implements IInvoiceRepository {
     organizationId,
   }: {
     id: string;
-    organizationId?: string;
+    organizationId: string;
   }): Promise<InvoiceWithRelations | null> {
-    const where = organizationId ? { id, organizationId } : { id };
     return this.prisma.invoice.findUnique({
-      where,
-      include: {
-        organization: true,
-        paymentSession: {
-          include: {
-            bankAccount: {
-              include: {
-                organizationBankConnection: true,
-              },
-            },
-          },
-        },
-        bankAccount: {
-          include: {
-            organizationBankConnection: true,
-          },
-        },
-      },
+      where: { id, organizationId },
+      include: invoiceWithRelationsInclude,
     });
   }
 
@@ -82,23 +78,7 @@ export class InvoiceRepository implements IInvoiceRepository {
       type === "referenceId" ? { referenceId } : { id: referenceId };
     return this.prisma.invoice.findUnique({
       where,
-      include: {
-        organization: true,
-        paymentSession: {
-          include: {
-            bankAccount: {
-              include: {
-                organizationBankConnection: true,
-              },
-            },
-          },
-        },
-        bankAccount: {
-          include: {
-            organizationBankConnection: true,
-          },
-        },
-      },
+      include: invoiceWithRelationsInclude,
     });
   }
 
@@ -131,7 +111,9 @@ export class InvoiceRepository implements IInvoiceRepository {
         },
         bankAccount: {
           include: {
-            organizationBankConnection: true,
+            organizationBankConnection: {
+              select: safeBankConnectionSelect,
+            },
           },
         },
       },
@@ -152,23 +134,7 @@ export class InvoiceRepository implements IInvoiceRepository {
     return (tx ?? this.prisma).invoice.update({
       where: { id, organizationId },
       data,
-      include: {
-        organization: true,
-        paymentSession: {
-          include: {
-            bankAccount: {
-              include: {
-                organizationBankConnection: true,
-              },
-            },
-          },
-        },
-        bankAccount: {
-          include: {
-            organizationBankConnection: true,
-          },
-        },
-      },
+      include: invoiceWithRelationsInclude,
     });
   }
 

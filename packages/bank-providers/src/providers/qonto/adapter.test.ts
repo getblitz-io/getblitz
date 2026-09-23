@@ -255,6 +255,60 @@ describe("QontoProvider", () => {
       }
     });
 
+    const signedRequest = (body: string) => {
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const signature = createHmac("sha256", secret)
+        .update(`${timestamp}.${body}`)
+        .digest("hex");
+      return new Request("https://webhook.url", {
+        method: "POST",
+        headers: { "x-qonto-signature": `t=${timestamp},v1=${signature}` },
+        body,
+      });
+    };
+
+    it("should reject unsigned webhooks when no secret is configured", async () => {
+      const request = new Request("https://webhook.url", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request,
+        secret: undefined,
+      });
+
+      expect(result.status).toBe(WebhookVerificationStatus.Error);
+    });
+
+    it("should ignore debit transactions", async () => {
+      const body = JSON.stringify({
+        ...payload,
+        data: { ...payload.data, side: "debit" },
+      });
+
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request: signedRequest(body),
+        secret,
+      });
+
+      expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+    });
+
+    it("should ignore declined transactions", async () => {
+      const body = JSON.stringify({
+        ...payload,
+        data: { ...payload.data, status: "declined" },
+      });
+
+      const result = await configuredProvider.verifyAndParseWebhook({
+        request: signedRequest(body),
+        secret,
+      });
+
+      expect(result.status).toBe(WebhookVerificationStatus.Ignore);
+    });
+
     it("should fail on invalid signature", async () => {
       const body = JSON.stringify(payload);
       const timestamp = Math.floor(Date.now() / 1000).toString();

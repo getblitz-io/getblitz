@@ -6,16 +6,18 @@ services:
       POSTGRES_DB: getblitz
       POSTGRES_USER: app
       POSTGRES_PASSWORD: password
+    # Bound to localhost only: never expose the database publicly
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   valkey:
     image: valkey/valkey:8
     container_name: getblitz-valkey
+    # Bound to localhost only: Valkey has no auth and carries payment events
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
     command: valkey-server --save 60 1
     volumes:
       - valkey_data:/data

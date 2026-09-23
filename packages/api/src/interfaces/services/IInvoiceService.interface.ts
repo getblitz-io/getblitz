@@ -12,6 +12,7 @@ import type {
   InvoiceDetailsResult,
   InvoiceWithOrg,
   InvoiceWithRelations,
+  WithoutPasswordHash,
 } from "..";
 
 export interface IInvoiceService {
@@ -25,9 +26,11 @@ export interface IInvoiceService {
 
   getInvoiceById({
     invoiceId,
+    organizationId,
   }: {
     invoiceId: string;
-  }): Promise<InvoiceWithRelations | null>;
+    organizationId: string;
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations> | null>;
 
   markInvoiceAsFinalized({
     organizationId,
@@ -35,17 +38,19 @@ export interface IInvoiceService {
   }: {
     organizationId: string;
     invoiceId: string;
-  }): Promise<InvoiceWithRelations>;
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations>>;
 
   getInvoiceByReference({
     referenceId,
     password,
     mode,
+    previewOrganizationId,
     deviceDetails,
   }: {
     referenceId: string;
     password?: string;
     mode: "public" | "preview";
+    previewOrganizationId?: string;
     deviceDetails: DeviceDetails;
   }): Promise<InvoiceDetailsResult | null>;
 
@@ -55,21 +60,23 @@ export interface IInvoiceService {
   }: {
     orgIds: string[];
     options?: { take?: number };
-  }): Promise<InvoiceWithOrg[]>;
+  }): Promise<WithoutPasswordHash<InvoiceWithOrg>[]>;
 
   verifyPassword({
     invoiceId,
     password,
+    deviceDetails,
   }: {
     invoiceId: string;
     password: string;
+    deviceDetails: DeviceDetails;
   }): Promise<boolean>;
 
   updateInvoice({
     input,
   }: {
     input: z.infer<typeof UpdateInvoiceInputSchema>;
-  }): Promise<InvoiceWithRelations>;
+  }): Promise<WithoutPasswordHash<InvoiceWithRelations>>;
 
   deleteInvoice({
     id,

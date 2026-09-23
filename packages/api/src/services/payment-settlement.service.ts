@@ -24,6 +24,7 @@ export class PaymentSettlementService implements IPaymentSettlementService {
   }): Promise<SettlementResult> {
     const {
       referenceId,
+      connectionId,
       txHash,
       amountCents,
       currency,
@@ -36,18 +37,26 @@ export class PaymentSettlementService implements IPaymentSettlementService {
     try {
       const result: SettlementResult & { webhookEvent?: WebhookEventType } =
         await prisma.$transaction(async (tx) => {
-          // Find session
+          // Find session. It must be paid into an account of the bank
+          // connection that received the webhook, otherwise any tenant could
+          // settle another tenant's session by quoting its reference.
           const session = await tx.paymentSession.findUnique({
             where: { referenceId },
-            include: { organization: true },
+            include: { organization: true, bankAccount: true },
           });
 
-          if (!session) {
+          if (
+            session?.bankAccount.organizationBankConnectionId !== connectionId
+          ) {
             return { success: false, error: "Payment session not found" };
           }
 
+          if (!Number.isInteger(amountCents) || amountCents <= 0) {
+            return { success: false, error: "Invalid transaction amount" };
+          }
+
           // Verify currency matches session currency to prevent accounting errors
-          if (currency && currency !== session.currency) {
+          if (currency.toUpperCase() !== session.currency) {
             return {
               success: false,
               error: `Currency mismatch: payment session requires ${session.currency}, but transaction was in ${currency}`,
@@ -86,7 +95,7 @@ export class PaymentSettlementService implements IPaymentSettlementService {
               paymentSessionId: session.id,
               txHash,
               amountCents,
-              currency: currency ?? session.currency,
+              currency: session.currency,
               status: "COMPLETED",
               customerIban,
               customerBic,
@@ -123,7 +132,7 @@ export class PaymentSettlementService implements IPaymentSettlementService {
             where: { id: session.id },
             data: {
               amountPaidCents: totalPaidCents,
-              amountPaidCurrency: currency ?? session.currency,
+              amountPaidCurrency: session.currency,
               status: newStatus,
             },
           });

@@ -58,9 +58,10 @@ export const GET = withApiAuth<Params>(
     try {
       const invoice = await invoiceService.getInvoiceById({
         invoiceId: params.id,
+        organizationId,
       });
 
-      if (invoice?.organizationId !== organizationId) {
+      if (!invoice) {
         return ApiResponse.notFound("Invoice not found", rateLimitHeaders);
       }
 

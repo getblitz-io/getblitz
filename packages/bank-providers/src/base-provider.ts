@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { timingSafeEqual } from "crypto";
 import type { z } from "zod";
 
 import type {
@@ -31,6 +32,19 @@ import type {
  * - `applyCredentials()` to validate & store credential fields
  * - Operation methods (verifyAndParseWebhook, listAccounts, etc.)
  */
+/**
+ * Constant-time comparison of two hex-encoded signatures.
+ */
+export function safeEqualHex(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "hex");
+  const bufB = Buffer.from(b, "hex");
+  return (
+    bufA.length === bufB.length &&
+    bufA.length > 0 &&
+    timingSafeEqual(bufA, bufB)
+  );
+}
+
 export abstract class BaseBankProvider
   implements BankProvider, ConfiguredProvider, AuthenticatedProvider
 {

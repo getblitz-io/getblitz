@@ -27,8 +27,10 @@ export interface IPaymentSessionService {
   }): Promise<SessionDetailsResult | null>;
   getSessionDetailsByReference({
     referenceId,
+    organizationId,
   }: {
     referenceId: string;
+    organizationId?: string;
   }): Promise<SessionDetailsResult | null>;
   simulatePayment({
     sessionId,

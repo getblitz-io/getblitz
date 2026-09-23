@@ -46,7 +46,7 @@ export const customerRouter = createTRPCRouter({
   get: organizationProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.services.customer.getCustomer(input.id);
+      return ctx.services.customer.getCustomer(input.id, ctx.organization.id);
     }),
 
   update: organizationProcedure

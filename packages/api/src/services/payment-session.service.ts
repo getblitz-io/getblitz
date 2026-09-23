@@ -98,6 +98,13 @@ export class PaymentSessionService implements IPaymentSessionService {
       bankAccount = await this.bankAccountRepository.findById({
         id: bankAccountId,
       });
+      // Never allow routing payments to another organization's account
+      if (
+        bankAccount &&
+        bankAccount.organizationBankConnection.organizationId !== organizationId
+      ) {
+        bankAccount = null;
+      }
     } else {
       // Try default bank account
       bankAccount =
@@ -130,12 +137,19 @@ export class PaymentSessionService implements IPaymentSessionService {
 
     if (redirectUrl) {
       try {
-        const redirectOrigin = new URL(redirectUrl).origin;
+        const parsedRedirect = new URL(redirectUrl);
+        const redirectOrigin = parsedRedirect.origin;
         const appUrl = new URL(env.NEXT_PUBLIC_APP_URL).origin;
 
+        // Block javascript:/data: etc. (their origin is the string "null")
+        const isHttp =
+          parsedRedirect.protocol === "https:" ||
+          parsedRedirect.protocol === "http:";
+
         const isAllowed =
-          redirectOrigin === appUrl ||
-          organization.allowedOrigins.includes(redirectOrigin);
+          isHttp &&
+          (redirectOrigin === appUrl ||
+            organization.allowedOrigins.includes(redirectOrigin));
 
         if (!isAllowed) {
           throw new Error("Invalid redirectUrl: origin not allowed");
@@ -193,13 +207,18 @@ export class PaymentSessionService implements IPaymentSessionService {
    */
   async getSessionDetailsByReference({
     referenceId,
+    organizationId,
   }: {
     referenceId: string;
+    organizationId?: string;
   }): Promise<SessionDetailsResult | null> {
     const session = await this.paymentSessionRepository.findByReferenceId({
       referenceId,
     });
     if (!session) {
+      return null;
+    }
+    if (organizationId && session.organizationId !== organizationId) {
       return null;
     }
     return this.getSessionDetails({ sessionId: session.id });
@@ -385,8 +404,10 @@ export class PaymentSessionService implements IPaymentSessionService {
     const result = await this.paymentSettlementService.settle({
       input: {
         referenceId: session.referenceId,
+        connectionId: connection.id,
         txHash: simTxHash,
         amountCents: session.amountCents,
+        currency: session.currency,
         rawPayload: {
           simulated: true,
           timestamp: new Date().toISOString(),

@@ -4,27 +4,10 @@ import { env } from "../env";
 import {
   createTRPCRouter,
   organizationProcedure,
-  protectedProcedure,
   publicProcedure,
 } from "../trpc";
 
 export const paymentRouter = createTRPCRouter({
-  // List payments for user's organizations
-  list: protectedProcedure
-    .input(
-      z.object({
-        orgIds: z.array(z.string()),
-        take: z.number().min(1).max(100).default(50),
-      }),
-    )
-    .query(async ({ input, ctx }) => {
-      // TODO: Add validation that user has access to these orgs
-      return ctx.services.paymentSession.listByOrgIds({
-        orgIds: input.orgIds,
-        options: { take: input.take },
-      });
-    }),
-
   // List payments for a single organization (by slug)
   listBySlug: organizationProcedure
     .input(
@@ -57,11 +40,9 @@ export const paymentRouter = createTRPCRouter({
       const session =
         await ctx.services.paymentSession.getSessionDetailsByReference({
           referenceId: input.referenceId,
+          organizationId: ctx.organization.id,
         });
 
-      // Session will be null if not found
-      // We don't need to verify org ownership here since it's just a lookup
-      // The organizationProcedure already verifies the user has access to the org
       return session;
     }),
 

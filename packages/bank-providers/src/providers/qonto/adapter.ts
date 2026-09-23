@@ -9,7 +9,7 @@ import type {
   WebhookVerificationResult,
 } from "../../types";
 import type { QontoBankCredentials, QontoProviderConfig } from "./types";
-import { BaseBankProvider } from "../../base-provider";
+import { BaseBankProvider, safeEqualHex } from "../../base-provider";
 import { WebhookVerificationStatus } from "../../types";
 import {
   QontoBankAccountSchema,
@@ -190,56 +190,61 @@ export class QontoProvider extends BaseBankProvider {
   }): Promise<WebhookVerificationResult> {
     const rawBody = await request.text();
 
-    // Verify signature if secret is provided
-    if (secret) {
-      const signatureHeader = request.headers.get("x-qonto-signature");
-      if (!signatureHeader) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Missing x-qonto-signature header",
-        };
-      }
+    // Fail closed: never accept unsigned webhooks
+    if (!secret) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Webhook secret not configured",
+      };
+    }
 
-      // Parse t={timestamp},v1={signature} format
-      const parts = Object.fromEntries(
-        signatureHeader.split(",").map((part) => {
-          const [key, ...rest] = part.split("=");
-          return [key, rest.join("=")];
-        }),
-      ) as Record<string, string>;
+    const signatureHeader = request.headers.get("x-qonto-signature");
+    if (!signatureHeader) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Missing x-qonto-signature header",
+      };
+    }
 
-      const timestamp = parts.t;
-      const signature = parts.v1;
+    // Parse t={timestamp},v1={signature} format
+    const parts = Object.fromEntries(
+      signatureHeader.split(",").map((part) => {
+        const [key, ...rest] = part.split("=");
+        return [key, rest.join("=")];
+      }),
+    ) as Record<string, string>;
 
-      if (!timestamp || !signature) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Invalid signature header format",
-        };
-      }
+    const timestamp = parts.t;
+    const signature = parts.v1;
 
-      // Verify timestamp is within 5 minutes
-      const timestampAge =
-        Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
-      if (timestampAge > 300) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Webhook timestamp too old",
-        };
-      }
+    if (!timestamp || !signature) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Invalid signature header format",
+      };
+    }
 
-      // Recreate signed payload: {timestamp}.{raw_request_body}
-      const signedPayload = `${timestamp}.${rawBody}`;
-      const expectedSignature = createHmac("sha256", secret)
-        .update(signedPayload)
-        .digest("hex");
+    // Verify timestamp is within 5 minutes
+    const timestampAge =
+      Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+    if (isNaN(timestampAge) || Math.abs(timestampAge) > 300) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Webhook timestamp too old",
+      };
+    }
 
-      if (signature !== expectedSignature) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Invalid webhook signature",
-        };
-      }
+    // Recreate signed payload: {timestamp}.{raw_request_body}
+    const signedPayload = `${timestamp}.${rawBody}`;
+    const expectedSignature = createHmac("sha256", secret)
+      .update(signedPayload)
+      .digest("hex");
+
+    if (!safeEqualHex(signature, expectedSignature)) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Invalid webhook signature",
+      };
     }
 
     // Parse payload
@@ -254,6 +259,20 @@ export class QontoProvider extends BaseBankProvider {
     }
 
     const { data } = parsed.data;
+
+    // Only incoming money counts as a payment
+    if (data.side !== "credit") {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: "Qonto transaction is not a credit",
+      };
+    }
+    if (["declined", "reversed"].includes(data.status)) {
+      return {
+        status: WebhookVerificationStatus.Ignore,
+        reason: `Qonto transaction status is ${data.status}`,
+      };
+    }
 
     // Extract reference from note or reference field
     const referenceId =

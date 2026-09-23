@@ -56,9 +56,12 @@ export const GET = withApiAuth<Params>(
     const { customerService } = container;
 
     try {
-      const customer = await customerService.getCustomer(params.id);
+      const customer = await customerService.getCustomer(
+        params.id,
+        organizationId,
+      );
 
-      if (customer?.organizationId !== organizationId) {
+      if (!customer) {
         return ApiResponse.notFound("Customer not found", rateLimitHeaders);
       }
 
