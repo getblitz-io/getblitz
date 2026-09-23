@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { ProviderMetadata } from "@getblitz/bank-providers";
 import { ProviderRegistry, WiseProvider } from "@getblitz/bank-providers";
 
-import { testProvidersEnabled } from "../env";
+import { areTestProvidersEnabled } from "../env";
 import {
   createTRPCRouter,
   organizationProcedure,
@@ -51,7 +51,7 @@ export const providerRouter = createTRPCRouter({
     const allProviders = ProviderRegistry.getAllProviderMetadata();
 
     // Filter out test providers in production environment
-    if (!testProvidersEnabled) {
+    if (!areTestProvidersEnabled()) {
       return allProviders.filter((provider) => !provider.isTestProvider);
     }
 

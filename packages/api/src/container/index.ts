@@ -11,7 +11,7 @@ import {
 import { prisma } from "@getblitz/database";
 import { getRedisClient } from "@getblitz/redis";
 
-import { testProvidersEnabled } from "../env";
+import { areTestProvidersEnabled } from "../env";
 import { BankAccountRepository } from "../repositories/bank-account.repository";
 import { CustomerRepository } from "../repositories/customer.repository";
 import { InvoiceRepository } from "../repositories/invoice.repository";
@@ -78,7 +78,7 @@ let container: ServiceContainer | null = null;
 function initProviders() {
   ProviderRegistry.register(QontoProvider);
   ProviderRegistry.register(RevolutProvider);
-  if (testProvidersEnabled) {
+  if (areTestProvidersEnabled()) {
     ProviderRegistry.register(TestBankProvider);
   }
   ProviderRegistry.register(WiseProvider);
