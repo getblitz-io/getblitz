@@ -141,7 +141,21 @@ export const organizationRouter = createTRPCRouter({
   update: organizationProcedure
     .input(
       z.object({
-        allowedOrigins: z.array(z.string()).optional(),
+        allowedOrigins: z
+          .array(
+            z.string().refine((value) => {
+              try {
+                const url = new URL(value);
+                return (
+                  (url.protocol === "https:" || url.protocol === "http:") &&
+                  url.origin === value
+                );
+              } catch {
+                return false;
+              }
+            }, "Must be a valid http(s) origin, e.g. https://shop.example.com"),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -460,44 +474,6 @@ export const organizationRouter = createTRPCRouter({
           message: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    }),
-
-  // Get all available providers with connection status for an organization
-  getAvailableProviders: protectedProcedure
-    .input(z.object({ orgId: z.string() }))
-    .query(async ({ input, ctx }) => {
-      // Get all registered providers from the registry
-      const allProviders = ProviderRegistry.getAllProviderMetadata();
-
-      // Get existing connections for this organization
-      const existingConnections =
-        await ctx.prisma.organizationBankConnection.findMany({
-          where: { organizationId: input.orgId },
-          select: {
-            id: true,
-            providerId: true,
-            webhookUrl: true,
-            webhookSecret: true,
-          },
-        });
-
-      // Map to connection status format
-      return allProviders.map((provider) => {
-        const connection = existingConnections.find(
-          (c) => c.providerId === provider.id,
-        );
-        return {
-          id: provider.id,
-          name: provider.displayName,
-          providerId: provider.id,
-          domain: provider.domain,
-          authType: provider.authType,
-          isConnected: !!connection,
-          connectionId: connection?.id ?? null,
-          webhookUrl: connection?.webhookUrl ?? null,
-          webhookSecret: connection?.webhookSecret ?? null,
-        };
-      });
     }),
 
   // Get all bank connections for an organization with provider metadata

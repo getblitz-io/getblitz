@@ -140,8 +140,10 @@ export function UnifiedPaymentWidget({
     let timeout: NodeJS.Timeout;
     if (redirecting && session.redirectUrl) {
       const url = session.redirectUrl;
+      // Defense in depth: only ever navigate to http(s) URLs
+      const isHttp = /^https?:\/\//i.test(url);
       timeout = setTimeout(() => {
-        window.location.href = url;
+        if (isHttp) window.location.href = url;
       }, 3000);
     }
     return () => clearTimeout(timeout);

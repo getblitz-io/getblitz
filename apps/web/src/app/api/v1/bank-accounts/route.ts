@@ -45,7 +45,22 @@ export const GET = withApiAuth(
         organizationId,
       });
 
-      return ApiResponse.success(bankAccounts, rateLimitHeaders);
+      // Explicit DTO: never expose bank credentials or webhook secrets
+      return ApiResponse.success(
+        bankAccounts.map((account) => ({
+          id: account.id,
+          accountName: account.accountName,
+          accountIban: account.accountIban,
+          accountBic: account.accountBic,
+          currency: account.currency,
+          isDefault: account.isDefault,
+          status: account.status,
+          providerId: account.organizationBankConnection.providerId,
+          createdAt: account.createdAt,
+          updatedAt: account.updatedAt,
+        })),
+        rateLimitHeaders,
+      );
     } catch (error) {
       console.error("Failed to list bank accounts:", error);
       return ApiResponse.internalError(

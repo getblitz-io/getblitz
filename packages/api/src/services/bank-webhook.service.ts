@@ -139,8 +139,10 @@ export class BankWebhookService implements IBankWebhookService {
       const result = await this.paymentSettlementService.settle({
         input: {
           referenceId: webhookResult.referenceId,
+          connectionId,
           txHash: webhookResult.txHash,
           amountCents: webhookResult.amountCents,
+          currency: webhookResult.currency,
           rawPayload: webhookResult.rawPayload,
         },
       });

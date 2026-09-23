@@ -105,6 +105,9 @@ describe("InvoiceService", () => {
       bankAccountId: "bank-1",
     };
 
+    mockPrisma.bankAccount.findFirst.mockResolvedValue({
+      id: "bank-1",
+    } as never);
     mockCustomerService.getOrCreateCustomer.mockResolvedValue({
       id: "cust-1",
       email: "test@example.com",

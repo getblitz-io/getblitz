@@ -78,6 +78,7 @@ describe("BankWebhookService", () => {
         referenceId: "ref-1",
         txHash: "hash-1",
         amountCents: 1000,
+        currency: "EUR",
         rawPayload: {},
       }),
     };
@@ -97,8 +98,10 @@ describe("BankWebhookService", () => {
     expect(mockSettlement.settle).toHaveBeenCalledWith({
       input: {
         referenceId: "ref-1",
+        connectionId: "conn-123",
         txHash: "hash-1",
         amountCents: 1000,
+        currency: "EUR",
         rawPayload: {},
       },
     });
@@ -121,6 +124,7 @@ describe("BankWebhookService", () => {
         referenceId: "ref-1",
         txHash: "hash-1",
         amountCents: 1000,
+        currency: "EUR",
         rawPayload: {},
       }),
     };
@@ -140,8 +144,10 @@ describe("BankWebhookService", () => {
     expect(mockSettlement.settle).toHaveBeenCalledWith({
       input: {
         referenceId: "ref-1",
+        connectionId: "conn-123",
         txHash: "hash-1",
         amountCents: 1000,
+        currency: "EUR",
         rawPayload: {},
       },
     });

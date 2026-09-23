@@ -21,7 +21,7 @@ export interface IInvoiceRepository {
     organizationId,
   }: {
     id: string;
-    organizationId?: string;
+    organizationId: string;
   }): Promise<InvoiceWithRelations | null>;
 
   findByReferenceId({

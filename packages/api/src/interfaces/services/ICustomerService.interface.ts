@@ -26,7 +26,7 @@ export interface ICustomerService {
     input: CreateCustomerInput,
     tx?: Prisma.TransactionClient,
   ): Promise<Customer>;
-  getCustomer(id: string): Promise<Customer | null>;
+  getCustomer(id: string, organizationId: string): Promise<Customer | null>;
   listCustomers(
     organizationId: string,
     options?: { take?: number; skip?: number },

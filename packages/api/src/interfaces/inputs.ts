@@ -69,9 +69,12 @@ export interface CreateChallengeInput {
 
 export interface SettlementInput {
   referenceId: string;
+  /** Bank connection that received the funds; the session must pay into it */
+  connectionId: string;
   txHash: string;
   amountCents: number;
-  currency?: Currency;
+  /** ISO currency code reported by the bank; must match the session */
+  currency: string;
   customerIban?: string;
   customerBic?: string;
   customerName?: string;

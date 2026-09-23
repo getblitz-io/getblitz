@@ -35,7 +35,7 @@ export default async function EditInvoicePage({ params }: Props) {
         notes: invoice.notes,
         invoiceNumber: invoice.invoiceNumber,
         lineItems: invoice.lineItems as LineItem[],
-        isPasswordProtected: invoice.passwordHash !== null,
+        isPasswordProtected: invoice.isPasswordProtected,
         // Financial fields
         subtotalCents: invoice.subtotalCents,
         taxRateBps: invoice.taxRateBps,

@@ -3,8 +3,11 @@ import { RateLimiterRedis } from "rate-limiter-flexible";
 import type { Redis } from "@getblitz/redis";
 import { getRedisClient } from "@getblitz/redis";
 
-// Cached rate limiter instance
-let rateLimiter: RateLimiterRedis | null = null;
+// Cached rate limiter instances, one per key prefix so that different
+// limits (API vs. invoice password) never share or override each other
+const rateLimiters = new Map<string, RateLimiterRedis>();
+
+const DEFAULT_KEY_PREFIX = "getblitz:ratelimit";
 
 export interface RateLimitResult {
   success: boolean;
@@ -27,7 +30,9 @@ export interface RateLimitConfig {
 export function getRateLimiter(
   config?: RateLimitConfig,
 ): RateLimiterRedis | null {
-  if (rateLimiter) return rateLimiter;
+  const keyPrefix = config?.keyPrefix ?? DEFAULT_KEY_PREFIX;
+  const cached = rateLimiters.get(keyPrefix);
+  if (cached) return cached;
 
   let redis: Redis;
   try {
@@ -39,13 +44,14 @@ export function getRateLimiter(
 
   // Create rate limiter with sliding window algorithm
   // 100 requests per 60 seconds per key
-  rateLimiter = new RateLimiterRedis({
+  const rateLimiter = new RateLimiterRedis({
     storeClient: redis,
-    keyPrefix: config?.keyPrefix ?? "getblitz:ratelimit",
+    keyPrefix,
     points: config?.points ?? 100, // Number of requests
     duration: config?.duration ?? 60, // Per 60 seconds
     blockDuration: config?.blockDuration ?? 0, // Don't block, just reject
   });
+  rateLimiters.set(keyPrefix, rateLimiter);
 
   return rateLimiter;
 }

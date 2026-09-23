@@ -24,3 +24,10 @@ export function apiEnv() {
 }
 
 export const env = apiEnv();
+
+/**
+ * Test providers (e.g. test-bank) accept unsigned webhooks and a user-supplied
+ * base URL. They must never be available on a production build.
+ */
+export const testProvidersEnabled =
+  env.NODE_ENV !== "production" && env.APPLICATION_ENV !== "production";

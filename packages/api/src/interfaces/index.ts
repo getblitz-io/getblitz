@@ -44,6 +44,7 @@ export type {
   PaymentSessionWithRelations,
   InvoiceWithOrg,
   InvoiceWithRelations,
+  WithoutPasswordHash,
 } from "./prisma-types";
 
 // Repository interfaces

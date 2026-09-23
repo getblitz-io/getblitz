@@ -44,8 +44,10 @@ describe("PaymentSettlementService", () => {
 
   const input = {
     referenceId: "ref-123",
+    connectionId: "conn-1",
     txHash: "hash-456",
     amountCents: 1000,
+    currency: "EUR" as Currency,
     rawPayload: { some: "data" },
   };
 
@@ -58,7 +60,7 @@ describe("PaymentSettlementService", () => {
       amountCents: 1000,
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const mockTx = {
@@ -110,13 +112,15 @@ describe("PaymentSettlementService", () => {
       amountCents: 1000,
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const partialInput = {
       referenceId: "ref-123",
+      connectionId: "conn-1",
       txHash: "hash-456",
       amountCents: 500, // Partial payment
+      currency: "EUR" as Currency,
       rawPayload: { some: "data" },
     };
 
@@ -168,7 +172,9 @@ describe("PaymentSettlementService", () => {
     const session = {
       id: "session-123",
       status: "PAID",
+      currency: "EUR",
       clientToken: "test-token",
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const mockTx = {
@@ -195,7 +201,7 @@ describe("PaymentSettlementService", () => {
       amountCents: 1000,
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const mockTx = {
@@ -242,11 +248,12 @@ describe("PaymentSettlementService", () => {
       amountCents: 1000,
       currency: "EUR" as Currency,
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const mismatchInput = {
       referenceId: "ref-123",
+      connectionId: "conn-1",
       txHash: "hash-456",
       amountCents: 1000,
       currency: "USD" as Currency, // Mismatch
@@ -269,11 +276,68 @@ describe("PaymentSettlementService", () => {
     }
   });
 
+  it("should reject a webhook from a connection that does not own the session", async () => {
+    const session = {
+      id: "session-123",
+      referenceId: "ref-123",
+      status: "PENDING",
+      amountCents: 1000,
+      currency: "EUR",
+      bankAccount: { organizationBankConnectionId: "victim-conn" },
+    };
+
+    const mockTx = {
+      paymentSession: {
+        findUnique: vi.fn().mockResolvedValue(session),
+        update: vi.fn(),
+      },
+      transaction: { create: vi.fn() },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({
+      input: { ...input, connectionId: "attacker-conn" },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Payment session not found");
+    expect(mockTx.transaction.create).not.toHaveBeenCalled();
+    expect(mockTx.paymentSession.update).not.toHaveBeenCalled();
+    expect(mockWebhookService.notifyMerchant).not.toHaveBeenCalled();
+  });
+
+  it("should reject non-positive amounts", async () => {
+    const session = {
+      id: "session-123",
+      status: "PENDING",
+      amountCents: 1000,
+      currency: "EUR",
+      bankAccount: { organizationBankConnectionId: "conn-1" },
+    };
+
+    const mockTx = {
+      paymentSession: { findUnique: vi.fn().mockResolvedValue(session) },
+      transaction: { create: vi.fn() },
+    };
+
+    mockTransaction(mockTx);
+
+    const result = await service.settle({
+      input: { ...input, amountCents: -1000 },
+    });
+
+    expect(result.success).toBe(false);
+    expect(mockTx.transaction.create).not.toHaveBeenCalled();
+  });
+
   it("should fail if session expired", async () => {
     const session = {
       status: "EXPIRED",
       expiresAt: new Date(Date.now() - 10000),
       amountCents: 1000,
+      currency: "EUR",
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const mockTx = {
@@ -301,13 +365,15 @@ describe("PaymentSettlementService", () => {
       amountCents: 1000,
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const overpayInput = {
       referenceId: "ref-123",
+      connectionId: "conn-1",
       txHash: "hash-456",
       amountCents: 1500, // Overpayment
+      currency: "EUR" as Currency,
       rawPayload: { some: "data" },
     };
 
@@ -350,13 +416,15 @@ describe("PaymentSettlementService", () => {
       amountPaidCents: 500, // 500 already paid
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const finalPaymentInput = {
       referenceId: "ref-123",
+      connectionId: "conn-1",
       txHash: "hash-789",
       amountCents: 500, // Remaining 500
+      currency: "EUR" as Currency,
       rawPayload: { some: "data" },
     };
 
@@ -410,13 +478,15 @@ describe("PaymentSettlementService", () => {
       amountPaidCents: 200, // 200 already paid
       currency: "EUR",
       clientToken: "test-token",
-      bankAccount: {},
+      bankAccount: { organizationBankConnectionId: "conn-1" },
     };
 
     const nextPartialInput = {
       referenceId: "ref-123",
+      connectionId: "conn-1",
       txHash: "hash-890",
       amountCents: 300,
+      currency: "EUR" as Currency,
       rawPayload: { some: "data" },
     };
 

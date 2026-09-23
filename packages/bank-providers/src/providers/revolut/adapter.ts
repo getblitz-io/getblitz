@@ -13,7 +13,7 @@ import type {
   RevolutTransaction,
   RevolutWebhookPayload,
 } from "./types";
-import { BaseBankProvider } from "../../base-provider";
+import { BaseBankProvider, safeEqualHex } from "../../base-provider";
 import { WebhookVerificationStatus } from "../../types";
 import {
   RevolutAccountsResponseSchema,
@@ -327,58 +327,63 @@ export class RevolutProvider extends BaseBankProvider {
   }): Promise<WebhookVerificationResult> {
     const rawBody = await request.text();
 
-    // Verify signature if secret is provided
-    if (secret) {
-      const signatureHeader = request.headers.get("Revolut-Signature");
-      const timestampHeader = request.headers.get("Revolut-Request-Timestamp");
+    // Fail closed: never accept unsigned webhooks
+    if (!secret) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Webhook secret not configured",
+      };
+    }
 
-      if (!signatureHeader) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Missing Revolut-Signature header",
-        };
-      }
-      if (!timestampHeader) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Missing Revolut-Request-Timestamp header",
-        };
-      }
+    const signatureHeader = request.headers.get("Revolut-Signature");
+    const timestampHeader = request.headers.get("Revolut-Request-Timestamp");
 
-      // Validate timestamp (5 minute tolerance)
-      // Revolut-Request-Timestamp is Unix timestamp in milliseconds
-      const webhookTime = parseInt(timestampHeader, 10);
-      const now = Date.now();
-      if (isNaN(webhookTime) || Math.abs(now - webhookTime) > 5 * 60 * 1000) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Webhook timestamp too old or invalid",
-        };
-      }
+    if (!signatureHeader) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Missing Revolut-Signature header",
+      };
+    }
+    if (!timestampHeader) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Missing Revolut-Request-Timestamp header",
+      };
+    }
 
-      // Parse signatures (format: v1=sig1,v1=sig2)
-      const signatures = signatureHeader
-        .split(",")
-        .map((s) => {
-          const [, sig] = s.split("=");
-          return sig;
-        })
-        .filter(Boolean);
+    // Validate timestamp (5 minute tolerance)
+    // Revolut-Request-Timestamp is Unix timestamp in milliseconds
+    const webhookTime = parseInt(timestampHeader, 10);
+    const now = Date.now();
+    if (isNaN(webhookTime) || Math.abs(now - webhookTime) > 5 * 60 * 1000) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Webhook timestamp too old or invalid",
+      };
+    }
 
-      // Compute expected signature per Revolut docs:
-      // payload_to_sign = v1.{timestamp}.{raw_payload}
-      const signedPayload = `v1.${timestampHeader}.${rawBody}`;
-      const expectedSignature = createHmac("sha256", secret)
-        .update(signedPayload)
-        .digest("hex");
+    // Parse signatures (format: v1=sig1,v1=sig2)
+    const signatures = signatureHeader
+      .split(",")
+      .map((s) => {
+        const [, sig] = s.split("=");
+        return sig;
+      })
+      .filter((sig): sig is string => !!sig);
 
-      // Check if any signature matches
-      if (!signatures.includes(expectedSignature)) {
-        return {
-          status: WebhookVerificationStatus.Error,
-          error: "Invalid webhook signature",
-        };
-      }
+    // Compute expected signature per Revolut docs:
+    // payload_to_sign = v1.{timestamp}.{raw_payload}
+    const signedPayload = `v1.${timestampHeader}.${rawBody}`;
+    const expectedSignature = createHmac("sha256", secret)
+      .update(signedPayload)
+      .digest("hex");
+
+    // Check if any signature matches
+    if (!signatures.some((sig) => safeEqualHex(sig, expectedSignature))) {
+      return {
+        status: WebhookVerificationStatus.Error,
+        error: "Invalid webhook signature",
+      };
     }
 
     try {

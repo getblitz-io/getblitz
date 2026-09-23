@@ -178,7 +178,7 @@ export default function InvoiceDetailsPage() {
           <div className="flex items-center justify-between">
             <CardTitle>{t("status")}</CardTitle>
             <div className="flex items-center gap-2">
-              {invoice.passwordHash && (
+              {invoice.isPasswordProtected && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-600">
                   <LockClosedIcon className="h-3 w-3" />
                   {t("passwordProtected")}

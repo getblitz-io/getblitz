@@ -47,7 +47,18 @@ export const GET = withApiAuth(
         return ApiResponse.notFound("Organization not found", rateLimitHeaders);
       }
 
-      return ApiResponse.success(organization, rateLimitHeaders);
+      // Explicit DTO: never expose bank credentials or webhook secrets
+      return ApiResponse.success(
+        {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          logo: organization.logo,
+          createdAt: organization.createdAt,
+          allowedOrigins: organization.allowedOrigins,
+        },
+        rateLimitHeaders,
+      );
     } catch (error) {
       console.error("Failed to get organization:", error);
       return ApiResponse.internalError(

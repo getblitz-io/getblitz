@@ -79,6 +79,12 @@ export function setupSocketHandlers({
           return;
         }
 
+        // A client token only grants access to its own session's events
+        if (sessionId !== socket.data.session?.sessionId) {
+          socket.emit("error", { message: "Forbidden" });
+          return;
+        }
+
         // Leave any previous session rooms
         socket.rooms.forEach((room) => {
           if (room !== socket.id && room.startsWith("session:")) {

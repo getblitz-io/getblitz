@@ -84,6 +84,13 @@ export type BankAccountWithOrganizationBankConnection =
     };
   }>;
 
+interface SafeBankConnectionSelect {
+  id: true;
+  organizationId: true;
+  providerId: true;
+  name: true;
+}
+
 export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
   include: {
     organization: true;
@@ -91,25 +98,30 @@ export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
       include: {
         bankAccount: {
           include: {
-            organizationBankConnection: true;
+            organizationBankConnection: { select: SafeBankConnectionSelect };
           };
         };
       };
     };
     bankAccount: {
       include: {
-        organizationBankConnection: true;
+        organizationBankConnection: { select: SafeBankConnectionSelect };
       };
     };
   };
 }>;
+
+/** Invoice as returned to clients: password hash replaced by a flag */
+export type WithoutPasswordHash<T extends { passwordHash: string | null }> =
+  Omit<T, "passwordHash"> & { isPasswordProtected: boolean };
+
 export type InvoiceWithOrg = Prisma.InvoiceGetPayload<{
   include: {
     organization: { select: { id: true; name: true; logo: true } };
     paymentSession: { select: { status: true; expiresAt: true } };
     bankAccount: {
       include: {
-        organizationBankConnection: true;
+        organizationBankConnection: { select: SafeBankConnectionSelect };
       };
     };
   };

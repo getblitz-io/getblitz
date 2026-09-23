@@ -87,7 +87,10 @@ describe("CustomerService", () => {
     it("should return customer when found", async () => {
       mockCustomerRepo.findById.mockResolvedValue(mockCustomer);
 
-      const result = await service.getCustomer("cust-1");
+      const result = await service.getCustomer(
+        "cust-1",
+        mockCustomer.organizationId,
+      );
 
       expect(result).toEqual(mockCustomer);
       expect(mockCustomerRepo.findById).toHaveBeenCalledWith("cust-1");
@@ -96,7 +99,17 @@ describe("CustomerService", () => {
     it("should return null when customer not found", async () => {
       mockCustomerRepo.findById.mockResolvedValue(null);
 
-      const result = await service.getCustomer("non-existent");
+      const result = await service.getCustomer("non-existent", "org-1");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getCustomer (tenant isolation)", () => {
+    it("should return null for a customer of another organization", async () => {
+      mockCustomerRepo.findById.mockResolvedValue(mockCustomer);
+
+      const result = await service.getCustomer("cust-1", "other-org");
 
       expect(result).toBeNull();
     });
