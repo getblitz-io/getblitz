@@ -179,7 +179,7 @@ export function BanksSection() {
               </p>
             </div>
             <a
-              href="https://github.com/getblitz-io/getblitz/blob/main/CONTRIBUTING.md"
+              href="https://github.com/jayokunle/getblitz/blob/main/CONTRIBUTING.md"
               target="_blank"
               rel="noopener noreferrer"
               className="border-border text-foreground hover:border-primary/40 hover:bg-primary/5 inline-flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02]"

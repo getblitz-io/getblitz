@@ -50,7 +50,7 @@ If you're interacting with the gateway directly, our full REST API (including En
 
 - 📚 [**Interactive REST API Reference**](https://app.getblitz.io/api-reference)
 
-> Want to see how the platform is built or deploy it yourself? Check out our [Main GitHub Repository](https://github.com/getblitz-io/getblitz) for the Quick Start guide and architecture diagrams.
+> Want to see how the platform is built or deploy it yourself? Check out our [Main GitHub Repository](https://github.com/jayokunle/getblitz) for the Quick Start guide and architecture diagrams.
 
 ---
 

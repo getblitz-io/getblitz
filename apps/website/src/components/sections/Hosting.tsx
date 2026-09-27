@@ -99,7 +99,7 @@ export function HostingSection() {
                 href={
                   option.highlighted
                     ? "https://app.getblitz.io"
-                    : "https://github.com/getblitz-io/getblitz"
+                    : "https://github.com/jayokunle/getblitz"
                 }
                 className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.02] ${
                   option.highlighted

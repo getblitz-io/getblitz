@@ -93,7 +93,7 @@ or alternatively:
 **Two CTAs side by side:**
 
 - Primary: `Get Started — €10/month` (links to SaaS signup)
-- Secondary: `Self-Host for Free` (links to GitHub repo: https://github.com/getblitz-io/getblitz)
+- Secondary: `Self-Host for Free` (links to GitHub repo: https://github.com/jayokunle/getblitz)
 
 **Beneath CTAs:** A small "trust bar" — logos or badges reading: 🇪🇺 SEPA Instant | 🔐 Self-Hosted | ⚡ Real-Time WebSockets | 🧩 MIT Licensed
 
@@ -304,7 +304,7 @@ Show a terminal-style animated block with the core setup steps:
 
 ```bash
 # Clone the repo
-git clone https://github.com/getblitz-io/getblitz.git
+git clone https://github.com/jayokunle/getblitz.git
 
 # Install dependencies
 pnpm install

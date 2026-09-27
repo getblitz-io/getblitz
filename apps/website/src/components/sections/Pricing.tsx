@@ -145,7 +145,7 @@ export function PricingSection() {
             </ul>
 
             <a
-              href="https://github.com/getblitz-io/getblitz"
+              href="https://github.com/jayokunle/getblitz"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-8 block w-full rounded-2xl border border-white/20 bg-white/5 px-6 py-4 text-center font-semibold text-zinc-300 transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:text-white"

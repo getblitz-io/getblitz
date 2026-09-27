@@ -293,9 +293,9 @@ Requires `fetch`, `WebSocket`, and ES2020 features.
 
 ## Links
 
-- [GitHub Repository](https://github.com/getblitz-io/getblitz)
+- [GitHub Repository](https://github.com/jayokunle/getblitz)
 - [Documentation](https://getblitz.io)
-- [Report Issues](https://github.com/getblitz-io/getblitz/issues)
+- [Report Issues](https://github.com/jayokunle/getblitz/issues)
 
 ## License
 

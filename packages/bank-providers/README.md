@@ -193,6 +193,6 @@ Wise does **not** implement `supportsSandboxSimulation()`. Sandbox connections u
 
 6. **(Optional) Add a custom UI step** following the recipe in [Custom provider UI components](#custom-provider-ui-components) above.
 
-7. **Write the user-facing setup guide** at `apps/docs/docs/banks/<name>.md`, link it from `apps/docs/docs/index.md`, and point `getSetupGuide()` at `https://github.com/getblitz-io/getblitz/blob/main/apps/docs/docs/banks/<name>.md`.
+7. **Write the user-facing setup guide** at `apps/docs/docs/banks/<name>.md`, link it from `apps/docs/docs/index.md`, and point `getSetupGuide()` at `https://github.com/jayokunle/getblitz/blob/main/apps/docs/docs/banks/<name>.md`.
 
 8. **Tests**: copy the structure from `providers/wise/adapter.test.ts` — at minimum cover metadata, base URL switching, signature verification (happy path + tampered body + missing header), and supported/ignored webhook event types.

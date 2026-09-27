@@ -8,7 +8,7 @@ import { useScrollReveal } from "../ScrollReveal";
 const TERMINAL_LINES = [
   { text: "# Clone the repo", type: "comment" },
   {
-    text: "git clone https://github.com/getblitz-io/getblitz.git",
+    text: "git clone https://github.com/jayokunle/getblitz.git",
     type: "command",
   },
   { text: "", type: "blank" },
@@ -129,7 +129,7 @@ export function QuickStartSection() {
         {/* CTAs */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
-            href="https://github.com/getblitz-io/getblitz"
+            href="https://github.com/jayokunle/getblitz"
             target="_blank"
             rel="noopener noreferrer"
             className="border-border bg-secondary/30 text-foreground hover:border-primary/40 hover:bg-primary/5 inline-flex items-center gap-2.5 rounded-xl border px-8 py-3.5 text-base font-semibold backdrop-blur-sm transition-all hover:scale-105"

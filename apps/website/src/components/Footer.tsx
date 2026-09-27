@@ -34,7 +34,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://github.com/getblitz-io/getblitz"
+                  href="https://github.com/jayokunle/getblitz"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
@@ -77,7 +77,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/getblitz-io/getblitz#self-hosting"
+                  href="https://github.com/jayokunle/getblitz#self-hosting"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
@@ -87,7 +87,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/getblitz-io/getblitz/releases"
+                  href="https://github.com/jayokunle/getblitz/releases"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground text-sm transition-colors"
