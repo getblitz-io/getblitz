@@ -26,6 +26,10 @@
   "bugs": {
     "url": "https://github.com/jayokunle/getblitz/issues"
   },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/jayokunle"
+  },
   "keywords": [
     "getblitz",
     "payment",
