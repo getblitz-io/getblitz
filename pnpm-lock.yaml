@@ -880,8 +880,8 @@ importers:
   packages/getblitz-client:
     dependencies:
       '@getblitz/shared-types':
-        specifier: ^0.0.7
-        version: 0.0.7(zod@4.3.6)
+        specifier: ^0.0.9
+        version: 0.0.9(zod@4.3.6)
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -3184,8 +3184,8 @@ packages:
   '@formatjs/intl-localematcher@0.8.8':
     resolution: {integrity: sha512-pBr2hVKWvkHVnfXegW+53NT9U2uaVQCc+EgzLPCCwXqBA3nvM5fPbK9IcJlNjV+NMKGyZ2F3ZSG78iGdxAAqbA==}
 
-  '@getblitz/shared-types@0.0.7':
-    resolution: {integrity: sha512-kKTdCuhA1khmgsZfIPjexoS4fusvs1mG5qgRfiGhoYGC2qPe/3MqyUYziqEhCSY53xwuvEfWe8uBlX8TSIJluA==}
+  '@getblitz/shared-types@0.0.9':
+    resolution: {integrity: sha512-aIhvt66BSTCJ/2AXLqlFKQJg2w/qPemwuPhxvddjRm6n2RHlqBh1bWDDolHypzeM8B5F+rLLMlSMjYgIWG/Q8w==}
     peerDependencies:
       zod: ^3.24.0
 
@@ -14811,7 +14811,7 @@ snapshots:
     dependencies:
       '@formatjs/fast-memoize': 3.1.5
 
-  '@getblitz/shared-types@0.0.7(zod@4.3.6)':
+  '@getblitz/shared-types@0.0.9(zod@4.3.6)':
     dependencies:
       zod: 4.3.6
 
