@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.11](https://github.com/jayokunle/getblitz/compare/shared-types-v0.0.10...shared-types-v0.0.11) (2026-09-27)
+
+
+### Bug Fixes
+
+* credit JAyokunle Enterprise UG across website, docs, app and packages ([#58](https://github.com/jayokunle/getblitz/issues/58)) ([cca4137](https://github.com/jayokunle/getblitz/commit/cca4137269ccb6ae0c32d7c21264e946eec9b717))
+
 ## [0.0.10](https://github.com/jayokunle/getblitz/compare/shared-types-v0.0.9...shared-types-v0.0.10) (2026-09-27)
 
 

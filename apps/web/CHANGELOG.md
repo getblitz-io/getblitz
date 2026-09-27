@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.14](https://github.com/jayokunle/getblitz/compare/web-v0.0.13...web-v0.0.14) (2026-09-27)
+
+
+### Bug Fixes
+
+* credit JAyokunle Enterprise UG across website, docs, app and packages ([#58](https://github.com/jayokunle/getblitz/issues/58)) ([cca4137](https://github.com/jayokunle/getblitz/commit/cca4137269ccb6ae0c32d7c21264e946eec9b717))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @getblitz/shared-types bumped to 0.0.11
+
 ## [0.0.13](https://github.com/jayokunle/getblitz/compare/web-v0.0.12...web-v0.0.13) (2026-09-27)
 
 

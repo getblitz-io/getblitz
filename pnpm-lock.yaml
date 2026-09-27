@@ -880,8 +880,8 @@ importers:
   packages/getblitz-client:
     dependencies:
       '@getblitz/shared-types':
-        specifier: ^0.0.9
-        version: 0.0.9(zod@4.3.6)
+        specifier: ^0.0.11
+        version: link:../shared-types
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -3183,11 +3183,6 @@ packages:
 
   '@formatjs/intl-localematcher@0.8.8':
     resolution: {integrity: sha512-pBr2hVKWvkHVnfXegW+53NT9U2uaVQCc+EgzLPCCwXqBA3nvM5fPbK9IcJlNjV+NMKGyZ2F3ZSG78iGdxAAqbA==}
-
-  '@getblitz/shared-types@0.0.9':
-    resolution: {integrity: sha512-aIhvt66BSTCJ/2AXLqlFKQJg2w/qPemwuPhxvddjRm6n2RHlqBh1bWDDolHypzeM8B5F+rLLMlSMjYgIWG/Q8w==}
-    peerDependencies:
-      zod: ^3.24.0
 
   '@hapi/hoek@9.3.0':
     resolution: {integrity: sha512-/c6rf4UJlmHlC9b5BaNvzAcFv7HZ2QHaV0D4/HNlBdvFnvQq8RI4kYdhyPCl7Xj+oWvTWQ8ujhqS53LIgAe6KQ==}
@@ -6931,6 +6926,7 @@ packages:
   cron-parser@4.9.0:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
+    deprecated: v4 is no longer maintained, upgrade to v5
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -7649,6 +7645,7 @@ packages:
   eslint@9.39.2:
     resolution: {integrity: sha512-LEyamqS7W5HB3ujJyvi0HQK/dtVINZvd5mAAp9eT5S/ujByGjiZLCzPcHVzuXbpJDJF/cxwHlfceVUDZ2lnSTw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -14810,10 +14807,6 @@ snapshots:
   '@formatjs/intl-localematcher@0.8.8':
     dependencies:
       '@formatjs/fast-memoize': 3.1.5
-
-  '@getblitz/shared-types@0.0.9(zod@4.3.6)':
-    dependencies:
-      zod: 4.3.6
 
   '@hapi/hoek@9.3.0': {}
 
