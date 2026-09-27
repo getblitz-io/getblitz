@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/jayokunle/getblitz/compare/shared-types-v0.0.9...shared-types-v0.0.10) (2026-09-27)
+
+
+### Bug Fixes
+
+* **shared-types:** republish with company metadata and funding link ([#55](https://github.com/jayokunle/getblitz/issues/55)) ([54d5414](https://github.com/jayokunle/getblitz/commit/54d541406b16acebbdc30738b3c6917ebb2f276f))
+
 ## [0.0.9](https://github.com/getblitz-io/getblitz/compare/shared-types-v0.0.8...shared-types-v0.0.9) (2026-04-05)
 
 
