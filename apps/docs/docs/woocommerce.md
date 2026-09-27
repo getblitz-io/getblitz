@@ -13,8 +13,8 @@ By default, the widget will let your customers perform a direct SEPA bank transf
 ## Links
 
 - **WordPress Plugin Directory:** [WordPress.org Plugin Page](https://wordpress.org/plugins/getblitz-payment-gateway)
-- **Plugin Source Code:** [GitHub Repository](https://github.com/getblitz-io/wp-getblitz-payment-gateway)
-- **Latest Release:** [GitHub Releases](https://github.com/getblitz-io/wp-getblitz-payment-gateway/releases)
+- **Plugin Source Code:** [GitHub Repository](https://github.com/jayokunle/wp-getblitz-payment-gateway)
+- **Latest Release:** [GitHub Releases](https://github.com/jayokunle/wp-getblitz-payment-gateway/releases)
 
 ## Screenshots
 

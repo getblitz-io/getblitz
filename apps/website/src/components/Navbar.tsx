@@ -66,7 +66,7 @@ export function Navbar() {
             {t("docs")}
           </a>
           <a
-            href="https://github.com/getblitz-io/getblitz"
+            href="https://github.com/jayokunle/getblitz"
             target="_blank"
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm transition-colors"
@@ -151,7 +151,7 @@ export function Navbar() {
             {t("docs")}
           </a>
           <a
-            href="https://github.com/getblitz-io/getblitz"
+            href="https://github.com/jayokunle/getblitz"
             target="_blank"
             rel="noopener noreferrer"
             className="text-foreground text-sm"

@@ -2,7 +2,7 @@
   "name": "@getblitz/shared-types",
   "version": "0.0.9",
   "description": "Shared TypeScript types for GetBlitz Payment Gateway",
-  "author": "GetBlitz <hello@getblitz.io>",
+  "author": "JAyokunle Enterprise UG <hello@jayokunle.com> (https://jayokunle.com)",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -19,12 +19,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getblitz-io/getblitz.git",
+    "url": "git+https://github.com/jayokunle/getblitz.git",
     "directory": "packages/shared-types"
   },
   "homepage": "https://getblitz.io",
   "bugs": {
-    "url": "https://github.com/getblitz-io/getblitz/issues"
+    "url": "https://github.com/jayokunle/getblitz/issues"
   },
   "keywords": [
     "getblitz",

@@ -118,7 +118,7 @@ export function HeroSection() {
             </svg>
           </a>
           <a
-            href="https://github.com/getblitz-io/getblitz"
+            href="https://github.com/jayokunle/getblitz"
             target="_blank"
             rel="noopener noreferrer"
             className="border-border bg-secondary/30 text-foreground hover:bg-secondary/60 inline-flex items-center gap-2 rounded-xl border px-8 py-3.5 text-base font-semibold backdrop-blur-sm transition-all hover:scale-105"

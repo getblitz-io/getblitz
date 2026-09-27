@@ -1,7 +1,7 @@
 # GetBlitz Payment Gateway
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/getblitz-io/getblitz/actions/workflows/ci.yml/badge.svg)](https://github.com/getblitz-io/getblitz/actions)
+[![Build Status](https://github.com/jayokunle/getblitz/actions/workflows/ci.yml/badge.svg)](https://github.com/jayokunle/getblitz/actions)
 [![npm version](https://badge.fury.io/js/%40getblitz%2Fclient.svg)](https://badge.fury.io/js/%40getblitz%2Fclient)
 
 **What is it?**  
@@ -18,7 +18,7 @@ Save on processing fees with direct bank-to-bank transfers, achieve _instant_ se
 ## Features
 
 - 🏦 **SEPA Payments** - Accept SEPA Instant Transfers via bank integrations (Qonto, Revolut, Wise, custom providers)
-- 🔌 **WooCommerce Integration** - WordPress e-commerce plugin ([WordPress.org Directory](https://wordpress.org/plugins/getblitz-payment-gateway) / [GitHub Repository](https://github.com/getblitz-io/wp-getblitz-payment-gateway))
+- 🔌 **WooCommerce Integration** - WordPress e-commerce plugin ([WordPress.org Directory](https://wordpress.org/plugins/getblitz-payment-gateway) / [GitHub Repository](https://github.com/jayokunle/wp-getblitz-payment-gateway))
 - 🧾 **Invoicing** - Generate and manage invoices with integrated payment links
 - 👥 **Customer Management** - Maintain customer profiles and payment history
 - 🔐 **Self-Hosted** - Full data sovereignty with your own database and infrastructure
@@ -240,9 +240,9 @@ When deploying to environments like Vercel or self-hosted Docker, ensure the app
 
 ### One-Click Deploy
 
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/getblitz-io/getblitz/tree/main&refcode=0eb3774edd76)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jayokunle/getblitz/tree/main&refcode=0eb3774edd76)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/getblitz-io/getblitz)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/jayokunle/getblitz)
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 

@@ -7,7 +7,7 @@ This guide explains how to deploy GetBlitz to various cloud platforms.
 ### DigitalOcean App Platform
 
 1.  Click the **Deploy to DigitalOcean** button in the README.
-2.  Connect your GitHub account and select the `getblitz-io/getblitz` repository.
+2.  Connect your GitHub account and select the `jayokunle/getblitz` repository.
 3.  **Instance Configuration (Defaults)**:
     - **Web Service**: Defaults to `basic-xs` (~$5/mo). Handles both API/Frontend and WebSocket traffic.
     - **Database/Redis**: Defaults to `db-s-1vcpu-1gb` (~$15/mo each).
@@ -45,7 +45,7 @@ For a simple VPS deployment (e.g., EC2, Droplet, Hetzner), you can use Docker Co
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/getblitz-io/getblitz.git
+git clone https://github.com/jayokunle/getblitz.git
 cd getblitz
 
 # 2. Configure Environment

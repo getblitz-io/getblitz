@@ -22,7 +22,7 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "getblitz-io", // Usually your GitHub org/user name.
+  organizationName: "jayokunle", // Usually your GitHub org/user name.
   projectName: "getblitz", // Usually your repo name.
   trailingSlash: false,
 
@@ -43,8 +43,7 @@ const config: Config = {
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
-          editUrl:
-            "https://github.com/getblitz-io/getblitz/tree/main/apps/docs/",
+          editUrl: "https://github.com/jayokunle/getblitz/tree/main/apps/docs/",
         },
         blog: false,
         theme: {
@@ -79,7 +78,7 @@ const config: Config = {
           position: "left",
         },
         {
-          href: "https://github.com/getblitz-io/getblitz",
+          href: "https://github.com/jayokunle/getblitz",
           label: "GitHub",
           position: "right",
         },
@@ -106,7 +105,7 @@ const config: Config = {
           items: [
             {
               label: "GitHub",
-              href: "https://github.com/getblitz-io/getblitz",
+              href: "https://github.com/jayokunle/getblitz",
             },
           ],
         },

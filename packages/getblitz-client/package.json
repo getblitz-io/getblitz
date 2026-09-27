@@ -2,7 +2,7 @@
   "name": "@getblitz/client",
   "version": "0.0.7",
   "description": "Embeddable payment SDK for GetBlitz Payment Gateway - Self-hosted SEPA instant transfers across Europe",
-  "author": "GetBlitz <hello@getblitz.io>",
+  "author": "JAyokunle Enterprise UG <hello@jayokunle.com> (https://jayokunle.com)",
   "license": "MIT",
   "type": "module",
   "main": "./dist/getblitz.umd.cjs",
@@ -10,12 +10,12 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getblitz-io/getblitz.git",
+    "url": "git+https://github.com/jayokunle/getblitz.git",
     "directory": "packages/getblitz-client"
   },
   "homepage": "https://getblitz.io",
   "bugs": {
-    "url": "https://github.com/getblitz-io/getblitz/issues"
+    "url": "https://github.com/jayokunle/getblitz/issues"
   },
   "keywords": [
     "payment",

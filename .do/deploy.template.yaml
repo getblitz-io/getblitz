@@ -18,7 +18,7 @@ spec:
   services:
     - name: web
       github:
-        repo: getblitz-io/getblitz
+        repo: jayokunle/getblitz
         branch: main
         deploy_on_push: true
       source_dir: /
