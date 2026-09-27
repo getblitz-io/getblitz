@@ -32,6 +32,39 @@ jobs:
           target-branch: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The node-workspace plugin bumps dependent package.json ranges (e.g. the
+      # client's @getblitz/shared-types) but only knows npm lockfiles. Re-sync
+      # pnpm-lock.yaml on the release branch so frozen installs keep working.
+      - name: Checkout release PR branch
+        if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+
+      - name: Setup pnpm
+        if: steps.release.outputs.prs_created == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        if: steps.release.outputs.prs_created == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Sync pnpm-lock.yaml on release PR
+        if: steps.release.outputs.prs_created == 'true'
+        run: |
+          pnpm install --lockfile-only --ignore-scripts
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "pnpm-lock.yaml already in sync"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore: sync pnpm-lock.yaml with release versions"
+          git push
+
   # Publish @getblitz/shared-types to npm
   publish-shared-types:
     needs: release-please
