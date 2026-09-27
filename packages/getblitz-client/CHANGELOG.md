@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.9](https://github.com/jayokunle/getblitz/compare/getblitz-client-v0.0.8...getblitz-client-v0.0.9) (2026-09-27)
+
+
+### Bug Fixes
+
+* **client:** depend on @getblitz/shared-types ^0.0.9 ([#56](https://github.com/jayokunle/getblitz/issues/56)) ([aba0076](https://github.com/jayokunle/getblitz/commit/aba00767112e5a1a02c04712b9056b68c1bbb9b3))
+* credit JAyokunle Enterprise UG across website, docs, app and packages ([#58](https://github.com/jayokunle/getblitz/issues/58)) ([cca4137](https://github.com/jayokunle/getblitz/commit/cca4137269ccb6ae0c32d7c21264e946eec9b717))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @getblitz/shared-types bumped from ^0.0.9 to ^0.0.11
+
 ## [0.0.8](https://github.com/jayokunle/getblitz/compare/getblitz-client-v0.0.7...getblitz-client-v0.0.8) (2026-09-27)
 
 
