@@ -57,4 +57,4 @@ GetBlitz takes security seriously. This document outlines the security measures 
 
 ## Reporting Vulnerabilities
 
-If you discover a security vulnerability, please do not open a public issue. Instead, please email security@getblitz.io (or the repository maintainer) with a description of the issue.
+If you discover a security vulnerability, please do not open a public issue. Instead, please email hello@jayokunle.com with a description of the issue.

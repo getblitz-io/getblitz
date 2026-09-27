@@ -337,7 +337,6 @@
     "legal": "MIT lizenziert · Made in Europe 🇪🇺",
     "resources": "Ressourcen",
     "product": "Produkt",
-    "productOf": "ein Produkt der",
     "copyright": "Alle Rechte vorbehalten."
   },
   "cookieBanner": {
@@ -375,7 +374,7 @@
   },
   "terms": {
     "title": "Nutzungsbedingungen",
-    "intro": "Willkommen bei GetBlitz. Durch den Zugriff auf unsere Website und die Nutzung unserer Software stimmen Sie diesen Nutzungsbedingungen zu.",
+    "intro": "Willkommen bei GetBlitz. Durch den Zugriff auf unsere Website und die Nutzung unserer Software stimmen Sie diesen Nutzungsbedingungen zu. Diese Website und GetBlitz werden von der JAyokunle Enterprise UG (haftungsbeschränkt), Augsburg, betrieben (siehe Impressum).",
     "sections": [
       {
         "title": "1. Nutzung der Website",
@@ -400,19 +399,24 @@
     "intro": "Bei GetBlitz nehmen wir Ihren Datenschutz ernst. Diese Richtlinie beschreibt, wie wir mit Informationen umgehen, wenn Sie unsere Website besuchen. Als Open-Source-Software, die Sie selbst hosten, ist GetBlitz darauf ausgelegt, maximale Datensouveränität zu gewährleisten.",
     "sections": [
       {
-        "title": "1. Informationen, die wir nicht erfassen",
+        "title": "1. Verantwortlicher",
+        "content": "Verantwortlich für diese Website im Sinne der DSGVO ist die JAyokunle Enterprise UG (haftungsbeschränkt), Reutlinger Straße 34, 86156 Augsburg, vertreten durch den Geschäftsführer Jacob Ayokunle. Kontakt:",
+        "email": "hello@jayokunle.com"
+      },
+      {
+        "title": "2. Informationen, die wir nicht erfassen",
         "content": "Wenn Sie die selbst gehostete Version von GetBlitz nutzen, haben wir keinen Zugriff auf Ihre Finanzdaten, Transaktionsdaten, Bankdaten oder Kundeninformationen. Ihre Daten bleiben vollständig auf Ihren Servern."
       },
       {
-        "title": "2. Website-Analysen und Cookies",
+        "title": "3. Website-Analysen und Cookies",
         "content": "Unsere Website verwendet nur essenzielle Cookies, um ordnungsgemäß zu funktionieren und Betrug zu verhindern. Wir verwenden keine Tracking-Cookies."
       },
       {
-        "title": "3. Links von Drittanbietern",
+        "title": "4. Links von Drittanbietern",
         "content": "Unsere Website kann Links zu Websites Dritter enthalten (wie GitHub). Wir sind nicht für die Datenschutzpraktiken dieser externen Websites verantwortlich."
       },
       {
-        "title": "4. Kontakt",
+        "title": "5. Kontakt",
         "content": "Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns unter:",
         "email": "hello@jayokunle.com"
       }

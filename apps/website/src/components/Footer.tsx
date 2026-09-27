@@ -164,7 +164,7 @@ export function Footer() {
             <span>{t("legal")}</span>
           </div>
           <p className="text-muted-foreground text-xs">
-            © {new Date().getFullYear()} GetBlitz, {t("productOf")}{" "}
+            © {new Date().getFullYear()}{" "}
             <a
               href="https://jayokunle.com"
               className="hover:text-foreground transition-colors"

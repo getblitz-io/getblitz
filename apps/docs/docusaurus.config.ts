@@ -110,7 +110,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} GetBlitz. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} JAyokunle Enterprise UG. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
