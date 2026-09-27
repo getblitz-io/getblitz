@@ -19,6 +19,7 @@
       "include-component-in-tag": true
     }
   },
+  "plugins": ["node-workspace"],
   "separate-pull-requests": false,
   "changelog-sections": [
     { "type": "feat", "section": "Features" },
