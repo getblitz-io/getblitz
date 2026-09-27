@@ -337,6 +337,7 @@
     "legal": "MIT Licensed · Made in Europe 🇪🇺",
     "resources": "Resources",
     "product": "Product",
+    "productOf": "a product of",
     "copyright": "All rights reserved."
   },
   "cookieBanner": {
@@ -345,9 +346,9 @@
   },
   "impressum": {
     "title": "Impressum (Legal Notice)",
-    "tmg": {
-      "title": "Angaben gemäß § 5 TMG",
-      "content": "JAyokunle Enterpise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
+    "provider": {
+      "title": "Angaben gemäß § 5 DDG",
+      "content": "JAyokunle Enterprise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
     },
     "register": {
       "title": "Registereintrag",
@@ -355,12 +356,16 @@
     },
     "representedBy": {
       "title": "Vertreten durch",
-      "content": "Jacob Ayokunle"
+      "content": "Jacob Ayokunle (Geschäftsführer)"
     },
     "contact": {
       "title": "Kontakt",
       "email": "E-Mail:",
-      "emailAddress": "jacob@ayokunle.com",
+      "emailAddress": "hello@jayokunle.com",
+      "phone": "Telefon:",
+      "phoneNumber": "+49 1512 9896770",
+      "website": "Website:",
+      "websiteUrl": "https://jayokunle.com",
       "inquiries": "For all issues and complaints, please contact us at the email above."
     },
     "disclaimer": {
@@ -400,7 +405,7 @@
       },
       {
         "title": "2. Website Analytics and Cookies",
-        "content": "Our website (getblitz.com) uses essential cookies only to function correctly and prevent fraud. We do not use tracking cookies or third-party behavioral analytics tools that compromise your privacy."
+        "content": "Our website (getblitz.io) uses essential cookies only to function correctly and prevent fraud. We do not use tracking cookies or third-party behavioral analytics tools that compromise your privacy."
       },
       {
         "title": "3. Third-Party Links",
@@ -409,7 +414,7 @@
       {
         "title": "4. Contact Us",
         "content": "If you have any questions about this Privacy Policy, please contact us at:",
-        "email": "jacob@ayokunle.com"
+        "email": "hello@jayokunle.com"
       }
     ]
   }

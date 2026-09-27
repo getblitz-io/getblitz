@@ -337,6 +337,7 @@
     "legal": "MIT lizenziert · Made in Europe 🇪🇺",
     "resources": "Ressourcen",
     "product": "Produkt",
+    "productOf": "ein Produkt der",
     "copyright": "Alle Rechte vorbehalten."
   },
   "cookieBanner": {
@@ -345,9 +346,9 @@
   },
   "impressum": {
     "title": "Impressum (Legal Notice)",
-    "tmg": {
-      "title": "Angaben gemäß § 5 TMG",
-      "content": "JAyokunle Enterpise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
+    "provider": {
+      "title": "Angaben gemäß § 5 DDG",
+      "content": "JAyokunle Enterprise UG (haftungsbeschränkt)<br />Reutlinger Straße 34<br />86156 Augsburg<br />Germany"
     },
     "register": {
       "title": "Registereintrag",
@@ -355,12 +356,16 @@
     },
     "representedBy": {
       "title": "Vertreten durch",
-      "content": "Jacob Ayokunle"
+      "content": "Jacob Ayokunle (Geschäftsführer)"
     },
     "contact": {
       "title": "Kontakt",
       "email": "E-Mail:",
-      "emailAddress": "jacob@ayokunle.com",
+      "emailAddress": "hello@jayokunle.com",
+      "phone": "Telefon:",
+      "phoneNumber": "+49 1512 9896770",
+      "website": "Website:",
+      "websiteUrl": "https://jayokunle.com",
       "inquiries": "For all issues and complaints, please contact us at the email above."
     },
     "disclaimer": {
@@ -409,7 +414,7 @@
       {
         "title": "4. Kontakt",
         "content": "Wenn Sie Fragen zu dieser Datenschutzerklärung haben, kontaktieren Sie uns unter:",
-        "email": "jacob@ayokunle.com"
+        "email": "hello@jayokunle.com"
       }
     ]
   }
