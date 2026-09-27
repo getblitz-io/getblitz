@@ -16,12 +16,12 @@ export default function ImpressumPage() {
 
           <section className="space-y-2">
             <h2 className="text-foreground text-xl font-semibold">
-              {t("tmg.title")}
+              {t("provider.title")}
             </h2>
             <p
               className="text-muted-foreground"
               // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-              dangerouslySetInnerHTML={{ __html: t.raw("tmg.content") }}
+              dangerouslySetInnerHTML={{ __html: t.raw("provider.content") }}
             />
           </section>
 
@@ -56,6 +56,24 @@ export default function ImpressumPage() {
                 className="text-primary hover:underline"
               >
                 {t("contact.emailAddress")}
+              </a>
+            </p>
+            <p className="text-muted-foreground">
+              {t("contact.phone")}{" "}
+              <a
+                href={`tel:${t("contact.phoneNumber").replace(/\s/g, "")}`}
+                className="text-primary hover:underline"
+              >
+                {t("contact.phoneNumber")}
+              </a>
+            </p>
+            <p className="text-muted-foreground">
+              {t("contact.website")}{" "}
+              <a
+                href={t("contact.websiteUrl")}
+                className="text-primary hover:underline"
+              >
+                {t("contact.websiteUrl").replace("https://", "")}
               </a>
             </p>
             <p className="text-muted-foreground mt-2 text-sm">
