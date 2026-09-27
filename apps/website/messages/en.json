@@ -337,7 +337,6 @@
     "legal": "MIT Licensed · Made in Europe 🇪🇺",
     "resources": "Resources",
     "product": "Product",
-    "productOf": "a product of",
     "copyright": "All rights reserved."
   },
   "cookieBanner": {
@@ -375,7 +374,7 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "intro": "Welcome to GetBlitz. By accessing our website and using our software, you agree to these Terms of Service.",
+    "intro": "Welcome to GetBlitz. By accessing our website and using our software, you agree to these Terms of Service. This website and GetBlitz are operated by JAyokunle Enterprise UG (haftungsbeschränkt), Augsburg, Germany (see the Impressum).",
     "sections": [
       {
         "title": "1. Use of the Website",
@@ -400,19 +399,24 @@
     "intro": "At GetBlitz, we take your privacy seriously. This Privacy Policy details how we handle information when you visit our website. As an open-source, self-hosted product, GetBlitz is designed to ensure maximum data sovereignty.",
     "sections": [
       {
-        "title": "1. Information We Do Not Collect",
+        "title": "1. Controller",
+        "content": "The controller responsible for this website under the GDPR is JAyokunle Enterprise UG (haftungsbeschränkt), Reutlinger Straße 34, 86156 Augsburg, Germany, represented by its managing director Jacob Ayokunle. Contact:",
+        "email": "hello@jayokunle.com"
+      },
+      {
+        "title": "2. Information We Do Not Collect",
         "content": "When you use the self-hosted version of GetBlitz, we do not have access to any of your financial data, transaction records, bank details, or customer information. Your data remains entirely on your servers and within your chosen infrastructure."
       },
       {
-        "title": "2. Website Analytics and Cookies",
+        "title": "3. Website Analytics and Cookies",
         "content": "Our website (getblitz.io) uses essential cookies only to function correctly and prevent fraud. We do not use tracking cookies or third-party behavioral analytics tools that compromise your privacy."
       },
       {
-        "title": "3. Third-Party Links",
+        "title": "4. Third-Party Links",
         "content": "Our website may contain links to third-party sites (like GitHub or DigitalOcean). We are not responsible for the privacy practices or content of these external sites."
       },
       {
-        "title": "4. Contact Us",
+        "title": "5. Contact Us",
         "content": "If you have any questions about this Privacy Policy, please contact us at:",
         "email": "hello@jayokunle.com"
       }

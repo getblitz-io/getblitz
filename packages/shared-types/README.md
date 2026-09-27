@@ -269,4 +269,4 @@ All types have corresponding Zod schemas for runtime validation:
 
 ## License
 
-MIT © [GetBlitz](https://getblitz.io)
+MIT © [JAyokunle Enterprise UG](https://jayokunle.com)

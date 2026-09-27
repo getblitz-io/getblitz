@@ -299,4 +299,4 @@ Requires `fetch`, `WebSocket`, and ES2020 features.
 
 ## License
 
-MIT © [GetBlitz](https://getblitz.io)
+MIT © [JAyokunle Enterprise UG](https://jayokunle.com)

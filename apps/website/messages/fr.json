@@ -337,7 +337,6 @@
     "legal": "Licence MIT · Made in Europe 🇪🇺",
     "resources": "Ressources",
     "product": "Produit",
-    "productOf": "un produit de",
     "copyright": "Tous droits réservés."
   },
   "cookieBanner": {
@@ -375,7 +374,7 @@
   },
   "terms": {
     "title": "Conditions d'utilisation",
-    "intro": "Bienvenue sur GetBlitz. En accédant à notre site Web et en utilisant notre logiciel, vous acceptez ces conditions d'utilisation.",
+    "intro": "Bienvenue sur GetBlitz. En accédant à notre site Web et en utilisant notre logiciel, vous acceptez ces conditions d'utilisation. Ce site Web et GetBlitz sont exploités par JAyokunle Enterprise UG (haftungsbeschränkt), Augsbourg, Allemagne (voir l’Impressum).",
     "sections": [
       {
         "title": "1. Utilisation du site Web",
@@ -400,19 +399,24 @@
     "intro": "Chez GetBlitz, nous prenons votre vie privée au sérieux. Cette politique de confidentialité détaille la façon dont nous traitons les informations lorsque vous visitez notre site Web. En tant que produit open source auto-hébergé, GetBlitz garantit une souveraineté maximale.",
     "sections": [
       {
-        "title": "1. Informations que nous ne collectons pas",
+        "title": "1. Responsable du traitement",
+        "content": "Le responsable du traitement de ce site Web au sens du RGPD est JAyokunle Enterprise UG (haftungsbeschränkt), Reutlinger Straße 34, 86156 Augsbourg, Allemagne, représentée par son gérant Jacob Ayokunle. Contact :",
+        "email": "hello@jayokunle.com"
+      },
+      {
+        "title": "2. Informations que nous ne collectons pas",
         "content": "Lorsque vous utilisez la version auto-hébergée de GetBlitz, nous n'avons aucun accès à vos données financières, enregistrements de transactions ou informations clients. Vos données restent sur vos serveurs."
       },
       {
-        "title": "2. Analyses du site Web et Cookies",
+        "title": "3. Analyses du site Web et Cookies",
         "content": "Notre site Web utilise uniquement des cookies essentiels pour fonctionner correctement et prévenir la fraude. Nous n'utilisons aucun outil de suivi."
       },
       {
-        "title": "3. Liens Tiers",
+        "title": "4. Liens Tiers",
         "content": "Notre site Web peut contenir des liens vers des sites tiers (comme GitHub). Nous ne sommes pas responsables des pratiques de confidentialité de ces sites."
       },
       {
-        "title": "4. Contactez-nous",
+        "title": "5. Contactez-nous",
         "content": "Si vous avez des questions concernant cette politique de confidentialité, veuillez nous contacter à l'adresse suivante :",
         "email": "hello@jayokunle.com"
       }

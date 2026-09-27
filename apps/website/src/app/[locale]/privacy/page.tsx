@@ -2,8 +2,15 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { useTranslations } from "next-intl";
 
+interface PrivacySection {
+  title: string;
+  content: string;
+  email?: string;
+}
+
 export default function PrivacyPage() {
   const t = useTranslations("privacyPolicy");
+  const sections = t.raw("sections") as PrivacySection[];
 
   return (
     <>
@@ -16,41 +23,27 @@ export default function PrivacyPage() {
 
           <p>{t("intro")}</p>
 
-          <section className="space-y-2">
-            <h2 className="text-foreground mt-8 mb-4 text-xl font-semibold">
-              {t("sections.0.title")}
-            </h2>
-            <p>{t("sections.0.content")}</p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-foreground mt-8 mb-4 text-xl font-semibold">
-              {t("sections.1.title")}
-            </h2>
-            <p>{t("sections.1.content")}</p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-foreground mt-8 mb-4 text-xl font-semibold">
-              {t("sections.2.title")}
-            </h2>
-            <p>{t("sections.2.content")}</p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-foreground mt-8 mb-4 text-xl font-semibold">
-              {t("sections.3.title")}
-            </h2>
-            <p>
-              {t("sections.3.content")}{" "}
-              <a
-                href={`mailto:${t("sections.3.email")}`}
-                className="text-primary hover:underline"
-              >
-                {t("sections.3.email")}
-              </a>
-            </p>
-          </section>
+          {sections.map((section) => (
+            <section key={section.title} className="space-y-2">
+              <h2 className="text-foreground mt-8 mb-4 text-xl font-semibold">
+                {section.title}
+              </h2>
+              <p>
+                {section.content}
+                {section.email && (
+                  <>
+                    {" "}
+                    <a
+                      href={`mailto:${section.email}`}
+                      className="text-primary hover:underline"
+                    >
+                      {section.email}
+                    </a>
+                  </>
+                )}
+              </p>
+            </section>
+          ))}
         </div>
       </main>
       <Footer />

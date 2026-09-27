@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description:
     "GetBlitz Payment Gateway is an Open Source Merchant Self-Hosted Payment Gateway that allows merchants to accept payments online and offline via SEPA Instant Transfer across Europe.",
   applicationName: "GetBlitz Payment Gateway",
-  authors: [{ name: "GetBlitz Team", url: "https://getblitz.io" }],
+  authors: [{ name: "JAyokunle Enterprise UG", url: "https://jayokunle.com" }],
   generator: "Next.js",
   keywords: [
     "Payment Gateway",
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
     "Banking",
   ],
   referrer: "origin-when-cross-origin",
-  creator: "GetBlitz Team",
-  publisher: "GetBlitz",
+  creator: "JAyokunle Enterprise UG",
+  publisher: "JAyokunle Enterprise UG",
   robots:
     env.APPLICATION_ENV === "production"
       ? {
